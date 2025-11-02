@@ -205,3 +205,22 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Embodied AI Architect - Secrets and Credentials
+# NEVER commit secrets or credentials!
+config/credentials/
+config/secrets.yaml
+config/secrets.json
+*.key
+*.pem
+*_key
+*_secret
+*_password
+*credentials*.json
+*.p12
+*.pfx
+
+# But allow examples
+!*.example
+!*_template.json
+!*_template.yaml

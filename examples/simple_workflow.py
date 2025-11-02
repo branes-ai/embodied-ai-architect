@@ -9,7 +9,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 import torch
 import torch.nn as nn
 from embodied_ai_architect import Orchestrator
-from embodied_ai_architect.agents import ModelAnalyzerAgent
+from embodied_ai_architect.agents import (
+    ModelAnalyzerAgent,
+    BenchmarkAgent,
+    HardwareProfileAgent,
+    ReportSynthesisAgent
+)
 
 
 # Define a simple CNN model for image classification
@@ -74,17 +79,28 @@ def main():
     model_analyzer = ModelAnalyzerAgent()
     orchestrator.register_agent(model_analyzer)
 
+    hardware_profiler = HardwareProfileAgent()
+    orchestrator.register_agent(hardware_profiler)
+
+    benchmark_agent = BenchmarkAgent()
+    orchestrator.register_agent(benchmark_agent)
+
+    report_agent = ReportSynthesisAgent()
+    orchestrator.register_agent(report_agent)
+
     print(f"\n📋 Registered agents: {orchestrator.list_agents()}")
 
     # Create request
     request = {
         "model": model,
         "input_shape": (1, 3, 32, 32),  # Batch size 1, 3 channels, 32x32 image
-        "targets": ["cpu", "gpu"],
+        "target_use_case": "edge",  # Looking for edge deployment
         "constraints": {
-            "max_latency_ms": 100,
-            "max_power_watts": 15
-        }
+            "max_latency_ms": 50,
+            "max_power_watts": 100,
+            "max_cost_usd": 3000
+        },
+        "top_n_hardware": 5,
     }
 
     # Process the request

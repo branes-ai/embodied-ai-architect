@@ -1,0 +1,28 @@
+version: "1.0"
+
+# Default backend for benchmarking
+default_backend: local_cpu
+
+# Backends configuration
+backends:
+  kubernetes:
+    namespace: embodied-ai
+    image: embodied-ai-benchmark:latest
+    cpu_request: "2"
+    memory_request: "4Gi"
+
+  ssh_remote:
+    host: gpu-server.example.com
+    port: 22
+    user: benchmark
+
+# Report settings
+reports:
+  auto_open: true  # Open in browser after generation
+  format: html
+
+# Workflow settings
+workflow:
+  default_iterations: 100
+  default_warmup: 10
+  auto_cleanup: true
