@@ -16,6 +16,10 @@ dependencies = [
     "torch>=2.0.0",
     "numpy>=1.24.0",
     "pydantic>=2.0.0",
+    "matplotlib>=3.7.0",
+    "jinja2>=3.1.0",
+    "click>=8.1.0",
+    "rich>=13.0.0",
 ]
 
 [project.optional-dependencies]
@@ -25,6 +29,15 @@ dev = [
     "black>=23.0.0",
     "ruff>=0.1.0",
 ]
+remote = [
+    "paramiko>=3.0.0",  # SSH connections
+]
+kubernetes = [
+    "kubernetes>=28.0.0",  # K8s client
+]
+
+[project.scripts]
+embodied-ai = "embodied_ai_architect.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

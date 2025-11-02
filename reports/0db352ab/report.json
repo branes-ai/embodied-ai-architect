@@ -1,0 +1,188 @@
+{
+  "metadata": {
+    "workflow_id": "0db352ab",
+    "timestamp": "2025-11-02T16:57:57.249198",
+    "version": "1.0"
+  },
+  "model_analysis": {
+    "model_type": "ResNet",
+    "total_parameters": 11689512,
+    "trainable_parameters": 11689512,
+    "total_layers": 67,
+    "layer_types": {
+      "Conv2d": 20,
+      "BatchNorm2d": 20,
+      "ReLU": 9,
+      "MaxPool2d": 1,
+      "Sequential": 7,
+      "BasicBlock": 8,
+      "AdaptiveAvgPool2d": 1,
+      "Linear": 1
+    },
+    "memory_mb": 44.591949462890625
+  },
+  "hardware_recommendations": [
+    {
+      "rank": 1,
+      "name": "NVIDIA Jetson AGX Orin",
+      "vendor": "NVIDIA",
+      "type": "gpu",
+      "score": 84.99,
+      "reasons": [
+        "Ample memory: 64.0GB (needs ~0.0GB)",
+        "Optimized for: convolution, matrix_multiply",
+        "Has tensor cores for matrix operations",
+        "Supports sparse tensor acceleration",
+        "Peak compute: 5.3 TFLOPS FP32",
+        "Suitable for: edge, robotics, autonomous_vehicles"
+      ],
+      "warnings": [],
+      "estimated_performance": {
+        "estimated_latency_ms": 0.01,
+        "memory_utilization_percent": 0.1
+      },
+      "cost_usd": 2000.0,
+      "power_watts": 60.0
+    },
+    {
+      "rank": 2,
+      "name": "NVIDIA A100",
+      "vendor": "NVIDIA",
+      "type": "gpu",
+      "score": 84.99,
+      "reasons": [
+        "Ample memory: 40.0GB (needs ~0.0GB)",
+        "Optimized for: convolution, matrix_multiply",
+        "Has tensor cores for matrix operations",
+        "Supports sparse tensor acceleration",
+        "Peak compute: 19.5 TFLOPS FP32",
+        "Suitable for: cloud, datacenter"
+      ],
+      "warnings": [],
+      "estimated_performance": {
+        "estimated_latency_ms": 0.0,
+        "memory_utilization_percent": 0.1
+      },
+      "cost_usd": 10000.0,
+      "power_watts": 400.0
+    },
+    {
+      "rank": 3,
+      "name": "AMD Instinct MI250X",
+      "vendor": "AMD",
+      "type": "gpu",
+      "score": 80.0,
+      "reasons": [
+        "Ample memory: 128.0GB (needs ~0.0GB)",
+        "Optimized for: convolution, matrix_multiply",
+        "Peak compute: 47.9 TFLOPS FP32",
+        "Suitable for: cloud, datacenter, hpc"
+      ],
+      "warnings": [],
+      "estimated_performance": {
+        "estimated_latency_ms": 0.0,
+        "memory_utilization_percent": 0.0
+      },
+      "cost_usd": 15000.0,
+      "power_watts": 560.0
+    },
+    {
+      "rank": 4,
+      "name": "Google TPU v4",
+      "vendor": "Google",
+      "type": "tpu",
+      "score": 69.99,
+      "reasons": [
+        "Ample memory: 32.0GB (needs ~0.0GB)",
+        "Optimized for: convolution, matrix_multiply",
+        "Suitable for: cloud, datacenter"
+      ],
+      "warnings": [],
+      "estimated_performance": {
+        "memory_utilization_percent": 0.1
+      },
+      "cost_usd": null,
+      "power_watts": 175.0
+    },
+    {
+      "rank": 5,
+      "name": "Google Coral Edge TPU",
+      "vendor": "Google",
+      "type": "tpu",
+      "score": 68.3,
+      "reasons": [
+        "Ample memory: 0.256GB (needs ~0.0GB)",
+        "Optimized for: convolution, matrix_multiply",
+        "Suitable for: edge, embedded, iot"
+      ],
+      "warnings": [],
+      "estimated_performance": {
+        "memory_utilization_percent": 17.0
+      },
+      "cost_usd": 60.0,
+      "power_watts": 2.0
+    }
+  ],
+  "model_characteristics": {
+    "parameters": 11689512,
+    "layers": 67,
+    "estimated_memory_mb": 44.591949462890625,
+    "operation_types": [
+      "convolution",
+      "matrix_multiply"
+    ]
+  },
+  "benchmarks": {
+    "local_cpu": {
+      "backend_name": "local_cpu",
+      "device": "cpu",
+      "mean_latency_ms": 10.13795171995298,
+      "std_latency_ms": 0.08489075051302597,
+      "min_latency_ms": 10.047486000985373,
+      "max_latency_ms": 10.4752359984559,
+      "throughput_samples_per_sec": 98.63925451843028,
+      "memory_allocated_mb": null,
+      "memory_reserved_mb": null,
+      "energy_joules": null,
+      "iterations": 100,
+      "warmup_iterations": 5,
+      "metadata": {
+        "input_shape": [
+          1,
+          3,
+          224,
+          224
+        ],
+        "batch_size": 1
+      }
+    }
+  },
+  "executive_summary": {
+    "model": {
+      "type": "ResNet",
+      "size": "11.7M parameters",
+      "memory": "44.6 MB"
+    },
+    "recommended_hardware": {
+      "name": "NVIDIA Jetson AGX Orin",
+      "vendor": "NVIDIA",
+      "score": 84.99,
+      "cost_usd": 2000.0,
+      "power_watts": 60.0
+    },
+    "performance": {
+      "backend": "local_cpu",
+      "latency_ms": 10.13795171995298,
+      "throughput": 98.63925451843028
+    },
+    "constraints_met": {}
+  },
+  "insights": [
+    "Multiple hardware options have similar scores - consider cost and availability"
+  ],
+  "recommendations": [
+    "Deploy on NVIDIA Jetson AGX Orin for optimal performance (score: 85.0/100)",
+    "Consider model quantization (INT8/FP16) to reduce memory and improve performance",
+    "Model uses convolutions - hardware with tensor cores will provide significant speedup"
+  ]
+}

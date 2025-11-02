@@ -1,0 +1,8 @@
+# Namespace for Embodied AI benchmarking
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: embodied-ai
+  labels:
+    name: embodied-ai
+    purpose: ml-benchmarking

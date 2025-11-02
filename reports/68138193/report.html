@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embodied AI Report - 68138193</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        header { border-bottom: 3px solid #3498db; padding-bottom: 20px; margin-bottom: 30px; }
+        h1 { color: #2c3e50; font-size: 2.5em; margin-bottom: 10px; }
+        h2 { color: #34495e; font-size: 1.8em; margin-top: 30px; margin-bottom: 15px; border-left: 4px solid #3498db; padding-left: 15px; }
+        h3 { color: #7f8c8d; font-size: 1.2em; margin-top: 20px; margin-bottom: 10px; }
+        .metadata { color: #7f8c8d; font-size: 0.9em; }
+        .key-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 20px 0; }
+        .metric-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; }
+        .metric-card.green { background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); }
+        .metric-card.blue { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); }
+        .metric-card.orange { background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); }
+        .metric-value { font-size: 2em; font-weight: bold; margin-bottom: 5px; }
+        .metric-label { font-size: 0.9em; opacity: 0.9; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ecf0f1; }
+        th { background: #34495e; color: white; font-weight: 600; }
+        tr:hover { background: #f8f9fa; }
+        .chart { margin: 30px 0; text-align: center; }
+        .chart img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .insight-box { background: #e8f5e9; border-left: 4px solid #4caf50; padding: 15px; margin: 15px 0; border-radius: 4px; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 15px 0; border-radius: 4px; }
+        .recommendation-box { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin: 15px 0; border-radius: 4px; }
+        ul { margin: 10px 0 10px 30px; }
+        li { margin: 8px 0; }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 0.85em; font-weight: 600; }
+        .badge.success { background: #d4edda; color: #155724; }
+        .badge.warning { background: #fff3cd; color: #856404; }
+        .badge.info { background: #d1ecf1; color: #0c5460; }
+        footer { margin-top: 50px; padding-top: 20px; border-top: 1px solid #ecf0f1; color: #7f8c8d; font-size: 0.9em; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 Embodied AI Architect Report</h1>
+            <div class="metadata">
+                Workflow ID: <strong>68138193</strong> |
+                Generated: 2025-11-02 16:57:16
+            </div>
+        </header>
+
+        <section id="executive-summary">
+            <h2>📊 Executive Summary</h2>
+            
+            <div class="key-metrics">
+                
+                <div class="metric-card blue">
+                    <div class="metric-label">Model</div>
+                    <div class="metric-value">11.7M parameters</div>
+                    <div class="metric-label">ResNet</div>
+                </div>
+                
+
+                
+                <div class="metric-card green">
+                    <div class="metric-label">Recommended Hardware</div>
+                    <div class="metric-value">85.0</div>
+                    <div class="metric-label">NVIDIA Jetson AGX Orin</div>
+                </div>
+                
+
+                
+                <div class="metric-card orange">
+                    <div class="metric-label">Performance</div>
+                    <div class="metric-value">10.302ms</div>
+                    <div class="metric-label">Inference Latency</div>
+                </div>
+                
+            </div>
+
+            
+            
+        </section>
+
+        
+        <section id="model-analysis">
+            <h2>🔬 Model Analysis</h2>
+            <table>
+                <tr><th>Property</th><th>Value</th></tr>
+                <tr><td>Model Type</td><td>ResNet</td></tr>
+                <tr><td>Total Parameters</td><td>11,689,512</td></tr>
+                <tr><td>Trainable Parameters</td><td>11,689,512</td></tr>
+                <tr><td>Total Layers</td><td>67</td></tr>
+                <tr><td>Estimated Memory</td><td>44.59 MB</td></tr>
+            </table>
+
+            
+            <div class="chart">
+                <img src="assets/layer_distribution.png" alt="Layer Distribution">
+            </div>
+            
+        </section>
+        
+
+        
+        <section id="hardware-recommendations">
+            <h2>🖥️ Hardware Recommendations</h2>
+
+            
+            <div class="chart">
+                <img src="assets/hardware_comparison.png" alt="Hardware Comparison">
+            </div>
+            
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Hardware</th>
+                        <th>Vendor</th>
+                        <th>Score</th>
+                        <th>Type</th>
+                        <th>Power (W)</th>
+                        <th>Cost (USD)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr>
+                        <td><strong>1</strong></td>
+                        <td>NVIDIA Jetson AGX Orin</td>
+                        <td>NVIDIA</td>
+                        <td><span class="badge info">85.0</span></td>
+                        <td>GPU</td>
+                        <td>60.0</td>
+                        <td>$2,000.0</td>
+                    </tr>
+                    
+                    <tr>
+                        <td><strong>2</strong></td>
+                        <td>NVIDIA A100</td>
+                        <td>NVIDIA</td>
+                        <td><span class="badge info">85.0</span></td>
+                        <td>GPU</td>
+                        <td>400.0</td>
+                        <td>$10,000.0</td>
+                    </tr>
+                    
+                    <tr>
+                        <td><strong>3</strong></td>
+                        <td>AMD Instinct MI250X</td>
+                        <td>AMD</td>
+                        <td><span class="badge info">80.0</span></td>
+                        <td>GPU</td>
+                        <td>560.0</td>
+                        <td>$15,000.0</td>
+                    </tr>
+                    
+                    <tr>
+                        <td><strong>4</strong></td>
+                        <td>Google TPU v4</td>
+                        <td>Google</td>
+                        <td><span class="badge info">70.0</span></td>
+                        <td>TPU</td>
+                        <td>175.0</td>
+                        <td>N/A</td>
+                    </tr>
+                    
+                    <tr>
+                        <td><strong>5</strong></td>
+                        <td>Google Coral Edge TPU</td>
+                        <td>Google</td>
+                        <td><span class="badge info">68.3</span></td>
+                        <td>TPU</td>
+                        <td>2.0</td>
+                        <td>$60.0</td>
+                    </tr>
+                    
+                </tbody>
+            </table>
+
+            <h3>Top Recommendation Details</h3>
+            
+            
+            <div class="recommendation-box">
+                <strong>NVIDIA Jetson AGX Orin</strong> (NVIDIA)<br>
+                <strong>Reasons:</strong>
+                <ul>
+                    
+                    <li>Ample memory: 64.0GB (needs ~0.0GB)</li>
+                    
+                    <li>Optimized for: convolution, matrix_multiply</li>
+                    
+                    <li>Has tensor cores for matrix operations</li>
+                    
+                    <li>Supports sparse tensor acceleration</li>
+                    
+                    <li>Peak compute: 5.3 TFLOPS FP32</li>
+                    
+                </ul>
+                
+            </div>
+            
+        </section>
+        
+
+        
+        <section id="benchmarks">
+            <h2>⚡ Benchmark Results</h2>
+
+            
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Backend</th>
+                        <th>Mean Latency (ms)</th>
+                        <th>Std Dev (ms)</th>
+                        <th>Min/Max (ms)</th>
+                        <th>Throughput (samples/sec)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr>
+                        <td><strong>LOCAL_CPU</strong></td>
+                        <td>10.302</td>
+                        <td>0.082</td>
+                        <td>10.238 / 10.736</td>
+                        <td>97.06</td>
+                    </tr>
+                    
+                </tbody>
+            </table>
+        </section>
+        
+
+        
+        <section id="insights">
+            <h2>💡 Insights</h2>
+            
+            <div class="insight-box">
+                Multiple hardware options have similar scores - consider cost and availability
+            </div>
+            
+        </section>
+        
+
+        
+        <section id="recommendations">
+            <h2>🎯 Recommendations</h2>
+            
+            <div class="recommendation-box">
+                Deploy on NVIDIA Jetson AGX Orin for optimal performance (score: 85.0/100)
+            </div>
+            
+            <div class="recommendation-box">
+                Consider model quantization (INT8/FP16) to reduce memory and improve performance
+            </div>
+            
+            <div class="recommendation-box">
+                Model uses convolutions - hardware with tensor cores will provide significant speedup
+            </div>
+            
+        </section>
+        
+
+        <footer>
+            <p>Generated by <strong>Embodied AI Architect</strong> | Version 1.0</p>
+            <p>For more information, visit the project repository</p>
+        </footer>
+    </div>
+</body>
+</html>

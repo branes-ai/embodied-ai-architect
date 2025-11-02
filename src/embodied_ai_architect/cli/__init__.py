@@ -1,0 +1,79 @@
+"""Embodied AI Architect CLI.
+
+Human-friendly command-line interface for the Embodied AI Architect system.
+"""
+
+import click
+from rich.console import Console
+from rich.panel import Panel
+
+from embodied_ai_architect import __version__
+
+# Initialize rich console for beautiful output
+console = Console()
+
+
+@click.group()
+@click.version_option(version=__version__, prog_name="embodied-ai")
+@click.option(
+    "-v",
+    "--verbose",
+    count=True,
+    help="Increase verbosity (-v, -vv, or --debug for max verbosity)",
+)
+@click.option("--json", is_flag=True, help="Output in JSON format")
+@click.option("--quiet", is_flag=True, help="Minimal output")
+@click.pass_context
+def cli(ctx, verbose, json, quiet):
+    """Embodied AI Architect - Design environment for Embodied AI systems.
+
+    \b
+    Examples:
+      embodied-ai workflow run my_model.pt
+      embodied-ai analyze my_model.pt
+      embodied-ai benchmark my_model.pt --backend kubernetes
+      embodied-ai report view --latest
+    """
+    # Store settings in context for subcommands
+    ctx.ensure_object(dict)
+    ctx.obj["verbose"] = verbose
+    ctx.obj["json"] = json
+    ctx.obj["quiet"] = quiet
+
+    # Show welcome banner (unless quiet)
+    if not quiet and not json and ctx.invoked_subcommand:
+        console.print(
+            Panel.fit(
+                "[bold cyan]Embodied AI Architect[/bold cyan]\n"
+                f"Version {__version__}",
+                border_style="cyan",
+            )
+        )
+
+
+def main():
+    """Entry point for the CLI."""
+    # Import subcommands
+    from embodied_ai_architect.cli.commands import workflow
+    from embodied_ai_architect.cli.commands import analyze
+    from embodied_ai_architect.cli.commands import benchmark
+    from embodied_ai_architect.cli.commands import report
+    from embodied_ai_architect.cli.commands import config
+    from embodied_ai_architect.cli.commands import backends
+    from embodied_ai_architect.cli.commands import secrets
+
+    # Register command groups
+    cli.add_command(workflow.workflow)
+    cli.add_command(analyze.analyze)
+    cli.add_command(benchmark.benchmark)
+    cli.add_command(report.report)
+    cli.add_command(config.config)
+    cli.add_command(backends.backends)
+    cli.add_command(secrets.secrets)
+
+    # Run CLI
+    cli(obj={})
+
+
+if __name__ == "__main__":
+    main()

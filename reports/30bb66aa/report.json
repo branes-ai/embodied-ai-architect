@@ -1,0 +1,172 @@
+{
+  "metadata": {
+    "workflow_id": "30bb66aa",
+    "timestamp": "2025-11-02T14:01:56.324903",
+    "version": "1.0"
+  },
+  "model_analysis": {
+    "model_type": "SimpleCNN",
+    "total_parameters": 620810,
+    "trainable_parameters": 620810,
+    "total_layers": 19,
+    "layer_types": {
+      "Sequential": 2,
+      "Conv2d": 3,
+      "ReLU": 4,
+      "BatchNorm2d": 3,
+      "MaxPool2d": 3,
+      "Flatten": 1,
+      "Linear": 2,
+      "Dropout": 1
+    },
+    "memory_mb": 2.3682022094726562
+  },
+  "hardware_recommendations": [
+    {
+      "rank": 1,
+      "name": "NVIDIA Jetson AGX Orin",
+      "vendor": "NVIDIA",
+      "type": "gpu",
+      "score": 91.4,
+      "reasons": [
+        "Ample memory: 64.0GB (needs ~0.0GB)",
+        "Low power: 60.0W (budget: 100W)",
+        "Optimized for: matrix_multiply, convolution",
+        "Has tensor cores for matrix operations",
+        "Supports sparse tensor acceleration",
+        "Peak compute: 5.3 TFLOPS FP32",
+        "Suitable for: edge, robotics, autonomous_vehicles"
+      ],
+      "warnings": [],
+      "estimated_performance": {
+        "estimated_latency_ms": 0.0,
+        "memory_utilization_percent": 0.0
+      },
+      "cost_usd": 2000.0,
+      "power_watts": 60.0
+    },
+    {
+      "rank": 2,
+      "name": "Google Coral Edge TPU",
+      "vendor": "Google",
+      "type": "tpu",
+      "score": 74.79,
+      "reasons": [
+        "Ample memory: 0.256GB (needs ~0.0GB)",
+        "Low power: 2.0W (budget: 100W)",
+        "Optimized for: matrix_multiply, convolution",
+        "Suitable for: edge, embedded, iot"
+      ],
+      "warnings": [],
+      "estimated_performance": {
+        "memory_utilization_percent": 0.9
+      },
+      "cost_usd": 60.0,
+      "power_watts": 2.0
+    },
+    {
+      "rank": 3,
+      "name": "Raspberry Pi 4",
+      "vendor": "Raspberry Pi Foundation",
+      "type": "cpu",
+      "score": 69.1,
+      "reasons": [
+        "Ample memory: 8.0GB (needs ~0.0GB)",
+        "Low power: 15.0W (budget: 100W)",
+        "Peak compute: 0.024 TFLOPS FP32",
+        "Suitable for: edge, embedded, iot, hobbyist"
+      ],
+      "warnings": [],
+      "estimated_performance": {
+        "estimated_latency_ms": 0.1,
+        "memory_utilization_percent": 0.0
+      },
+      "cost_usd": 75.0,
+      "power_watts": 15.0
+    },
+    {
+      "rank": 4,
+      "name": "Intel Neural Compute Stick 2",
+      "vendor": "Intel",
+      "type": "kpu",
+      "score": 64.89,
+      "reasons": [
+        "Ample memory: 0.512GB (needs ~0.0GB)",
+        "Low power: 1.0W (budget: 100W)",
+        "Optimized for: convolution",
+        "Suitable for: edge, embedded, iot"
+      ],
+      "warnings": [],
+      "estimated_performance": {
+        "memory_utilization_percent": 0.5
+      },
+      "cost_usd": 70.0,
+      "power_watts": 1.0
+    }
+  ],
+  "model_characteristics": {
+    "parameters": 620810,
+    "layers": 19,
+    "estimated_memory_mb": 2.3682022094726562,
+    "operation_types": [
+      "matrix_multiply",
+      "convolution"
+    ]
+  },
+  "benchmarks": {
+    "local_cpu": {
+      "backend_name": "local_cpu",
+      "device": "cpu",
+      "mean_latency_ms": 0.3973843396670418,
+      "std_latency_ms": 0.004295494819283062,
+      "min_latency_ms": 0.39031899359542876,
+      "max_latency_ms": 0.41178699757438153,
+      "throughput_samples_per_sec": 2516.455481959542,
+      "memory_allocated_mb": null,
+      "memory_reserved_mb": null,
+      "energy_joules": null,
+      "iterations": 100,
+      "warmup_iterations": 10,
+      "metadata": {
+        "input_shape": [
+          1,
+          3,
+          32,
+          32
+        ],
+        "batch_size": 1
+      }
+    }
+  },
+  "executive_summary": {
+    "model": {
+      "type": "SimpleCNN",
+      "size": "0.6M parameters",
+      "memory": "2.4 MB"
+    },
+    "recommended_hardware": {
+      "name": "NVIDIA Jetson AGX Orin",
+      "vendor": "NVIDIA",
+      "score": 91.4,
+      "cost_usd": 2000.0,
+      "power_watts": 60.0
+    },
+    "performance": {
+      "backend": "local_cpu",
+      "latency_ms": 0.3973843396670418,
+      "throughput": 2516.455481959542
+    },
+    "constraints_met": {
+      "power": true,
+      "cost": true
+    }
+  },
+  "insights": [
+    "Lightweight model (621K params) suitable for edge deployment",
+    "Excellent latency on local_cpu (0.397ms) - suitable for real-time applications"
+  ],
+  "recommendations": [
+    "Deploy on NVIDIA Jetson AGX Orin for optimal performance (score: 91.4/100)",
+    "Model uses convolutions - hardware with tensor cores will provide significant speedup"
+  ]
+}
