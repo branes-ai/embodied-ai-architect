@@ -56,3 +56,64 @@ This architecture provides the >10 TOPS/W efficiency required (via RB5 or Hailo)
 
 [Structured Interfaces for Automated Reasoning with 3D Scene Graphs](https://www.youtube.com/watch?v=zY_YI9giZSA)
 This video demonstrates the "reasoning" capability you are looking for, showing a robot using a 3D Scene Graph (similar to Hydra) to understand a query, correct a mislabeled object in its digital twin, and plan a task based on that semantic update.
+
+# Tracking through the visual or virtual worlds
+
+VIrtual world builders like **Kimera and Hydra are heavy.** They were developed (mostly by MIT) on Spot (Boston Dynamics) and heavy ground rovers where carrying an Intel NUC or an NVIDIA Jetson AGX Xavier (30W+) is trivial.
+
+On a drone, where every watt of compute steals flight time, running a full metric-semantic reconstruction just to follow a feature, a person, or car is inefficient.
+
+Here is the breakdown of the lean **Visual Object Tracking** pipeline needed, followed by the energy physics of why the "Digital Twin" approach is futuristic.
+
+### 1. The Core Pipeline: Visual Object Tracking
+To simply **track** an object (know where it is relative to the observer and follow it) without building a persistent world, we would need a pipeline that operates primarily in the **2D Image Space**, only promoting to 3D at the very last step.
+
+This pipeline is "stateless" regarding the world map—it doesn't care what is behind it, only what it sees right now.
+
+#### The Components (The "Lean" Stack)
+1.  **Detector (The "Eyes"):**
+    * *Algorithm:* **YOLOv8-Nano** or **RT-DETR** (Real-Time Detection Transformer).
+    * *Function:* Scans the 2D image and draws a box. "There is a car at pixels [200,300]."
+2.  **Tracker (The "Short-Term Memory"):**
+    * *Algorithm:* **ByteTrack** or **DeepSORT**.
+    * *Function:* Associates the box from Frame 1 with Frame 2. "The car from the last frame moved 10 pixels right." It handles ID switching (so you don't think one car is ten different cars).
+3.  **Estimator (The "3D Promotion"):**
+    * *Algorithm:* **PnP (Perspective-n-Point)** or **Depth Fusion**.
+    * *Function:* Takes the 2D center of the bounding box + a single depth reading (from LiDAR or Stereo) to calculate a 3D vector. "The car is at [X: 5m, Y: 2m, Z: -1m] relative to the drone."
+4.  **Filter (The "Smoother"):**
+    * *Algorithm:* **Extended Kalman Filter (EKF)**.
+    * *Function:* The raw detection will be jittery. The EKF predicts the object's velocity and smooths the movement command. "The car is moving North at 2 m/s."
+
+**Total Compute Load:** Low. This pipeline can run at 30FPS on a 5-watt accelerator (like a Hailo-8 or even a raw Jetson Orin Nano).
+
+---
+
+### 2. The Energy Cost: Visual Channel vs. VIrtual World (Digital Twin)
+The energy difference is massive—roughly **an order of magnitude (10x)**.
+
+#### Approach A: The Visual Channel (Tracking)
+* **What it does:** Processes one frame, extracts the target coordinates, sends a velocity command, and **forgets the data**.
+* **Memory:** Constant and low (~100MB).
+* **Compute:** Linear. It scales with the number of pixels and objects detected.
+* **Energy Profile:** **5–8 Watts**. (Sensor + Detector + Tracker).
+* **Physics:** You are only fighting **Observation Latency**.
+
+#### Approach B: The Virtual World Channel (Digital Twin/SLAM)
+* **What it does:** Processes a frame, calculates camera pose, fuses the data into a global voxel map (TSDF), updates the mesh, optimizes the pose graph (fixes drift), and ray-casts to check for collisions globally.
+* **Memory:** Unbounded. As you fly, the map grows. You need gigabytes of RAM.
+* **Compute:** Exponential/Polynomic. Loop closures (realizing "I have been here before") require solving massive optimization matrices. Ray-casting a detailed 3D mesh for path planning is extremely expensive.
+* **Energy Profile:** **30–60 Watts**. (Requires heavy CPU for the graph optimization + heavy GPU for the mesh generation).
+* **Physics:** You are fighting **Entropy**. You are trying to maintain a globally consistent state of a chaotic world.
+
+### 3. Which one do you need?
+
+| Feature | Visual Tracking (The "Reactive" Pipeline) | Digital Twin (The "Reasoning" Pipeline) |
+| :--- | :--- | :--- |
+| **Goal** | "Follow that truck." | "Patrol this facility and tell me if a truck is parked where it shouldn't be." |
+| **Awareness** | **Local.** Only knows what is in the frustum (field of view). | **Global.** Remembers what is behind it and around corners. |
+| **Obstacle Avoidance** | **Reactive.** "Current depth map says stop." | **Planned.** "I know this corridor is a dead end, I won't even turn there." |
+| **Hardware** | **RPi 5 + Hailo-8 / Orin Nano** | **Orin NX / AGX / RB5** |
+
+### Next Step
+Simple **"follow and avoid"** (tactical autonomy) can be done with stateless visual processing. The Kimera/Hydra option to build a virtual world is currently one bridge too far for drones.
+
