@@ -27,6 +27,7 @@ python examples/full_pipeline.py \
     --model "${MODEL}" \
     --classes ${CLASSES} \
     --save-video "${VIDEO_DIR}/247589_tiny_output.mp4" \
+    --no-viz-3d \
     > "${VIDEO_DIR}/247589_tiny.log" 2>&1
 echo "  ✓ Completed. Log: ${VIDEO_DIR}/247589_tiny.log"
 
@@ -37,6 +38,7 @@ python examples/full_pipeline.py \
     --model "${MODEL}" \
     --classes ${CLASSES} \
     --save-video "${VIDEO_DIR}/247589_small_output.mp4" \
+    --no-viz-3d \
     > "${VIDEO_DIR}/247589_small.log" 2>&1
 echo "  ✓ Completed. Log: ${VIDEO_DIR}/247589_small.log"
 
@@ -47,6 +49,7 @@ python examples/full_pipeline.py \
     --model "${MODEL}" \
     --classes ${CLASSES} \
     --save-video "${VIDEO_DIR}/247589_medium_output.mp4" \
+    --no-viz-3d \
     > "${VIDEO_DIR}/247589_medium.log" 2>&1
 echo "  ✓ Completed. Log: ${VIDEO_DIR}/247589_medium.log"
 
