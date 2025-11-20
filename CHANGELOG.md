@@ -189,6 +189,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Demonstrates hybrid time/data triggered pattern
   - Multi-threading with independent rates working
   - Clean declarative API validated
+- Drone Perception Pipeline: Complete end-to-end perception system (prototypes/drone_perception/)
+  - **Object Detection**: YOLOv8 integration with multiple model sizes (nano to xlarge)
+    - CPU and CUDA support
+    - Class filtering and confidence thresholds
+    - Batch processing capability
+  - **Multi-Object Tracking**: ByteTrack implementation with re-identification
+    - ID persistence across frames and occlusions
+    - Two-stage association (high-conf + low-conf detections)
+    - Kalman filter for 2D bbox tracking (8D state)
+    - Lost track recovery and management
+  - **3D Scene Graph**: World state management with position/velocity/acceleration
+    - 9D Kalman filtering per object [x, y, z, vx, vy, vz, ax, ay, az]
+    - Constant acceleration motion model
+    - Depth estimation: heuristic (bbox height) with stereo/LiDAR ready
+    - Object pruning with time-to-live
+  - **Sensor Abstraction**: Progressive complexity support
+    - BaseSensor interface for all camera types
+    - MonocularCamera: Video file and webcam input with FPS control
+    - Ready for stereo (RealSense, OAK-D) and LiDAR extensions
+  - **Visualization**: Real-time 3D matplotlib viewer
+    - Object positions, velocities, and trajectories
+    - Interactive controls and screenshot saving
+    - Dual view (2D video + 3D scene graph)
+  - **Common Data Structures**: Frame, Detection, Track, TrackedObject
+    - 2D→3D projection utilities
+    - Bounding box operations (IOU, conversion)
+    - Camera intrinsics handling
+  - **Examples**: Full pipeline and simple detection demos
+    - Live processing with dual visualization
+    - Performance monitoring (FPS, detection/track counts)
+    - Video saving capability
+  - **Documentation**: Architecture, quick start, session summary
+    - Design principles (sensor progression, visual channel approach)
+    - Progressive implementation roadmap
+    - Integration path to multi-rate framework
+  - **Performance**: 20-30 FPS on CPU, 60+ FPS on GPU (YOLOv8n)
+- Drone Perception Test Infrastructure: Comprehensive testing and validation system
+  - **Test Data Structure**: Organized directory hierarchy
+    - Categories: traffic, pedestrian, mixed, visdrone, synthetic
+    - Separate folders for videos, annotations, results, recordings
+    - Git-safe (videos excluded, metadata tracked)
+  - **Video Catalog**: Curated test video collection (test_data/video_catalog.yaml)
+    - 9 curated videos with detailed metadata
+    - Sources: VisDrone (academic), Pixabay, Mixkit, Videezy (free stock)
+    - Test suites: quick (~50MB), traffic_focus, pedestrian_focus, comprehensive (~200MB)
+    - Metadata: duration, resolution, FPS, features, license, download method
+  - **Download Script**: Automated test video acquisition (scripts/download_test_videos.py)
+    - Download by suite, category, or individual video
+    - Progress bars and error handling
+    - YouTube support (via yt-dlp)
+    - Direct HTTP downloads from free stock sites
+  - **Test Runner**: Automated pipeline validation (scripts/run_test_suite.py)
+    - Run on video suites or individual files
+    - Metrics collection: FPS, detection counts, track counts, 3D objects
+    - Per-frame statistics and timing
+    - JSON output for regression testing
+  - **Baseline Targets**: Expected performance metrics
+    - Detection recall: cars 85%, person 80%, bicycle 75%
+    - Tracking: <2 ID switches per 100 frames, 25+ frame persistence
+    - Speed: 20-30 FPS CPU, 60-100 FPS GPU (YOLOv8n)
+  - **Documentation**: Test data setup guide, scripts README
+    - Quick start workflow
+    - CI/CD integration examples
+    - Troubleshooting guide
+- Research Documentation: Drone architecture and design principles
+  - Drone pipeline research (docs/research/drone-pipeline.md)
+    - Hardware recommendations (Qualcomm RB5, Hailo-8, OAK-D)
+    - Visual tracking vs digital twin comparison
+    - Energy efficiency analysis (5-8W vs 30-60W SLAM)
+  - SoC design assistant principles (docs/research/design-assistant.md)
+    - AI assistant architecture for chip design
+    - HW/SW co-design methodology
+    - Design space exploration principles
 
 ### Changed
 
