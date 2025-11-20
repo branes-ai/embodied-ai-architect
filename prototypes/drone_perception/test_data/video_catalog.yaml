@@ -1,0 +1,296 @@
+# Video Catalog - Test Videos for Drone Perception Pipeline
+#
+# Each video entry contains:
+# - id: Unique identifier
+# - name: Human-readable name
+# - category: One of [visdrone, traffic, pedestrian, mixed, synthetic]
+# - source: Where to download from
+# - url: Direct download link (if available)
+# - duration: Video length in seconds
+# - resolution: Video resolution (widthxheight)
+# - fps: Frames per second
+# - description: What makes this video useful for testing
+# - features: Key characteristics to test
+# - ground_truth: Whether annotations are available
+# - license: Usage license
+
+videos:
+  # VisDrone Dataset Samples
+  - id: visdrone_sample_001
+    name: "VisDrone Urban Traffic"
+    category: visdrone
+    source: "VisDrone Dataset"
+    url: "https://github.com/VisDrone/VisDrone-Dataset"
+    download_method: "manual"  # Requires registration
+    duration: 30
+    resolution: "1920x1080"
+    fps: 30
+    description: "Dense urban traffic scene with multiple object types"
+    features:
+      - Multiple cars
+      - Pedestrians
+      - Bicycles
+      - Occlusions
+      - Various scales
+    ground_truth: true
+    annotation_format: "visdrone"
+    license: "Academic use"
+
+  - id: visdrone_sample_002
+    name: "VisDrone Parking Lot"
+    category: visdrone
+    source: "VisDrone Dataset"
+    url: "https://github.com/VisDrone/VisDrone-Dataset"
+    download_method: "manual"
+    duration: 45
+    resolution: "1920x1080"
+    fps: 30
+    description: "Parking lot with moving and stationary vehicles"
+    features:
+      - Stationary objects
+      - Moving vehicles
+      - Scale variation
+    ground_truth: true
+    annotation_format: "visdrone"
+    license: "Academic use"
+
+  # Traffic Scenes (Free Stock Footage)
+  - id: traffic_001
+    name: "Highway Traffic Overhead"
+    category: traffic
+    source: "Pixabay"
+    url: "https://pixabay.com/videos/highway-traffic-cars-road-drone-52847/"
+    download_method: "direct"
+    duration: 18
+    resolution: "1920x1080"
+    fps: 30
+    description: "Straight highway section with multiple lanes"
+    features:
+      - Multiple vehicles
+      - Constant speeds
+      - Clear visibility
+      - Good for speed estimation
+    ground_truth: false
+    license: "Pixabay License (Free)"
+    test_aspects:
+      - Vehicle detection accuracy
+      - Speed estimation
+      - Lane tracking
+
+  - id: traffic_002
+    name: "City Intersection Top-Down"
+    category: traffic
+    source: "Mixkit"
+    url: "https://mixkit.co/free-stock-video/top-view-of-a-city-intersection-with-traffic-42430/"
+    download_method: "direct"
+    duration: 15
+    resolution: "1920x1080"
+    fps: 30
+    description: "Busy intersection with turning vehicles"
+    features:
+      - Multiple directions
+      - Turning maneuvers
+      - Traffic lights
+    ground_truth: false
+    license: "Mixkit License (Free)"
+    test_aspects:
+      - Direction changes
+      - Trajectory prediction
+      - Multi-path tracking
+
+  - id: traffic_003
+    name: "Parking Lot Activity"
+    category: traffic
+    source: "Videezy"
+    url: "https://www.videezy.com/aerial-footage/53927-aerial-view-of-parking-lot"
+    download_method: "direct"
+    duration: 20
+    resolution: "1920x1080"
+    fps: 24
+    description: "Parking lot with cars entering/exiting"
+    features:
+      - Slow speeds
+      - Stops and starts
+      - Stationary vehicles
+    ground_truth: false
+    license: "CC BY 3.0"
+    test_aspects:
+      - Low-speed tracking
+      - Stationary object handling
+      - Start/stop detection
+
+  # Pedestrian Scenarios
+  - id: pedestrian_001
+    name: "Crosswalk Aerial"
+    category: pedestrian
+    source: "Pixabay"
+    url: "https://pixabay.com/videos/people-pedestrians-crossing-street-28418/"
+    download_method: "direct"
+    duration: 12
+    resolution: "1920x1080"
+    fps: 30
+    description: "People crossing at marked crosswalk"
+    features:
+      - Multiple pedestrians
+      - Crossing patterns
+      - Occlusions
+    ground_truth: false
+    license: "Pixabay License (Free)"
+    test_aspects:
+      - Person detection
+      - Occlusion handling
+      - Group behavior
+
+  - id: pedestrian_002
+    name: "Park Walking Path"
+    category: pedestrian
+    source: "Videvo"
+    url: "https://www.videvo.net/video/aerial-view-of-people-walking-in-park/7758/"
+    download_method: "direct"
+    duration: 25
+    resolution: "1920x1080"
+    fps: 25
+    description: "People walking on paths in park"
+    features:
+      - Natural paths
+      - Various speeds
+      - Trees (partial occlusion)
+    ground_truth: false
+    license: "Videvo Attribution"
+    test_aspects:
+      - Variable speeds
+      - Natural trajectories
+      - Partial occlusions
+
+  # Mixed Scenes
+  - id: mixed_001
+    name: "Urban Street Mixed Traffic"
+    category: mixed
+    source: "Pixabay"
+    url: "https://pixabay.com/videos/city-traffic-street-cars-people-71234/"
+    download_method: "direct"
+    duration: 20
+    resolution: "1920x1080"
+    fps: 30
+    description: "City street with cars, buses, pedestrians, bikes"
+    features:
+      - Multi-class objects
+      - Complex interactions
+      - Variable scales
+    ground_truth: false
+    license: "Pixabay License (Free)"
+    test_aspects:
+      - Multi-class detection
+      - Class switching
+      - Complex scenarios
+
+  - id: mixed_002
+    name: "Shopping District Overhead"
+    category: mixed
+    source: "Mixkit"
+    url: "https://mixkit.co/free-stock-video/aerial-view-shopping-district-42456/"
+    download_method: "direct"
+    duration: 18
+    resolution: "1920x1080"
+    fps: 30
+    description: "Busy shopping area with diverse activity"
+    features:
+      - Dense crowd
+      - Vehicles
+      - Static objects (bikes, carts)
+    ground_truth: false
+    license: "Mixkit License (Free)"
+    test_aspects:
+      - Dense scenarios
+      - Static vs dynamic
+      - Crowd handling
+
+  # Synthetic/Simulation (Placeholders for future)
+  - id: synthetic_001
+    name: "Gazebo Simulation - Simple Traffic"
+    category: synthetic
+    source: "Generated"
+    url: null
+    download_method: "generate"
+    duration: 30
+    resolution: "1280x720"
+    fps: 30
+    description: "Simulated traffic scenario with perfect ground truth"
+    features:
+      - Perfect annotations
+      - Controlled conditions
+      - Reproducible
+    ground_truth: true
+    annotation_format: "custom"
+    license: "Internal"
+    notes: "To be generated using Gazebo/Unreal"
+
+# Test Suites - Predefined collections for different purposes
+test_suites:
+  quick:
+    name: "Quick Smoke Test"
+    description: "Fast validation during development (5-10 minutes)"
+    videos:
+      - traffic_001
+      - pedestrian_001
+      - mixed_001
+    total_duration: 53
+    total_size_mb: 50
+
+  traffic_focus:
+    name: "Traffic Tracking Validation"
+    description: "Focus on vehicle detection and tracking"
+    videos:
+      - traffic_001
+      - traffic_002
+      - traffic_003
+    total_duration: 53
+    total_size_mb: 45
+
+  pedestrian_focus:
+    name: "Pedestrian Tracking Validation"
+    description: "Focus on person detection and tracking"
+    videos:
+      - pedestrian_001
+      - pedestrian_002
+      - mixed_001
+    total_duration: 57
+    total_size_mb: 55
+
+  comprehensive:
+    name: "Full Regression Suite"
+    description: "Complete test coverage (30+ minutes)"
+    videos:
+      - visdrone_sample_001
+      - visdrone_sample_002
+      - traffic_001
+      - traffic_002
+      - traffic_003
+      - pedestrian_001
+      - pedestrian_002
+      - mixed_001
+      - mixed_002
+    total_duration: 203
+    total_size_mb: 200
+
+# Baseline Performance Targets
+# (These are initial targets, will be updated based on actual measurements)
+baseline_targets:
+  detection_recall:
+    cars: 0.85
+    person: 0.80
+    bicycle: 0.75
+
+  tracking_metrics:
+    id_switches_per_100_frames: 2.0
+    track_persistence_avg: 25  # frames
+    lost_track_recovery: 0.60
+
+  performance:
+    fps_cpu_yolov8n: 20
+    fps_gpu_yolov8n: 60
+    fps_gpu_yolov8s: 40
+
+  scene_graph:
+    position_error_m: 1.0  # meters (for synthetic with GT)
+    velocity_error_mps: 0.5  # m/s

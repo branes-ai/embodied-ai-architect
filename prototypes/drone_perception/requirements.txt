@@ -1,0 +1,33 @@
+# Core dependencies
+numpy>=1.24.0
+opencv-python>=4.8.0
+
+# Detection
+ultralytics>=8.0.0
+
+# Tracking & filtering
+scipy>=1.11.0
+filterpy>=1.4.5
+
+# Visualization
+matplotlib>=3.7.0
+
+# Data storage
+h5py>=3.9.0
+
+# Configuration and scripting
+pyyaml>=6.0
+
+# Optional: Interactive visualization
+plotly>=5.17.0
+
+# Optional: Video downloading
+# yt-dlp>=2023.0.0
+
+# Optional: Stereo cameras (install when needed)
+# pyrealsense2>=2.54.0
+# depthai>=2.23.0
+
+# Optional: Monocular depth estimation
+# torch>=2.0.0
+# timm>=0.9.0
