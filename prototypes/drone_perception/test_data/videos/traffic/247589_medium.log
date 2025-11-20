@@ -1,6 +1,50 @@
-qt.qpa.xcb: could not connect to display 
-qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "/home/stillwater/venv/p311/lib/python3.11/site-packages/cv2/qt/plugins" even though it was found.
-This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.
 
-Available platform plugins are: xcb.
+======================================================================
+FULL DRONE PERCEPTION PIPELINE
+======================================================================
+Video: test_data/videos/traffic/247589_medium.mp4
+Model: yolov8s on cpu
+Detection threshold: 0.3
+Tracking classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
+Pipeline: Camera → YOLO → ByteTrack → Scene Graph → 3D Viz
+
+Controls:
+  'q' - Quit
+  'p' - Pause/Resume
+  's' - Save 3D view screenshot
+======================================================================
+
+[1/5] Initializing camera...
+[MonocularCamera] Opened: test_data/videos/traffic/247589_medium.mp4
+  Resolution: 720x1280
+  FPS: 25.0 → 25.0
+  Total frames: 258
+[2/5] Loading detection model...
+[YOLODetector] Loading yolov8s.pt...
+[YOLODetector] Warming up on cpu...
+[YOLODetector] Ready! Detecting 80 classes
+  Filtered to: ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light']
+[3/5] Initializing tracker...
+[4/5] Creating scene graph...
+[5/5] Setting up visualization...
+
+[READY] Starting pipeline...
+
+Frame 0000 | FPS: 5.5 | Detections: 3 | Tracks: 3 | 3D Objects: 3
+Frame 0030 | FPS: 7.6 | Detections: 1 | Tracks: 1 | 3D Objects: 14
+Frame 0060 | FPS: 7.7 | Detections: 3 | Tracks: 3 | 3D Objects: 10
+Frame 0090 | FPS: 7.7 | Detections: 1 | Tracks: 1 | 3D Objects: 9
+Frame 0120 | FPS: 7.9 | Detections: 2 | Tracks: 2 | 3D Objects: 8
+Frame 0150 | FPS: 8.0 | Detections: 2 | Tracks: 2 | 3D Objects: 9
+Frame 0180 | FPS: 8.0 | Detections: 0 | Tracks: 0 | 3D Objects: 17
+Frame 0210 | FPS: 8.1 | Detections: 1 | Tracks: 1 | 3D Objects: 8
+Frame 0240 | FPS: 8.0 | Detections: 1 | Tracks: 1 | 3D Objects: 11
+
+[INFO] End of video
+
+[CLEANUP] Shutting down...
+[MonocularCamera] Released
+
+[STATS] Average FPS: 8.0
+[INFO] Done!
