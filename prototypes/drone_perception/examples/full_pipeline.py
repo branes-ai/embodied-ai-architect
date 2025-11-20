@@ -17,7 +17,7 @@ import cv2
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from sensors import MonocularCamera
+from sensors import MonocularCamera, StereoCamera, StereoRecordedCamera
 from detection import YOLODetector
 from tracking import ByteTracker
 from scene_graph import SceneGraphManager
@@ -42,6 +42,11 @@ def main():
                         help='Disable 3D visualization')
     parser.add_argument('--save-video', type=str, default=None,
                         help='Save 2D output video')
+    parser.add_argument('--stereo', action='store_true',
+                        help='Use stereo camera (RealSense/OAK-D) instead of monocular')
+    parser.add_argument('--stereo-backend', type=str, default='realsense',
+                        choices=['realsense', 'oakd'],
+                        help='Stereo camera backend (when --stereo is enabled)')
 
     args = parser.parse_args()
 
@@ -54,12 +59,22 @@ def main():
     print("\n" + "="*70)
     print("FULL DRONE PERCEPTION PIPELINE")
     print("="*70)
-    print(f"Video: {video_source}")
+
+    # Determine sensor mode
+    sensor_mode = "Stereo" if args.stereo else "Monocular"
+    depth_mode = "stereo" if args.stereo else "heuristic"
+
+    if not args.stereo:
+        print(f"Video: {video_source}")
+    else:
+        print(f"Stereo camera: {args.stereo_backend}")
+
+    print(f"Sensor mode: {sensor_mode}")
     print(f"Model: yolov8{args.model} on {args.device}")
     print(f"Detection threshold: {args.conf}")
     if args.classes:
         print(f"Tracking classes: {args.classes}")
-    print("\nPipeline: Camera → YOLO → ByteTrack → Scene Graph → 3D Viz")
+    print(f"\nPipeline: Camera ({sensor_mode}) → YOLO → ByteTrack → Scene Graph → 3D Viz")
     print("\nControls:")
     print("  'q' - Quit")
     print("  'p' - Pause/Resume")
@@ -68,7 +83,17 @@ def main():
 
     # Initialize pipeline components
     print("[1/5] Initializing camera...")
-    camera = MonocularCamera(source=video_source)
+    if args.stereo:
+        # Use stereo camera
+        camera = StereoCamera(
+            backend=args.stereo_backend,
+            width=640,
+            height=480,
+            fps=30
+        )
+    else:
+        # Use monocular camera
+        camera = MonocularCamera(source=video_source)
 
     print("[2/5] Loading detection model...")
     detector = YOLODetector(
@@ -134,7 +159,7 @@ def main():
                 tracks = tracker.update(detections)
 
                 # 4. Update 3D scene graph
-                scene_graph.update(tracks, frame, depth_estimation_mode='heuristic')
+                scene_graph.update(tracks, frame, depth_estimation_mode=depth_mode)
 
                 # 5. Get tracked objects
                 objects_3d = scene_graph.get_objects()

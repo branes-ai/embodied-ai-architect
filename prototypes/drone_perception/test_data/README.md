@@ -9,6 +9,12 @@ test_data/
 ├── videos/              # Source video files
 │   ├── visdrone/       # VisDrone dataset videos
 │   ├── traffic/        # Traffic/road scenes
+│   │   ├── *.mp4       # RGB videos (monocular)
+│   │   ├── *_depth.mp4 # Depth map videos (stereo testing)
+│   │   ├── *_output.mp4  # Monocular pipeline outputs
+│   │   ├── *_stereo_output.mp4  # Stereo pipeline outputs
+│   │   ├── *.log       # Pipeline logs
+│   │   └── *_depth.yaml  # Depth map metadata
 │   ├── pedestrian/     # Pedestrian tracking scenarios
 │   ├── mixed/          # Mixed scenes (cars, people, bikes)
 │   └── synthetic/      # Synthetic/simulation data
@@ -174,3 +180,66 @@ For thorough validation and benchmarking:
 - Covers diverse scenarios, lighting, altitudes
 
 Run: `python scripts/download_test_videos.py --full`
+
+## Stereo Testing (Phase 2)
+
+### Depth Map Generation
+
+The stereo pipeline requires depth maps. Generate synthetic depth from RGB videos using MiDaS:
+
+```bash
+# Generate depth for all toll booth videos
+python scripts/generate_depth_maps.py --batch toll_booth
+
+# Generate depth for a specific video
+python scripts/generate_depth_maps.py \
+    --input test_data/videos/traffic/247589_tiny.mp4 \
+    --max-depth 15.0
+```
+
+**Requirements:** PyTorch (install with `pip install torch torchvision`)
+
+### Stereo Test Suite
+
+Run automated stereo pipeline tests:
+
+```bash
+# Run all stereo tests (auto-generates depth if missing)
+./run_stereo_test_suite.sh
+
+# Compare monocular vs stereo results
+python scripts/compare_mono_vs_stereo.py --batch
+```
+
+### Depth Map File Format
+
+Generated depth maps are stored as:
+- **Format:** MP4 video with colormap visualization
+- **Scale:** 0.001 (1mm per unit)
+- **Range:** 0-65.535 meters (stored in uint16)
+- **Metadata:** Accompanying YAML file with generation parameters
+
+Example metadata (`247589_tiny_depth.yaml`):
+```yaml
+source_video: 247589_tiny.mp4
+depth_video: 247589_tiny_depth.mp4
+model: MiDaS
+frames: 258
+resolution: 640x480
+fps: 25.0
+max_depth_meters: 15.0
+depth_scale: 0.001  # meters per unit
+```
+
+### Testing Without Hardware
+
+The `StereoRecordedCamera` class allows testing stereo pipeline features without physical stereo cameras:
+
+```bash
+python examples/stereo_pipeline.py \
+    --backend recorded \
+    --rgb-video test_data/videos/traffic/247589_tiny.mp4 \
+    --depth-video test_data/videos/traffic/247589_tiny_depth.mp4
+```
+
+See [STEREO_TESTING.md](../STEREO_TESTING.md) for detailed instructions.

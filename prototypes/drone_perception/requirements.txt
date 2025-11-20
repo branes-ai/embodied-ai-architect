@@ -24,10 +24,12 @@ plotly>=5.17.0
 # Optional: Video downloading
 # yt-dlp>=2023.0.0
 
-# Optional: Stereo cameras (install when needed)
-# pyrealsense2>=2.54.0
-# depthai>=2.23.0
+# Phase 2: Stereo cameras (RealSense D435, OAK-D)
+pyrealsense2>=2.54.0
+depthai>=2.23.0
 
-# Optional: Monocular depth estimation
+# Optional: Monocular depth estimation (for generating test depth maps)
+# Uncomment these to generate depth maps using MiDaS
 # torch>=2.0.0
+# torchvision>=0.15.0
 # timm>=0.9.0
