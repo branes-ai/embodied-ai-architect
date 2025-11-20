@@ -14,7 +14,7 @@ pip install -r requirements.txt
 ### Run Full Pipeline (✅ Working!)
 
 ```bash
-# Basic usage with webcam
+# Basic usage with webcam (monocular)
 python examples/full_pipeline.py --video 0
 
 # Or with a video file
@@ -27,6 +27,15 @@ python examples/full_pipeline.py \
     --model s \
     --classes 0 2 7 \
     --save-video output.mp4
+
+# Stereo mode with RealSense D435 (Phase 2)
+python examples/full_pipeline.py --stereo --stereo-backend realsense
+
+# Stereo mode with OAK-D
+python examples/full_pipeline.py --stereo --stereo-backend oakd
+
+# Dedicated stereo pipeline example
+python examples/stereo_pipeline.py --backend realsense --model s
 ```
 
 **See [QUICKSTART.md](QUICKSTART.md) for detailed instructions!**
@@ -45,7 +54,7 @@ This pipeline is designed to work with three levels of sensor complexity:
 - **Input**: RealSense D435, OAK-D
 - **Depth**: Stereo depth map
 - **Use Case**: Metric tracking, velocity estimation
-- **Status**: 📋 Planned
+- **Status**: ✅ Complete
 
 ### Level 3: LiDAR + Camera
 - **Input**: Livox/Velodyne + Camera
@@ -107,11 +116,13 @@ drone_perception/
 - [x] Real-time 3D visualization
 - [x] Full end-to-end example
 
-### 📋 Phase 2: Stereo Support (Next)
-- [ ] RealSense D435 integration
-- [ ] Depth map fusion
-- [ ] Metric accuracy validation
-- [ ] Stereo example
+### ✅ Phase 2: Stereo Support (COMPLETE)
+- [x] RealSense D435 integration
+- [x] OAK-D support
+- [x] Depth map fusion
+- [x] Metric accuracy validation
+- [x] Stereo pipeline example
+- [x] Updated full_pipeline.py with --stereo flag
 
 ### 📋 Phase 3: Recording & Replay
 - [ ] HDF5 data recording

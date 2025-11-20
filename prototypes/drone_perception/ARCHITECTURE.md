@@ -156,13 +156,21 @@ class TrackedObject:
 
 **Limitations**: Scale ambiguity (person at 10m looks like child at 5m)
 
-### Phase 2: Stereo (Weeks 3-4)
+### Phase 2: Stereo (COMPLETE ✅)
 **Input**: RealSense D435/OAK-D
 **Depth Estimation**:
 - Direct depth lookup from depth map at bbox centroid
 - Median depth within bbox for robustness
+- Implemented in `sensors/stereo.py`
 
 **Advantages**: True metric depth, no scale ambiguity
+
+**New Features**:
+- `StereoCamera` class with RealSense and OAK-D support
+- `StereoRecordedCamera` for playback of recorded stereo data
+- `examples/stereo_pipeline.py` - Dedicated stereo demo
+- `scripts/validate_stereo_accuracy.py` - Accuracy validation tools
+- Integrated into `full_pipeline.py` with `--stereo` flag
 
 ### Phase 3: LiDAR + Camera (Weeks 5-6)
 **Input**: LiDAR (e.g., Livox/Velodyne) + Camera
