@@ -193,28 +193,20 @@ def generate_depth_video(
     print(f"Total frames: {total_frames}")
 
     # Create output video writer
-    # Use grayscale 16-bit format
-    fourcc = cv2.VideoWriter_fourcc(*'FFV1')  # Lossless codec for 16-bit
+    # fourcc = cv2.VideoWriter_fourcc(*'FFV1')  # Lossless codec for 16-bit
+    # Note: FFV1 (lossless 16-bit) is not compatible with MP4 format
+    # Use mp4v codec for 8-bit colormap visualization compatible with .mp4 container
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     depth_writer = cv2.VideoWriter(
         str(output_depth_path),
         fourcc,
         fps,
         (width, height),
-        isColor=False
+        isColor=True  # Writing colormap (RGB)
     )
 
     if not depth_writer.isOpened():
-        # Fallback to visualization (8-bit colormap)
-        print("Warning: Failed to create 16-bit video, using 8-bit colormap instead")
-        output_depth_path = output_depth_path.with_suffix('.vis.mp4')
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        depth_writer = cv2.VideoWriter(
-            str(output_depth_path),
-            fourcc,
-            fps,
-            (width, height),
-            isColor=True
-        )
+        raise RuntimeError(f"Failed to create video writer: {output_depth_path}")
 
     # Process frames
     frame_count = 0
