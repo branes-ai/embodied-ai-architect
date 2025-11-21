@@ -178,6 +178,7 @@ def main():
     print("  'b' - Toggle behavior info")
     print("  's' - Print scene description")
     print("  'x' - Clear trajectory histories")
+    print("  'd' - Debug: show object velocities")
     print("="*70)
 
     # Initialize sensor
@@ -300,8 +301,8 @@ def main():
                     cv2.putText(viz_frame, label, (x, y - 10),
                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-                # Draw trajectories
-                if show_trajectories:
+                # Draw trajectories (only if we have predictions)
+                if show_trajectories and len(predictions) > 0:
                     viz_frame = draw_trajectory_prediction(
                         viz_frame, predictor, predictions, frame.camera_params
                     )
@@ -317,9 +318,9 @@ def main():
                 # Info overlay
                 high_risk_count = sum(1 for r in collision_risks
                                      if r.risk_level.value >= RiskLevel.HIGH.value)
-                info = f"Frame: {frame_count} | Objects: {len(nodes)} | Risks: {high_risk_count}"
+                info = f"Frame: {frame_count} | Objects: {len(nodes)} | Predictions: {len(predictions)} | Risks: {high_risk_count}"
                 cv2.putText(viz_frame, info, (10, 30),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
                 # Show
                 cv2.imshow("Reasoning Pipeline", viz_frame)
@@ -349,10 +350,24 @@ def main():
             elif key == ord('x'):
                 # Clear trajectory histories AND predictions
                 scene_graph.clear_trajectories()
+                old_count = len(predictions)
                 predictions = []  # Clear predicted trajectories
                 collision_risks = []  # Clear collision warnings
                 behaviors = []  # Clear behaviors
-                print("Cleared all trajectories and predictions")
+                print(f"Cleared {old_count} predictions and all trajectory histories")
+            elif key == ord('d'):
+                # Debug: show object info
+                print("\n" + "="*60)
+                print("DEBUG INFO")
+                print("="*60)
+                for node in nodes:
+                    vel_mag = np.linalg.norm(node.velocity_3d)
+                    print(f"ID {node.track_id} ({node.class_name}):")
+                    print(f"  Position: {node.position_3d}")
+                    print(f"  Velocity: {node.velocity_3d} (mag: {vel_mag:.3f} m/s)")
+                    print(f"  History length: {len(node.trajectory_3d)}")
+                print(f"\nTotal predictions: {len(predictions)}")
+                print("="*60 + "\n")
             elif key == ord('s'):
                 # Print scene description
                 print("\n" + "="*60)
