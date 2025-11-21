@@ -1,0 +1,46 @@
+ Changes Made:
+
+  1. Fixed Object Pruning (examples/reasoning_pipeline.py)
+
+  - Moved import time as time_module to the top with other imports (more efficient)
+  - Added debug logging when objects are pruned: [Pruning] Removing N stale objects: [IDs]
+  - The pruning logic now correctly removes objects that haven't been seen for longer than the TTL
+
+  2. Improved ByteTracker Re-Identification
+
+  - Lowered match_thresh from 0.5 to 0.3 (more permissive IOU matching - default is 0.8)
+  - Increased max_time_lost from 15 to 30 frames (~1 second at 30 FPS)
+  - This gives ByteTracker more chances to re-identify the same person instead of creating new IDs
+
+  3. Adjusted Scene Graph TTL
+
+  - Increased from 1.0 to 1.5 seconds to match ByteTracker's timeout plus a buffer
+  - This prevents premature removal of objects that ByteTracker is still tracking
+
+  4. Enhanced Debug Output ('d' key)
+
+  - Now shows:
+    - Current tracks from ByteTracker
+    - Total objects in scene graph
+    - Active nodes (filtered)
+    - For each object: last seen time and whether it's in current tracks
+  - This helps diagnose ID creation and pruning issues
+
+  5. Improved Info Overlay
+
+  - Changed from Objects: N to show three separate counts:
+    - Tracks: Current detections from ByteTracker
+    - Scene: Total objects in scene graph (including stale)
+    - Active: Objects both tracked and in scene
+
+  This will help you monitor if objects are accumulating or being properly pruned.
+
+  Testing the Fixes:
+
+  Run the pipeline and observe:
+  1. The info overlay should show Tracks and Scene counts staying close together
+  2. When you move out of frame, you should see [Pruning] Removing... messages after ~1.5 seconds
+  3. When you move back into frame, it should reuse the same ID (not create a new one)
+  4. Press 'd' to see detailed debug info about object states and pruning
+
+
