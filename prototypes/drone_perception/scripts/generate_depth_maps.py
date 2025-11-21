@@ -51,8 +51,24 @@ def load_midas_model(model_type="dpt_hybrid"):
         device = torch.device("cpu")
         print("Using CPU")
 
+    # Map lowercase model names to actual MiDaS function names
+    # Newer MiDaS uses capitalized names (DPT_Hybrid vs dpt_hybrid)
+    model_name_map = {
+        "dpt_large": "DPT_Large",
+        "dpt_hybrid": "DPT_Hybrid",
+        "midas_small": "MiDaS_small"
+    }
+
+    # Use mapped name if available, otherwise try as-is
+    actual_model_name = model_name_map.get(model_type, model_type)
+
     # Load model
-    midas = torch.hub.load("intel-isl/MiDaS", model_type)
+    try:
+        midas = torch.hub.load("intel-isl/MiDaS", actual_model_name)
+    except RuntimeError:
+        # Fallback: try the original name
+        print(f"Warning: Model '{actual_model_name}' not found, trying '{model_type}'")
+        midas = torch.hub.load("intel-isl/MiDaS", model_type)
     midas.to(device)
     midas.eval()
 
