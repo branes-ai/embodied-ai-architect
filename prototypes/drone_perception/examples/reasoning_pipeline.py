@@ -262,8 +262,17 @@ def main():
 
                 # Update scene graph (use simple depth for monocular)
                 for track in tracks:
-                    # Estimate depth (placeholder - would use actual depth from stereo/LiDAR)
-                    estimated_depth = 5.0
+                    # Estimate depth using bbox size (rough approximation)
+                    # Larger bbox = closer object, smaller bbox = farther object
+                    # Assuming average person height of 1.7m
+                    assumed_height = 1.7  # meters
+                    bbox_height_pixels = track.bbox.h
+                    if bbox_height_pixels > 10:  # Avoid division by zero
+                        estimated_depth = (assumed_height * frame.camera_params.fy) / bbox_height_pixels
+                        estimated_depth = max(1.0, min(estimated_depth, 20.0))  # Clamp to 1-20m
+                    else:
+                        estimated_depth = 5.0
+
                     cx, cy = track.bbox.center
                     position_3d = project_2d_to_3d(cx, cy, estimated_depth, frame.camera_params)
 
