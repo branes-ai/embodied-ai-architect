@@ -259,7 +259,7 @@ def main():
                     position_3d = project_2d_to_3d(cx, cy, estimated_depth, frame.camera_params)
 
                     scene_graph.update_node(
-                        track_id=track.track_id,
+                        track_id=track.id,  # Track uses 'id' not 'track_id'
                         class_name=track.class_name,
                         bbox=track.bbox,
                         position_3d=position_3d,
@@ -286,7 +286,7 @@ def main():
                                 int(track.bbox.w), int(track.bbox.h)
                     cv2.rectangle(viz_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-                    label = f"{track.track_id}: {track.class_name}"
+                    label = f"{track.id}: {track.class_name}"
                     cv2.putText(viz_frame, label, (x, y - 10),
                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
