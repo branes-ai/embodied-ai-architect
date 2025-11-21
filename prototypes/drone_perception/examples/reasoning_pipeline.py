@@ -199,11 +199,16 @@ def main():
 
     # Initialize tracker
     print("[3/6] Initializing tracker...")
-    tracker = ByteTracker()
+    tracker = ByteTracker(
+        high_thresh=0.5,     # Detection confidence threshold
+        low_thresh=0.1,      # Low confidence detections
+        match_thresh=0.5,    # Lower IOU threshold for better re-ID (was 0.8)
+        max_time_lost=15     # Keep tracks alive for 15 frames (~0.5s)
+    )
 
     # Initialize scene graph
     print("[4/6] Creating scene graph...")
-    scene_graph = SceneGraphManager()
+    scene_graph = SceneGraphManager(ttl_seconds=1.0)  # Remove objects after 1 second (was 5)
 
     # Initialize reasoning modules
     print("[5/6] Initializing reasoning modules...")
@@ -284,8 +289,10 @@ def main():
                         confidence=track.confidence
                     )
 
-                # Get active nodes
-                nodes = scene_graph.get_active_nodes()
+                # Get active nodes (only objects currently being tracked)
+                current_track_ids = {track.id for track in tracks}
+                nodes = [node for node in scene_graph.get_active_nodes()
+                        if node.track_id in current_track_ids]
 
                 # Run reasoning modules (skip frames for performance)
                 if frame_count % prediction_skip_frames == 0:
@@ -310,11 +317,14 @@ def main():
                     cv2.putText(viz_frame, label, (x, y - 10),
                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-                # Draw trajectories (only if we have predictions)
+                # Draw trajectories (only for currently visible objects)
                 if show_trajectories and len(predictions) > 0:
-                    viz_frame = draw_trajectory_prediction(
-                        viz_frame, predictor, predictions, frame.camera_params
-                    )
+                    # Filter predictions to only show those for current tracks
+                    visible_predictions = [p for p in predictions if p.track_id in current_track_ids]
+                    if len(visible_predictions) > 0:
+                        viz_frame = draw_trajectory_prediction(
+                            viz_frame, predictor, visible_predictions, frame.camera_params
+                        )
 
                 # Draw collision warnings
                 if show_collisions:
