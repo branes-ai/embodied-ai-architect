@@ -331,6 +331,15 @@ class SceneGraphManager:
         """Get number of active nodes."""
         return len(self.objects)
 
+    def clear_trajectories(self):
+        """Clear all trajectory histories (keep current positions)."""
+        for obj in self.objects.values():
+            obj.position_history.clear()
+            # Keep current position
+            if obj.position is not None:
+                obj.position_history.append(obj.position.copy())
+        print("[SceneGraph] Cleared all trajectory histories")
+
     @property
     def trajectory_3d(self) -> List[np.ndarray]:
         """Compatibility property for reasoning modules."""

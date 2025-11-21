@@ -48,8 +48,8 @@ def draw_trajectory_prediction(
 ) -> np.ndarray:
     """Draw predicted trajectories on image."""
     for pred in predictions:
-        # Get smooth trajectory visualization
-        positions, colors = predictor.visualize_trajectory(pred)
+        # Get smooth trajectory visualization (reduced resolution for speed)
+        positions, colors = predictor.visualize_trajectory(pred, resolution=15)  # Was 50
 
         # Project 3D points to 2D
         for i, pos_3d in enumerate(positions):
@@ -176,6 +176,7 @@ def main():
     print("  'c' - Toggle collision warnings")
     print("  'b' - Toggle behavior info")
     print("  's' - Print scene description")
+    print("  'x' - Clear trajectory histories")
     print("="*70)
 
     # Initialize sensor
@@ -239,6 +240,12 @@ def main():
     show_collisions = True
     show_behaviors = True
 
+    # Prediction optimization: only predict every N frames
+    prediction_skip_frames = 3  # Predict every 3rd frame
+    predictions = []
+    collision_risks = []
+    behaviors = []
+
     try:
         while True:
             if not paused:
@@ -269,13 +276,14 @@ def main():
                 # Get active nodes
                 nodes = scene_graph.get_active_nodes()
 
-                # Run reasoning modules
-                predictions = predictor.predict_all(nodes)
-                collision_risks = collision_detector.check_all_collisions(
-                    predictions,
-                    drone_position=drone_position
-                )
-                behaviors = behavior_classifier.classify_all(nodes, drone_position)
+                # Run reasoning modules (skip frames for performance)
+                if frame_count % prediction_skip_frames == 0:
+                    predictions = predictor.predict_all(nodes)
+                    collision_risks = collision_detector.check_all_collisions(
+                        predictions,
+                        drone_position=drone_position
+                    )
+                    behaviors = behavior_classifier.classify_all(nodes, drone_position)
 
                 # Visualize
                 viz_frame = frame.image.copy()
@@ -336,6 +344,10 @@ def main():
             elif key == ord('b'):
                 show_behaviors = not show_behaviors
                 print(f"Behavior info: {'ON' if show_behaviors else 'OFF'}")
+            elif key == ord('x'):
+                # Clear trajectory histories
+                scene_graph.clear_trajectories()
+                print("Cleared all trajectory histories")
             elif key == ord('s'):
                 # Print scene description
                 print("\n" + "="*60)

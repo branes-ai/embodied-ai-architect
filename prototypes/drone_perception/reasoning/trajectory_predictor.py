@@ -72,7 +72,7 @@ class TrajectoryPredictor:
     def __init__(
         self,
         prediction_horizon: float = 3.0,  # seconds
-        dt: float = 0.1,  # timestep
+        dt: float = 0.2,  # timestep (increased from 0.1 for fewer points)
         method: str = "constant_velocity",
         min_history_length: int = 3
     ):
