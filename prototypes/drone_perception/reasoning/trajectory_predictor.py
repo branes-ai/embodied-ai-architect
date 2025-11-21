@@ -352,14 +352,15 @@ class TrajectoryPredictor:
         ])
 
         # Color gradient (green -> yellow -> red based on time)
+        # OpenCV uses BGR format, so we generate in BGR
         colors = []
         for i in range(resolution):
             t = i / (resolution - 1)
-            # Green to red gradient
+            # Green to red gradient in BGR format
             r = int(255 * t)
             g = int(255 * (1 - t))
             b = 0
-            colors.append([r, g, b])
+            colors.append([b, g, r])  # BGR format for OpenCV
 
         colors = np.array(colors)
 

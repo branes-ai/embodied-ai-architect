@@ -63,14 +63,15 @@ def draw_trajectory_prediction(
                     color = tuple(int(c) for c in colors[i])
                     cv2.circle(image, (x_2d, y_2d), 3, color, -1)
 
-        # Draw endpoint
+        # Draw endpoint (blue circle in BGR format)
         endpoint = pred.predicted_endpoint
         if endpoint[2] > 0.1:
             x_2d = int(camera_params.fx * endpoint[0] / endpoint[2] + camera_params.cx)
             y_2d = int(camera_params.fy * endpoint[1] / endpoint[2] + camera_params.cy)
 
             if 0 <= x_2d < image.shape[1] and 0 <= y_2d < image.shape[0]:
-                cv2.circle(image, (x_2d, y_2d), 8, (0, 0, 255), 2)
+                # Blue circle (BGR format)
+                cv2.circle(image, (x_2d, y_2d), 8, (255, 0, 0), 2)
 
     return image
 
@@ -286,7 +287,8 @@ def main():
                     behaviors = behavior_classifier.classify_all(nodes, drone_position)
 
                 # Visualize
-                viz_frame = frame.image.copy()
+                # Convert RGB to BGR for OpenCV display
+                viz_frame = cv2.cvtColor(frame.image, cv2.COLOR_RGB2BGR)
 
                 # Draw tracks
                 for track in tracks:
