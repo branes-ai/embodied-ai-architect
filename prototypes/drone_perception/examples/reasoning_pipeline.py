@@ -18,6 +18,7 @@ import sys
 from pathlib import Path
 import argparse
 import time
+import time as time_module
 import cv2
 import numpy as np
 
@@ -201,14 +202,14 @@ def main():
     print("[3/6] Initializing tracker...")
     tracker = ByteTracker(
         high_thresh=0.5,     # Detection confidence threshold
-        low_thresh=0.1,      # Low confidence detections
-        match_thresh=0.5,    # Lower IOU threshold for better re-ID (was 0.8)
-        max_time_lost=15     # Keep tracks alive for 15 frames (~0.5s)
+        low_thresh=0.1,      # Low confidence detections (catch partial detections)
+        match_thresh=0.3,    # Very permissive IOU for re-ID (was 0.5, default 0.8)
+        max_time_lost=30     # Keep tracks alive for 30 frames (~1s) for re-ID
     )
 
     # Initialize scene graph
     print("[4/6] Creating scene graph...")
-    scene_graph = SceneGraphManager(ttl_seconds=1.0)  # Remove objects after 1 second (was 5)
+    scene_graph = SceneGraphManager(ttl_seconds=1.5)  # Match ByteTracker timeout + buffer
 
     # Initialize reasoning modules
     print("[5/6] Initializing reasoning modules...")
@@ -289,6 +290,22 @@ def main():
                         confidence=track.confidence
                     )
 
+                # Prune stale objects from scene graph (must be called manually since we use update_node)
+                current_time = time_module.time()
+                stale_ids = []
+                for obj_id, obj in scene_graph.objects.items():
+                    if current_time - obj.last_seen > scene_graph.ttl_seconds:
+                        stale_ids.append(obj_id)
+
+                # Remove stale objects
+                if len(stale_ids) > 0:
+                    print(f"[Pruning] Removing {len(stale_ids)} stale objects: {stale_ids}")
+                for obj_id in stale_ids:
+                    if obj_id in scene_graph.objects:
+                        del scene_graph.objects[obj_id]
+                    if obj_id in scene_graph.kalman_filters:
+                        del scene_graph.kalman_filters[obj_id]
+
                 # Get active nodes (only objects currently being tracked)
                 current_track_ids = {track.id for track in tracks}
                 nodes = [node for node in scene_graph.get_active_nodes()
@@ -337,7 +354,8 @@ def main():
                 # Info overlay
                 high_risk_count = sum(1 for r in collision_risks
                                      if r.risk_level.value >= RiskLevel.HIGH.value)
-                info = f"Frame: {frame_count} | Objects: {len(nodes)} | Predictions: {len(predictions)} | Risks: {high_risk_count}"
+                total_scene_objects = len(scene_graph.objects)
+                info = f"Frame: {frame_count} | Tracks: {len(tracks)} | Scene: {total_scene_objects} | Active: {len(nodes)} | Risks: {high_risk_count}"
                 cv2.putText(viz_frame, info, (10, 30),
                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
@@ -379,13 +397,23 @@ def main():
                 print("\n" + "="*60)
                 print("DEBUG INFO")
                 print("="*60)
-                for node in nodes:
-                    vel_mag = np.linalg.norm(node.velocity_3d)
-                    print(f"ID {node.track_id} ({node.class_name}):")
-                    print(f"  Position: {node.position_3d}")
-                    print(f"  Velocity: {node.velocity_3d} (mag: {vel_mag:.3f} m/s)")
-                    print(f"  History length: {len(node.trajectory_3d)}")
-                print(f"\nTotal predictions: {len(predictions)}")
+                print(f"Current tracks from ByteTracker: {len(tracks)}")
+                print(f"Objects in scene graph: {len(scene_graph.objects)}")
+                print(f"Active nodes (filtered): {len(nodes)}")
+                print()
+                current_time = time_module.time()
+                for obj_id, obj in scene_graph.objects.items():
+                    vel_mag = np.linalg.norm(obj.velocity_3d)
+                    age = current_time - obj.last_seen
+                    in_current_tracks = obj_id in {track.id for track in tracks}
+                    print(f"ID {obj_id} ({obj.class_name}):")
+                    print(f"  Position: {obj.position_3d}")
+                    print(f"  Velocity: {obj.velocity_3d} (mag: {vel_mag:.3f} m/s)")
+                    print(f"  History length: {len(obj.trajectory_3d)}")
+                    print(f"  Last seen: {age:.2f}s ago")
+                    print(f"  In current tracks: {in_current_tracks}")
+                    print()
+                print(f"Total predictions: {len(predictions)}")
                 print("="*60 + "\n")
             elif key == ord('s'):
                 # Print scene description
