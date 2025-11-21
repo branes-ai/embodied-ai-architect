@@ -231,8 +231,8 @@ def main():
             # Detect objects
             detections = detector.detect(frame.image)
 
-            # Track objects
-            tracks = tracker.update(detections, frame.frame_id)
+            # Track objects (ByteTracker manages frame_id internally)
+            tracks = tracker.update(detections)
 
             # Update scene graph with stereo depth
             for track in tracks:
