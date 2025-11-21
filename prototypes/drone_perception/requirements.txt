@@ -42,3 +42,12 @@ tqdm>=4.65.0  # Progress bars for depth map generation
 # ouster-sdk>=0.10.0  # Ouster LiDAR
 # livox-sdk-python>=0.0.2  # Livox LiDAR
 # rospy>=1.15.0  # ROS Python (for ROS-based LiDAR)
+
+# Phase 4: Wide-angle (fisheye) cameras with DNN depth
+# Depth Any Camera (DAC) - installed separately in third_party/
+# See docs/setup_dac.md for installation instructions
+# Required DAC dependencies (install if using wide-angle pipeline):
+# timm>=0.9.12  # Vision transformer models
+# einops>=0.7.0  # Tensor operations
+# transformers>=4.30.0  # Hugging Face transformers
+# huggingface-hub>=0.20.0  # Model downloads
