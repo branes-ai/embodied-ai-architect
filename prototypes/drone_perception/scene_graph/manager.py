@@ -263,3 +263,77 @@ class SceneGraphManager:
             return 0.0
         velocities = [np.linalg.norm(obj.velocity) for obj in self.objects.values()]
         return np.mean(velocities)
+
+    # Convenience methods for reasoning pipeline
+    def update_node(
+        self,
+        track_id: int,
+        class_name: str,
+        bbox,
+        position_3d: np.ndarray,
+        confidence: float
+    ):
+        """
+        Update or create a single node (simplified interface for reasoning pipeline).
+
+        Args:
+            track_id: Unique track ID
+            class_name: Object class name
+            bbox: Bounding box
+            position_3d: 3D position (x, y, z)
+            confidence: Detection confidence
+        """
+        current_time = time.time()
+
+        if track_id not in self.objects:
+            # New object
+            obj = TrackedObject(
+                track_id=track_id,
+                class_name=class_name,
+                position=position_3d,
+                timestamp=current_time,
+                confidence=confidence,
+                last_seen=current_time,
+                age=1
+            )
+            self.objects[track_id] = obj
+            self.kalman_filters[track_id] = Object3DKalman(position_3d)
+        else:
+            # Existing object - update with Kalman filter
+            kf = self.kalman_filters[track_id]
+            kf.update(position_3d)
+
+            # Get filtered state
+            pos, vel, acc = kf.get_state()
+
+            obj = self.objects[track_id]
+            obj.position = pos
+            obj.velocity = vel
+            obj.acceleration = acc
+            obj.timestamp = current_time
+            obj.last_seen = current_time
+            obj.confidence = confidence
+
+            # Update history
+            obj.position_history.append(pos.copy())
+            if len(obj.position_history) > obj.max_history:
+                obj.position_history.pop(0)
+
+    def get_active_nodes(self) -> List[TrackedObject]:
+        """Get all active tracked objects (alias for get_objects)."""
+        return self.get_objects()
+
+    def get_node(self, track_id: int) -> Optional[TrackedObject]:
+        """Get specific node by track ID (alias for get_object)."""
+        return self.get_object(track_id)
+
+    def num_nodes(self) -> int:
+        """Get number of active nodes."""
+        return len(self.objects)
+
+    @property
+    def trajectory_3d(self) -> List[np.ndarray]:
+        """Compatibility property for reasoning modules."""
+        # This is a workaround - reasoning modules expect this on nodes
+        # In practice, each TrackedObject has position_history
+        return []
