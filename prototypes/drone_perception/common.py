@@ -151,6 +151,21 @@ class TrackedObject:
             v_previous = (self.position_history[-2] - self.position_history[-3]) / dt
             self.acceleration = (v_current - v_previous) / dt
 
+    @property
+    def trajectory_3d(self) -> list:
+        """Get 3D trajectory (alias for position_history for reasoning modules)."""
+        return self.position_history
+
+    @property
+    def position_3d(self) -> np.ndarray:
+        """Get current 3D position (alias for reasoning modules)."""
+        return self.position
+
+    @property
+    def velocity_3d(self) -> np.ndarray:
+        """Get 3D velocity (alias for reasoning modules)."""
+        return self.velocity
+
 
 def project_2d_to_3d(
     pixel_x: float,
