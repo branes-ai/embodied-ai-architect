@@ -345,9 +345,12 @@ def main():
                 show_behaviors = not show_behaviors
                 print(f"Behavior info: {'ON' if show_behaviors else 'OFF'}")
             elif key == ord('x'):
-                # Clear trajectory histories
+                # Clear trajectory histories AND predictions
                 scene_graph.clear_trajectories()
-                print("Cleared all trajectory histories")
+                predictions = []  # Clear predicted trajectories
+                collision_risks = []  # Clear collision warnings
+                behaviors = []  # Clear behaviors
+                print("Cleared all trajectories and predictions")
             elif key == ord('s'):
                 # Print scene description
                 print("\n" + "="*60)
