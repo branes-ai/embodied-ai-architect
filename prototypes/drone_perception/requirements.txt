@@ -34,3 +34,11 @@ torch>=2.0.0
 torchvision>=0.15.0
 timm>=0.9.0
 tqdm>=4.65.0  # Progress bars for depth map generation
+
+# Phase 3: LiDAR + Camera fusion
+# Optional: LiDAR support (uncomment based on your hardware)
+# python-pcl>=0.3.0  # Point cloud processing (requires PCL installation)
+# open3d>=0.18.0  # Alternative point cloud library (easier to install)
+# ouster-sdk>=0.10.0  # Ouster LiDAR
+# livox-sdk-python>=0.0.2  # Livox LiDAR
+# rospy>=1.15.0  # ROS Python (for ROS-based LiDAR)
