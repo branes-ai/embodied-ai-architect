@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- CLAUDE.md: Claude Code guidance file for repository onboarding
+  - Project overview and purpose
+  - Build, test, and development commands
+  - Architecture documentation (Orchestrator, agents, backends, CLI)
+  - Prototype documentation (drone_perception, multi_rate_framework)
+  - Key design patterns and code style guidelines
 - Initial project structure with Python package layout
 - Documentation directories: `docs/plans` for architecture plans, `docs/sessions` for session logs
 - Architecture plan: Multi-agent system design for Embodied AI evaluation (docs/plans/agent-architecture.md)
