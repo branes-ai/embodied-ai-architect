@@ -35,6 +35,14 @@ remote = [
 kubernetes = [
     "kubernetes>=28.0.0",  # K8s client
 ]
+chat = [
+    "anthropic>=0.39.0",  # Claude API for interactive chat
+]
+all = [
+    "paramiko>=3.0.0",
+    "kubernetes>=28.0.0",
+    "anthropic>=0.39.0",
+]
 
 [project.scripts]
 embodied-ai = "embodied_ai_architect.cli:main"
