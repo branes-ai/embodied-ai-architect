@@ -8,6 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Interactive Chat Interface: Claude Code-style conversational agent for AI architecture design
+  - LLM Integration Layer (src/embodied_ai_architect/llm/):
+    - LLMClient: Claude API wrapper with tool use support
+    - ArchitectAgent: Agentic loop that reasons and calls tools iteratively
+    - Tool definitions wrapping existing agents (analyze_model, recommend_hardware, run_benchmark)
+    - File exploration tools (list_files, read_file)
+  - CLI Command: `embodied-ai chat` for interactive sessions
+    - Rich terminal UI with spinners and formatted output
+    - Tool execution visibility (shows tool calls and results)
+    - Session commands: exit, reset, help
+    - Verbose mode for detailed execution info
+  - branes-ai/graphs Integration (src/embodied_ai_architect/llm/graphs_tools.py):
+    - analyze_model_detailed: Roofline-based analysis with latency, energy, memory, utilization
+    - compare_hardware_targets: Multi-hardware comparison (30+ targets) ranked by speed/efficiency
+    - identify_bottleneck: Compute vs memory bound analysis with recommendations
+    - list_available_hardware: Hardware catalog by category (datacenter GPU, edge GPU, CPU, TPU, accelerators, automotive)
+    - estimate_power_consumption: Power and energy estimation for deployment planning
+  - System Prompt: Domain-specific guidance for embodied AI architecture assistance
+  - 10 total tools available for comprehensive model-to-hardware analysis
+  - Documentation: docs/interactive-chat.md with architecture, examples, and usage guide
+  - Optional dependency: `pip install -e ".[chat]"` for anthropic package
 - CLAUDE.md: Claude Code guidance file for repository onboarding
   - Project overview and purpose
   - Build, test, and development commands
