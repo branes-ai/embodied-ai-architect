@@ -19,6 +19,9 @@ pip install -e ".[dev]"
 # Install with optional dependencies
 pip install -e ".[dev,remote,kubernetes]"
 
+# Install with interactive chat support
+pip install -e ".[chat]"
+
 # Run tests
 pytest tests/
 
@@ -34,6 +37,10 @@ embodied-ai --help
 embodied-ai workflow run model.pt
 embodied-ai analyze model.pt
 embodied-ai benchmark model.pt --backend local
+
+# Start interactive chat session (requires ANTHROPIC_API_KEY)
+export ANTHROPIC_API_KEY=your-key-here
+embodied-ai chat
 ```
 
 ## Architecture
@@ -57,12 +64,18 @@ embodied-ai benchmark model.pt --backend local
 - `KubernetesBackend`: Distributed benchmarking on K8s (requires `kubernetes`)
 
 **CLI** (`cli/`): Click-based CLI with subcommands:
+- `chat` - Interactive AI architect session (Claude Code-style)
 - `workflow` - Run full analysis pipeline
 - `analyze` - Model structure analysis only
 - `benchmark` - Performance benchmarking
 - `report` - View/manage reports
 - `backends` - Manage benchmark backends
 - `secrets` - Manage credentials
+
+**LLM Integration** (`llm/`): Interactive agent system:
+- `LLMClient` - Claude API wrapper with tool use support
+- `ArchitectAgent` - Agentic loop that reasons and calls tools
+- `tools.py` - Tool definitions wrapping existing agents
 
 ### Prototypes (`prototypes/`)
 
