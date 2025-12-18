@@ -1,5 +1,6 @@
+# Quick Start
 
-  🎁 Baseline Performance Targets
+## Baseline Performance Targets
 
   I defined expected performance metrics in the catalog:
 
@@ -17,8 +18,9 @@
       fps_cpu_yolov8n: 20
       fps_gpu_yolov8n: 60
 
-  ⚡ Get Started Now
+## Get Started Now
 
+```bash
   cd prototypes/drone_perception
 
   # Install dependencies (adds pyyaml)
@@ -29,4 +31,51 @@
 
   # Run first test!
   python scripts/run_test_suite.py --suite quick
+```
+
+## Testing the Design Assistant
+
+### Prerequisites
+
+  1. Install with chat dependencies:
+  pip install -e ".[chat]"
+  2. Set your Anthropic API key:
+  export ANTHROPIC_API_KEY=your-key-here
+
+### Running It
+
+```bash
+  embodied-ai chat
+```
+
+  Or with verbose mode to see tool execution details:
+```bash
+  embodied-ai chat -v
+```
+
+### What's Working
+
+  - Interactive Claude-powered chat with tool use
+  - 5 base tools: analyze_model, recommend_hardware, run_benchmark, list_files, read_file
+  - 5 advanced tools (if branes-ai/graphs is installed): analyze_model_detailed, compare_hardware_targets, identify_bottleneck, list_available_hardware,
+  estimate_power_consumption
+  - Rich console UI with tool execution visibility
+  - Session commands: exit, reset, help
+
+### What's Missing (for production)
+
+  - No test suite yet (tests/ is empty)
+  - No streaming responses (waits for complete response)
+  - No session persistence
+  - No constraint natural language parsing (e.g., "under 10W")
+
+### Quick Test Commands
+
+  Once in the chat, try:
+  > What models can you analyze?
+  > List the files in the prototypes directory
+  > What hardware targets are available?
+
+  If you have a PyTorch model file:
+  > Analyze the model at path/to/model.pt
 
