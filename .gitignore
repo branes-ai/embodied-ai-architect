@@ -219,6 +219,7 @@ config/secrets.json
 *credentials*.json
 *.p12
 *.pfx
+bin/test_api_key.sh
 
 # But allow examples
 !*.example
