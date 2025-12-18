@@ -12,7 +12,7 @@ The Embodied AI Architect currently supports analyzing and benchmarking **indivi
 
 ```
 Sensors → Preprocessing → DNN → State Estimation → Planning → Control → Actuators
-                           ↓           ↓              ↓          ↓
+                           ↓           ↓             ↓         ↓
                       (PyTorch)  (Kalman Filter)   (RRT*)    (PID)
 ```
 
@@ -133,10 +133,11 @@ actuators:
 
 ```
 ┌─────────────────────────────────────────┐
-│  Layer 1: Python Application Framework │  ← User writes code here
+│  Layer 1: Python Application Framework  │  ← User writes code here
 │  - Rich operator library                │
 │  - Type checking, IDE support           │
 │  - Familiar Python patterns             │
+|  - Natural Dev & Test workflow          |
 └─────────────────────────────────────────┘
                   ↓ (trace/compile)
 ┌─────────────────────────────────────────┐
@@ -207,8 +208,8 @@ class EmbodiedAIGraph:
         return self
 
     def profile(self, backend: Backend, dataset: Dataset) -> ProfilingResults:
-        """Profile each operator on target backend."""
-        # Returns latency/energy per operator
+        """Profile each operator subgraph on target backend."""
+        # Returns latency/energy per operator subgraph
 
     def to_dsl(self) -> dict:
         """Serialize to declarative format."""
@@ -280,6 +281,8 @@ benchmark = ApplicationBenchmark(
 results = benchmark.run(
     backends=[
         LocalCPUBackend(),
+        CPUBackend(model="raspberry_pi"),
+        KPUBackend(model="kpu_t64"),
         JetsonBackend(model="agx_orin"),
         SimulatorBackend(physics_engine="gazebo")
     ],
@@ -293,7 +296,7 @@ results = benchmark.run(
 report = results.generate_report()
 ```
 
-**Why Option 3?**
+**Framework -> Graph IR Benefits**
 
 ✅ **Best Developer Experience**: Python framework is familiar
 ✅ **Analyzable**: Graph IR enables optimization and profiling
@@ -314,14 +317,14 @@ report = results.generate_report()
 Based on existing tooling, we have:
 
 1. **Python Profiling/Tracing**: Can capture execution traces
-2. **PyTorch FX**: Graph capture for PyTorch models
-3. **MLIR/IREE**: C++ IR analysis and compilation
+2. **PyTorch FX & Dynamo**: Graph capture for PyTorch models
+3. **torch.compile/MLIR/IREE**: C++ IR analysis and compilation
 4. **Simulators**: Functional, performance, energy simulation
 5. **Compiler/Runtime Modeler**: Hardware mapping analysis
 
 **Integration Strategy:**
-- Use PyTorch FX for DNN graph capture
-- Bridge to MLIR/IREE for compilation
+- Use PyTorch FX & Dynamo for DNN graph capture
+- Bridge to torch.compile/MLIR/IREE for compilation
 - Extend profiling to full applications
 - Use simulators as benchmark backends
 - Leverage hardware mapping models
