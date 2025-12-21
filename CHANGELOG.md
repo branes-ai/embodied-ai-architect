@@ -8,6 +8,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Agentic AI Architecture Design (2025-12-20):
+  - Tool registration pattern analysis and recommendations
+  - Subtask decomposition design for embodied AI codesign
+  - Dimension-specific tool granularity decision (analyze_latency, analyze_power, etc.)
+  - Verdict-first tool output schema design (PASS/FAIL with confidence, evidence, suggestions)
+  - Knowledge base architecture with hybrid storage (YAML + optional graph + vector)
+  - Research on current agentic memory systems (A-MEM, Zep/Graphiti, Mem0)
+  - Documentation: docs/plans/agentic-tool-architecture.md
+- Embodied AI Codesign Subtask Enumeration (2025-12-20):
+  - 70+ discrete subtasks organized into 7 categories
+  - Knowledge Base subtasks (21): hardware, models, sensors, use cases, constraints
+  - Analysis Tool subtasks (19): latency, power, memory, accuracy, cost, physical
+  - Recommendation Tool subtasks (12): hardware, model, sensor, software stack
+  - Synthesis Tool subtasks (11): trade-offs, configuration, reports
+  - Decomposition & Planning subtasks (14): query understanding, orchestration
+  - Validation subtasks (10): benchmark execution, accuracy verification
+  - Phased implementation plan (Foundation → Recommendation → Validation → Advanced)
+  - Documentation: docs/plans/embodied-ai-codesign-subtasks.md
+- Knowledge Base Schema Design (2025-12-20):
+  - Complete schema for hardware platforms (physical, environmental, power, interfaces)
+  - Model catalog schema (architecture, variants, accuracy benchmarks)
+  - Sensor catalog schema (cameras, depth, LiDAR)
+  - Use case template schema (constraints, success criteria, recommendations)
+  - Benchmark result schema (verdict-first output format)
+  - Constraint ontology (latency tiers, power classes, implication rules)
+  - Directory structure design for YAML data catalog
+  - Query interface design with filtering and relationships
+  - Documentation: docs/plans/knowledge-base-schema.md
+- Shared Schema Repository Architecture (2025-12-20):
+  - Created branes-ai/embodied-schemas as shared package
+  - Dependency flow: embodied-schemas ← graphs, embodied-ai-architect
+  - Data split decision between graphs/hardware_registry and embodied-schemas
+  - Migration strategy for existing graphs hardware data
+  - Integration patterns with code examples
+  - Documentation: docs/plans/shared-schema-repo-architecture.md
+- Created branes-ai/embodied-schemas repository:
+  - Complete Pydantic schema models (hardware, models, sensors, usecases, benchmarks, constraints)
+  - YAML data loaders with validation
+  - Registry API for unified data access
+  - Data directory structure for hardware, chips, models, sensors, usecases
+  - 15 passing tests for schema validation
+  - pyproject.toml, README.md, LICENSE, .gitignore
+  - Session documentation: embodied-schemas/docs/sessions/2025-12-20-initial-setup.md
 - Design Assistant CLI Verification (2025-12-18):
   - Verified all 10 LLM tools are functional and properly integrated
   - Confirmed CLI `chat` command is registered and accessible
