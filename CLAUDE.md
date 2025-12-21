@@ -111,6 +111,40 @@ python example_multirate.py
 - **Rich console** output for CLI
 - **Jinja2 templates** for HTML report generation
 
+## Related Repositories
+
+This project is part of a multi-repo architecture:
+
+```
+embodied-schemas (shared dependency)
+       ↑              ↑
+       │              │
+   graphs      Embodied-AI-Architect (this repo)
+```
+
+### embodied-schemas (`../embodied-schemas`)
+Shared Pydantic schemas and factual data catalog. This repo imports:
+- `HardwareEntry`, `ModelEntry`, `SensorEntry`, `UseCaseEntry` - Data models
+- `BenchmarkResult` - Verdict-first output schema for tools
+- `Registry` - Unified data access API
+- Constraint tier definitions (latency, power classes)
+
+**Usage:**
+```python
+from embodied_schemas import HardwareEntry, Registry, BenchmarkResult
+from embodied_schemas.constraints import LatencyTier, get_latency_tier
+```
+
+### graphs (`../graphs`)
+Analysis tools, roofline models, hardware simulation. Owns:
+- `ops_per_clock` - Roofline model parameters
+- Calibration data - Measured performance
+- Hardware mappers - Architecture-specific execution models
+
+### Data Split
+- **Datasheet specs** (vendor-published facts) → `embodied-schemas`
+- **Analysis-specific data** (roofline params, calibration) → `graphs`
+
 ## Code Style
 
 - Line length: 100 characters
