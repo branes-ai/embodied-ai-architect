@@ -119,7 +119,7 @@ This project is part of a multi-repo architecture:
 embodied-schemas (shared dependency)
        ↑              ↑
        │              │
-   graphs      Embodied-AI-Architect (this repo)
+   graphs      embodied-ai-architect (this repo)
 ```
 
 ### embodied-schemas (`../embodied-schemas`)

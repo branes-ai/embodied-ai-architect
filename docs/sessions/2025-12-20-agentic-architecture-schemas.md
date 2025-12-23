@@ -233,7 +233,7 @@ hardware_registry/
 
 1. **Seed initial data** - Add YAML files for key hardware platforms and models
 2. **Integrate with graphs** - Add embodied-schemas as dependency, update hardware registry to reference base_id
-3. **Integrate with Embodied-AI-Architect** - Migrate knowledge_base.py to use shared schemas
+3. **Integrate with embodied-ai-architect** - Migrate knowledge_base.py to use shared schemas
 4. **Implement analysis tools** - Build dimension-specific tools using the verdict-first output schema
 
 ---
@@ -250,7 +250,7 @@ hardware_registry/
 - `tests/test_schemas.py` - 15 tests
 - `docs/sessions/2024-12-20-initial-setup.md` - Session log
 
-### Created (Embodied-AI-Architect repo)
+### Created (embodied-ai-architect repo)
 - `docs/plans/agentic-tool-architecture.md`
 - `docs/plans/embodied-ai-codesign-subtasks.md`
 - `docs/plans/knowledge-base-schema.md`
