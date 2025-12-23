@@ -66,7 +66,7 @@ Downloading https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov
 
 [READY] Starting pipeline...
 
-F:\Users\tomtz\dev\branes\clones\Embodied-AI-Architect\prototypes\drone_perception\visualization\live_view.py:158: UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown
+F:\Users\tomtz\dev\branes\clones\embodied-ai-architect\prototypes\drone_perception\visualization\live_view.py:158: UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown
   plt.pause(0.001)
 Frame 0000 | FPS: 6.7 | Detections: 3 | Tracks: 3 | 3D Objects: 3
 Frame 0030 | FPS: 7.9 | Detections: 2 | Tracks: 2 | 3D Objects: 6

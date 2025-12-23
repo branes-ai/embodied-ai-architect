@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Cross-Repository Claude Documentation (2025-12-21):
+  - Created CLAUDE.md for embodied-schemas repository
+  - Documents repository role as shared dependency for graphs and embodied-ai-architect
+  - Documents data split (datasheet specs vs roofline/calibration)
+  - Schema design patterns (verdict-first outputs, ID conventions)
+  - Guidelines for adding new data and making schema changes
+  - Updated embodied-ai-architect/CLAUDE.md with Related Repositories section
+  - Updated graphs/CLAUDE.md with Related Repositories section and data split table
+  - Each repo's CLAUDE.md now establishes cross-repo awareness
+  - Documentation: docs/sessions/2025-12-21-cross-repo-claude-documentation.md
 - Agentic AI Architecture Design (2025-12-20):
   - Tool registration pattern analysis and recommendations
   - Subtask decomposition design for embodied AI codesign
