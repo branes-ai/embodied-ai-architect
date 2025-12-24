@@ -1,0 +1,4 @@
+
+read_verilog -sv /home/stillwater/dev/branes/clones/embodied-ai-architect/experiments/crew-ai/soc_optimization/demo_correct/lint/design.v
+hierarchy -check
+stat

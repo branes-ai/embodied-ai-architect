@@ -1,0 +1,22 @@
+{
+  "buggy": {
+    "validation_passed": false,
+    "trajectory_score": 100,
+    "original_cells": 263,
+    "optimized_cells": 182
+  },
+  "correct": {
+    "validation_passed": true,
+    "trajectory_score": 100,
+    "original_cells": 263,
+    "optimized_cells": 273
+  },
+  "comparison": {
+    "scores": {
+      "Buggy": 100,
+      "Correct": 100
+    },
+    "better": "Correct",
+    "differences": []
+  }
+}
