@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- SoC Optimizer LangGraph Workflow Improvements (2025-12-23):
+  - Fixed GraphRecursionError by adding dynamic recursion_limit to LangGraph config
+  - Formula: `(max_iterations + 1) * 6 + 10` accounts for 5 nodes per iteration plus syntax retry loops
+  - Verified full optimization loop works with Claude LLM integration
+  - Identified need for functional correctness gate (test count validation)
+  - Identified need for composite PPA scoring (not just area)
+  - Documentation: docs/sessions/2025-12-23-soc-optimizer-recursion-fix.md
 - Cross-Repository Claude Documentation (2025-12-21):
   - Created CLAUDE.md for embodied-schemas repository
   - Documents repository role as shared dependency for graphs and embodied-ai-architect
