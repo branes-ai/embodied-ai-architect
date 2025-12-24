@@ -1,0 +1,21 @@
+
+# Read RTL
+read_verilog -sv /home/stillwater/dev/branes/clones/embodied-ai-architect/experiments/langgraph/soc_optimizer/optimization_run/synth/riscv_alu.sv
+hierarchy -check -top riscv_alu
+
+# Generic synthesis
+proc; opt; opt_clean; opt -full;
+fsm; opt; opt_clean; opt -full;
+memory; opt; opt_clean; opt -full;
+techmap; opt; opt_clean; opt -full;
+
+# Generic gate mapping (no technology library)
+abc -g AND,OR,XOR,NAND,NOR,XNOR,MUX,AOI3,OAI3,AOI4,OAI4
+opt; opt_clean; opt -full;
+
+# Statistics
+stat
+
+# Write outputs
+write_json /home/stillwater/dev/branes/clones/embodied-ai-architect/experiments/langgraph/soc_optimizer/optimization_run/synth/netlist.json
+write_verilog /home/stillwater/dev/branes/clones/embodied-ai-architect/experiments/langgraph/soc_optimizer/optimization_run/synth/synth.v
