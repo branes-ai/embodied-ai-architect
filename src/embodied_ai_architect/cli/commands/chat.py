@@ -88,8 +88,8 @@ def chat(ctx, model: str, verbose: bool):
             "[dim]Commands:[/dim]\n"
             "  [green]exit[/green] or [green]quit[/green] - End session\n"
             "  [green]reset[/green] - Clear conversation history\n"
-            "  [green]help[/green] - Show this help\n\n"
-            "[dim]Try:[/dim] \"Analyze ./models/resnet18.pt and recommend hardware\"",
+            "  [green]help[/green] - Show example queries\n\n"
+            "[dim]Try:[/dim] \"Can ResNet-18 meet 10ms latency on H100?\"",
             border_style="cyan",
         )
     )
@@ -189,13 +189,17 @@ def _show_help() -> None:
             "[green]exit[/green], [green]quit[/green] - End the session\n"
             "[green]reset[/green] - Clear conversation history\n"
             "[green]help[/green] - Show this message\n\n"
-            "[bold]Example Queries[/bold]\n\n"
-            "• \"List the .pt files in ./models\"\n"
-            "• \"Analyze models/yolov8n.pt\"\n"
-            "• \"What hardware can run YOLOv8n at 30fps?\"\n"
-            "• \"I need it to run on a drone with 10W power budget\"\n"
-            "• \"Benchmark it on local CPU\"\n"
-            "• \"Compare Jetson Nano vs Coral Edge TPU for this model\"",
+            "[bold]Constraint Checking (Verdict-First)[/bold]\n\n"
+            "• \"Can ResNet-18 meet 10ms latency on H100?\"\n"
+            "• \"Does MobileNetV2 fit in 512MB memory?\"\n"
+            "• \"Can YOLOv8n run under 15W on Jetson Orin?\"\n\n"
+            "[bold]Analysis & Comparison[/bold]\n\n"
+            "• \"Full analysis of ResNet-50 on A100\"\n"
+            "• \"Compare ResNet-18 on H100 vs Jetson Orin AGX\"\n"
+            "• \"Is ResNet-18 compute-bound or memory-bound on A100?\"\n\n"
+            "[bold]Discovery[/bold]\n\n"
+            "• \"List available hardware targets\"\n"
+            "• \"What edge GPUs can you analyze?\"",
             title="Help",
             border_style="blue",
         )
