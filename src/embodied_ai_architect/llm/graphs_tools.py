@@ -5,6 +5,12 @@ Provides LLM-callable tools for:
 - Hardware comparison across 30+ targets
 - Bottleneck identification
 - Energy/power estimation
+
+Verdict-first tools (NEW):
+- analyze_latency: Check if model meets latency target
+- analyze_power: Check if model meets power budget
+- analyze_memory: Check if model fits in memory
+- check_constraint: Generic constraint checking
 """
 
 import json
@@ -22,6 +28,22 @@ except ImportError:
     UnifiedAnalyzer = None
     Precision = None
     BottleneckType = None
+
+# Optional import - Pydantic adapters and schemas
+try:
+    from graphs.adapters import convert_to_pydantic
+    from embodied_schemas import (
+        Verdict,
+        Confidence,
+        GraphAnalysisResult,
+    )
+    HAS_PYDANTIC = True
+except ImportError:
+    HAS_PYDANTIC = False
+    convert_to_pydantic = None
+    Verdict = None
+    Confidence = None
+    GraphAnalysisResult = None
 
 
 # Hardware categories for easier discovery
@@ -218,6 +240,142 @@ def get_graphs_tool_definitions() -> list[dict[str, Any]]:
                     "inferences_per_second": {
                         "type": "number",
                         "description": "Target inference rate for power calculation",
+                    },
+                },
+                "required": ["model_name", "hardware_name"],
+            },
+        },
+        # === Verdict-first tools (NEW) ===
+        {
+            "name": "check_latency",
+            "description": (
+                "Check if a model meets a latency target on specific hardware. "
+                "Returns verdict (PASS/FAIL), confidence level, and actionable suggestions. "
+                "Use this when you need a clear yes/no answer about latency requirements."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "model_name": {
+                        "type": "string",
+                        "description": "Model name (e.g., 'resnet18', 'mobilenet_v2')",
+                    },
+                    "hardware_name": {
+                        "type": "string",
+                        "description": "Hardware target (e.g., 'H100', 'Jetson-Orin-AGX')",
+                    },
+                    "latency_target_ms": {
+                        "type": "number",
+                        "description": "Required latency in milliseconds",
+                    },
+                    "batch_size": {
+                        "type": "integer",
+                        "description": "Batch size (default: 1)",
+                    },
+                    "precision": {
+                        "type": "string",
+                        "enum": ["FP32", "FP16", "INT8"],
+                        "description": "Numerical precision (default: FP32)",
+                    },
+                },
+                "required": ["model_name", "hardware_name", "latency_target_ms"],
+            },
+        },
+        {
+            "name": "check_power",
+            "description": (
+                "Check if a model meets a power budget on specific hardware. "
+                "Returns verdict (PASS/FAIL), confidence level, and actionable suggestions. "
+                "Use this for power-constrained deployments."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "model_name": {
+                        "type": "string",
+                        "description": "Model name",
+                    },
+                    "hardware_name": {
+                        "type": "string",
+                        "description": "Hardware target",
+                    },
+                    "power_budget_w": {
+                        "type": "number",
+                        "description": "Maximum power budget in watts",
+                    },
+                    "batch_size": {
+                        "type": "integer",
+                        "description": "Batch size (default: 1)",
+                    },
+                },
+                "required": ["model_name", "hardware_name", "power_budget_w"],
+            },
+        },
+        {
+            "name": "check_memory",
+            "description": (
+                "Check if a model fits within a memory budget on specific hardware. "
+                "Returns verdict (PASS/FAIL), confidence level, and memory breakdown. "
+                "Use this for memory-constrained edge deployments."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "model_name": {
+                        "type": "string",
+                        "description": "Model name",
+                    },
+                    "hardware_name": {
+                        "type": "string",
+                        "description": "Hardware target",
+                    },
+                    "memory_budget_mb": {
+                        "type": "number",
+                        "description": "Maximum memory budget in MB",
+                    },
+                    "batch_size": {
+                        "type": "integer",
+                        "description": "Batch size (default: 1)",
+                    },
+                },
+                "required": ["model_name", "hardware_name", "memory_budget_mb"],
+            },
+        },
+        {
+            "name": "full_analysis",
+            "description": (
+                "Perform comprehensive analysis with optional constraint checking. "
+                "Returns complete breakdown (roofline, energy, memory) with verdict. "
+                "Use this when you need detailed metrics alongside pass/fail status."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "model_name": {
+                        "type": "string",
+                        "description": "Model name",
+                    },
+                    "hardware_name": {
+                        "type": "string",
+                        "description": "Hardware target",
+                    },
+                    "constraint_metric": {
+                        "type": "string",
+                        "enum": ["latency", "power", "memory", "energy"],
+                        "description": "Metric to check against threshold",
+                    },
+                    "constraint_threshold": {
+                        "type": "number",
+                        "description": "Threshold value (ms for latency, W for power, MB for memory, mJ for energy)",
+                    },
+                    "batch_size": {
+                        "type": "integer",
+                        "description": "Batch size (default: 1)",
+                    },
+                    "precision": {
+                        "type": "string",
+                        "enum": ["FP32", "FP16", "INT8"],
+                        "description": "Numerical precision (default: FP32)",
                     },
                 },
                 "required": ["model_name", "hardware_name"],
@@ -639,16 +797,266 @@ def estimate_power_consumption(
         return f"Error estimating power: {str(e)}\n{traceback.format_exc()}"
 
 
+# =============================================================================
+# Verdict-First Tool Executors (NEW)
+# =============================================================================
+
+
+def _check_pydantic_available() -> str | None:
+    """Check if Pydantic adapters are available."""
+    if not HAS_PYDANTIC:
+        return (
+            "Error: embodied-schemas or graphs[schemas] not installed. "
+            "Install with: pip install embodied-schemas"
+        )
+    return None
+
+
+def _format_verdict_result(result: "GraphAnalysisResult") -> str:
+    """Format GraphAnalysisResult as JSON for LLM consumption."""
+    # Convert to dict, handling datetime
+    output = {
+        "verdict": result.verdict.value,
+        "confidence": result.confidence.value,
+        "summary": result.summary,
+        "model_id": result.model_id,
+        "hardware_id": result.hardware_id,
+        "batch_size": result.batch_size,
+        "precision": result.precision,
+        "metrics": {
+            "latency_ms": round(result.latency_ms, 3),
+            "throughput_fps": round(result.throughput_fps, 1),
+            "energy_per_inference_mj": round(result.energy_per_inference_mj, 3),
+            "peak_memory_mb": round(result.peak_memory_mb, 1),
+        },
+        "roofline": {
+            "bottleneck": result.roofline.bottleneck.value,
+            "utilization_pct": round(result.roofline.utilization_pct, 1),
+            "arithmetic_intensity": round(result.roofline.arithmetic_intensity, 1),
+        },
+        "energy": {
+            "compute_mj": round(result.energy.compute_energy_mj, 3),
+            "memory_mj": round(result.energy.memory_energy_mj, 3),
+            "static_mj": round(result.energy.static_energy_mj, 3),
+            "average_power_w": round(result.energy.average_power_w, 1),
+        },
+        "memory": {
+            "weights_mb": round(result.memory.weights_mb, 1),
+            "activations_mb": round(result.memory.activations_mb, 1),
+            "fits_in_l2": result.memory.fits_in_l2,
+            "fits_in_device_memory": result.memory.fits_in_device_memory,
+        },
+    }
+
+    # Add constraint info if present
+    if result.constraint_metric:
+        output["constraint"] = {
+            "metric": result.constraint_metric,
+            "threshold": result.constraint_threshold,
+            "actual": result.constraint_actual,
+            "margin_pct": round(result.constraint_margin_pct, 1) if result.constraint_margin_pct else None,
+        }
+
+    # Add suggestions if present
+    if result.suggestions:
+        output["suggestions"] = result.suggestions
+
+    # Add warnings if present
+    if result.warnings:
+        output["warnings"] = result.warnings
+
+    return json.dumps(output, indent=2)
+
+
+def check_latency(
+    model_name: str,
+    hardware_name: str,
+    latency_target_ms: float,
+    batch_size: int = 1,
+    precision: str | None = None,
+) -> str:
+    """Check if a model meets a latency target (verdict-first)."""
+    error = _check_graphs_available()
+    if error:
+        return error
+    error = _check_pydantic_available()
+    if error:
+        return error
+
+    try:
+        analyzer = UnifiedAnalyzer(verbose=False)
+        prec = _get_precision(precision)
+
+        result = analyzer.analyze_model(
+            model_name=model_name,
+            hardware_name=hardware_name,
+            batch_size=batch_size,
+            precision=prec,
+        )
+
+        # Convert to Pydantic with latency constraint
+        pydantic_result = convert_to_pydantic(
+            result,
+            constraint_metric="latency",
+            constraint_threshold=latency_target_ms,
+        )
+
+        return _format_verdict_result(pydantic_result)
+
+    except Exception as e:
+        return json.dumps({
+            "verdict": "UNKNOWN",
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+        }, indent=2)
+
+
+def check_power(
+    model_name: str,
+    hardware_name: str,
+    power_budget_w: float,
+    batch_size: int = 1,
+) -> str:
+    """Check if a model meets a power budget (verdict-first)."""
+    error = _check_graphs_available()
+    if error:
+        return error
+    error = _check_pydantic_available()
+    if error:
+        return error
+
+    try:
+        analyzer = UnifiedAnalyzer(verbose=False)
+
+        result = analyzer.analyze_model(
+            model_name=model_name,
+            hardware_name=hardware_name,
+            batch_size=batch_size,
+        )
+
+        # Convert to Pydantic with power constraint
+        pydantic_result = convert_to_pydantic(
+            result,
+            constraint_metric="power",
+            constraint_threshold=power_budget_w,
+        )
+
+        return _format_verdict_result(pydantic_result)
+
+    except Exception as e:
+        return json.dumps({
+            "verdict": "UNKNOWN",
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+        }, indent=2)
+
+
+def check_memory(
+    model_name: str,
+    hardware_name: str,
+    memory_budget_mb: float,
+    batch_size: int = 1,
+) -> str:
+    """Check if a model fits within a memory budget (verdict-first)."""
+    error = _check_graphs_available()
+    if error:
+        return error
+    error = _check_pydantic_available()
+    if error:
+        return error
+
+    try:
+        analyzer = UnifiedAnalyzer(verbose=False)
+
+        result = analyzer.analyze_model(
+            model_name=model_name,
+            hardware_name=hardware_name,
+            batch_size=batch_size,
+        )
+
+        # Convert to Pydantic with memory constraint
+        pydantic_result = convert_to_pydantic(
+            result,
+            constraint_metric="memory",
+            constraint_threshold=memory_budget_mb,
+        )
+
+        return _format_verdict_result(pydantic_result)
+
+    except Exception as e:
+        return json.dumps({
+            "verdict": "UNKNOWN",
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+        }, indent=2)
+
+
+def full_analysis(
+    model_name: str,
+    hardware_name: str,
+    constraint_metric: str | None = None,
+    constraint_threshold: float | None = None,
+    batch_size: int = 1,
+    precision: str | None = None,
+) -> str:
+    """Perform comprehensive analysis with optional constraint checking."""
+    error = _check_graphs_available()
+    if error:
+        return error
+    error = _check_pydantic_available()
+    if error:
+        return error
+
+    try:
+        analyzer = UnifiedAnalyzer(verbose=False)
+        prec = _get_precision(precision)
+
+        result = analyzer.analyze_model(
+            model_name=model_name,
+            hardware_name=hardware_name,
+            batch_size=batch_size,
+            precision=prec,
+        )
+
+        # Convert to Pydantic with optional constraint
+        pydantic_result = convert_to_pydantic(
+            result,
+            constraint_metric=constraint_metric,
+            constraint_threshold=constraint_threshold,
+        )
+
+        return _format_verdict_result(pydantic_result)
+
+    except Exception as e:
+        return json.dumps({
+            "verdict": "UNKNOWN",
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+        }, indent=2)
+
+
+# =============================================================================
+# Tool Executor Registration
+# =============================================================================
+
+
 def create_graphs_tool_executors() -> dict[str, callable]:
     """Create executor functions for graphs tools.
 
     Returns:
         Dictionary mapping tool names to executor functions
     """
-    return {
+    executors = {
+        # Original tools
         "analyze_model_detailed": analyze_model_detailed,
         "compare_hardware_targets": compare_hardware_targets,
         "identify_bottleneck": identify_bottleneck,
         "list_available_hardware": list_available_hardware,
         "estimate_power_consumption": estimate_power_consumption,
+        # Verdict-first tools (NEW)
+        "check_latency": check_latency,
+        "check_power": check_power,
+        "check_memory": check_memory,
+        "full_analysis": full_analysis,
     }
+    return executors
