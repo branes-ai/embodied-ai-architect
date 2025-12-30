@@ -11,49 +11,49 @@ To help architects design state-of-the-art embodied AI, we need to model **softw
 ### What We Have
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Current Scope                            │
-├─────────────────────────────────────────────────────────────┤
-│  Hardware Catalog          Model Catalog                    │
+┌────────────────────────────────────────────────────────────┐
+│                    Current Scope                           │
+├────────────────────────────────────────────────────────────┤
+│  Hardware Catalog          Model Catalog                   │
 │  ├─ H100, A100, TPU       ├─ ResNet, YOLO, ViT             │
 │  ├─ Jetson Orin variants  ├─ MobileNet, EfficientNet       │
 │  ├─ Coral Edge TPU        └─ (Attention, Enc/Dec planned)  │
 │  └─ TDA4VM, Hailo-8                                        │
-│                                                             │
-│  Analysis Tools                                             │
+│                                                            │
+│  Analysis Tools                                            │
 │  ├─ check_latency(model, hw, target)                       │
 │  ├─ check_power(model, hw, budget)                         │
 │  ├─ check_memory(model, hw, limit)                         │
 │  └─ full_analysis(model, hw)                               │
-└─────────────────────────────────────────────────────────────┘
+└────────────────────────────────────────────────────────────┘
 ```
 
 ### What We Need
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Required Scope                           │
-├─────────────────────────────────────────────────────────────┤
-│  Hardware    Model         Operator        Application      │
-│  Catalog     Catalog       Catalog         Catalog          │
-│  (exists)    (exists)      (NEW)           (NEW)            │
-│                                                             │
+┌────────────────────────────────────────────────────────────┐
+│                    Required Scope                          │
+├────────────────────────────────────────────────────────────┤
+│  Hardware    Model         Operator        Application     │
+│  Catalog     Catalog       Catalog         Catalog         │
+│  (exists)    (exists)      (NEW)           (NEW)           │
+│                                                            │
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │  Application = Composition of Operators             │   │
 │  │                                                     │   │
-│  │  Sensor → Preprocess → Detect → Track → Reason     │   │
-│  │    ↓                                      ↓        │   │
-│  │  IMU ──────────────→ State Est. ──→ Controller     │   │
-│  │                          ↓              ↓          │   │
-│  │                      Planner ──────→ Actuator      │   │
+│  │  Sensor → Preprocess → Detect → Track → Reason      │   │
+│  │    ↓                                      ↓         │   │
+│  │  IMU ──────────────→ State Est. ──→ Controller      │   │
+│  │                          ↓              ↓           │   │
+│  │                      Planner ──────→ Actuator       │   │
 │  └─────────────────────────────────────────────────────┘   │
-│                                                             │
-│  Analysis Tools (Extended)                                  │
+│                                                            │
+│  Analysis Tools (Extended)                                 │
 │  ├─ check_latency(model | operator | app, hw, target)      │
 │  ├─ analyze_dataflow(app, hw) → bottleneck identification  │
 │  ├─ analyze_scheduling(app, hw) → rate feasibility         │
 │  └─ full_analysis(app, hw) → end-to-end verdict            │
-└─────────────────────────────────────────────────────────────┘
+└────────────────────────────────────────────────────────────┘
 ```
 
 ## Conceptual Model
@@ -262,7 +262,11 @@ class SchedulingAnalysis(BaseModel):
 
     # Aggregate metrics
     total_cpu_utilization: float     # 0-1 (or >1 if infeasible)
-    total_gpu_utilization: float
+   #  total_gpu_utilization: float   gpu/kpu is too specific, we need a more flexible set
+   #  total_kpu_utilization: float
+    total_acc_utilization: dict[str, float]     # we could have a set of very different types of accelerators
+    total_acc_efficiency: dict[str, float]      # efficiency is key to cost
+    # we need to a multi-objective optimization of utilization and efficiency
     worst_case_latency_ms: float
 
     # Rate feasibility
