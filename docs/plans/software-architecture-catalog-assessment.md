@@ -285,6 +285,16 @@ class RateFeasibility(BaseModel):
 
 ## Implementation Plan
 
+
+  | Phase                           | Weeks | Deliverables                      |
+  |---------------------------------|-------|-----------------------------------|
+  | 1. Operator Catalog             | 4     | Schema, 20 operators, profiling   |
+  | 2. Architecture Representation  | 4     | Schema, 3 reference architectures |
+  | 3. Architecture Analysis        | 6     | E2E analysis, scheduling checks   |
+  | 4. Optimization Recommendations | 4     | Bottleneck ID, suggestions        |
+  | 5. End-to-End Benchmarking      | 4     | Real measurement, ROS bags        |
+
+
 ### Phase 1: Operator Catalog Foundation (4 weeks)
 
 **Goal**: Establish operator abstraction and initial catalog
