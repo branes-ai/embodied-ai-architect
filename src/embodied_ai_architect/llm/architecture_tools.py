@@ -20,6 +20,8 @@ try:
         OperatorEntry,
         Verdict,
         Confidence,
+        ExecutionTarget,
+        EXECUTION_TARGET_INFO,
         architecture_to_mermaid,
     )
     from embodied_schemas.scheduling import (
@@ -36,6 +38,8 @@ except ImportError:
     HAS_SCHEMAS = False
     Registry = None
     SoftwareArchitecture = None
+    ExecutionTarget = None
+    EXECUTION_TARGET_INFO = {}
 
 
 def _check_schemas_available() -> str | None:
@@ -46,6 +50,58 @@ def _check_schemas_available() -> str | None:
             "Install with: pip install -e ../embodied-schemas"
         )
     return None
+
+
+def _normalize_execution_target(target: str | None) -> str:
+    """Normalize execution target string to standard form.
+
+    Args:
+        target: Execution target string (e.g., 'gpu', 'GPU', 'kpu', None)
+
+    Returns:
+        Normalized lowercase target string, defaults to 'cpu' if None
+    """
+    if target is None:
+        return "cpu"
+
+    # Normalize to lowercase
+    normalized = target.lower().strip()
+
+    # Map common aliases
+    aliases = {
+        "cuda": "gpu",
+        "rocm": "gpu",
+        "neural": "npu",
+        "tensor": "tpu",
+        "knowledge": "kpu",
+        "vision": "vpu",
+        "hailo": "cvu",
+        "mobileye": "cvu",
+        "eyeq": "cvu",
+        "hexagon": "dsp",
+    }
+
+    return aliases.get(normalized, normalized)
+
+
+def _get_target_display_name(target: str) -> str:
+    """Get display name for an execution target.
+
+    Args:
+        target: Normalized execution target string
+
+    Returns:
+        Human-readable display name
+    """
+    if ExecutionTarget is None:
+        return target.upper()
+
+    try:
+        exec_target = ExecutionTarget(target)
+        info = EXECUTION_TARGET_INFO.get(exec_target, {})
+        return info.get("name", target.upper())
+    except ValueError:
+        return target.upper()
 
 
 def _get_registry() -> "Registry":
@@ -367,8 +423,10 @@ def analyze_architecture(
         bottleneck_latency = 0.0
         critical_path = []
 
-        cpu_ops = []
-        gpu_ops = []
+        # Track operators and utilization by execution target (generalized)
+        # Keys: normalized target names (cpu, gpu, kpu, tpu, cvu, etc.)
+        target_operators: dict[str, list[str]] = {}
+        target_latencies: dict[str, float] = {}
 
         for op_inst in arch.operators:
             effective_op_id = operator_id_map[op_inst.id]
@@ -391,12 +449,15 @@ def analyze_architecture(
                 max_rate = None
                 rate_feasible = True
 
-            # Track by execution target
-            exec_target = op_inst.execution_target or "cpu"
-            if exec_target == "gpu":
-                gpu_ops.append(op_inst.id)
-            else:
-                cpu_ops.append(op_inst.id)
+            # Track by execution target (generalized for all accelerator types)
+            exec_target = _normalize_execution_target(op_inst.execution_target)
+
+            # Add to target tracking
+            if exec_target not in target_operators:
+                target_operators[exec_target] = []
+                target_latencies[exec_target] = 0.0
+            target_operators[exec_target].append(op_inst.id)
+            target_latencies[exec_target] += latency_ms
 
             timing = OperatorTiming(
                 operator_instance_id=op_inst.id,
@@ -544,6 +605,16 @@ def analyze_architecture(
                 }
                 for t in result.operator_timings
             ],
+            # Per-execution-target breakdown (generalized for all accelerator types)
+            "execution_targets": {
+                target: {
+                    "name": _get_target_display_name(target),
+                    "operators": ops,
+                    "total_latency_ms": round(target_latencies.get(target, 0.0), 2),
+                    "operator_count": len(ops),
+                }
+                for target, ops in target_operators.items()
+            },
             "suggestions": result.suggestions,
             "warnings": result.warnings,
         }
@@ -583,12 +654,12 @@ def check_scheduling(
         # Analyze rate feasibility for each operator
         rate_analysis = []
         all_feasible = True
-        total_cpu_util = 0.0
-        total_gpu_util = 0.0
         worst_latency = 0.0
 
-        cpu_util_list = []
-        gpu_util_list = []
+        # Track utilization by execution target (generalized for all accelerator types)
+        # Keys: normalized target names (cpu, gpu, kpu, tpu, cvu, etc.)
+        target_util_lists: dict[str, list[float]] = {}
+        target_operators: dict[str, list[str]] = {}
 
         for op_inst in arch.operators:
             effective_op_id = operator_id_map[op_inst.id]
@@ -601,6 +672,15 @@ def check_scheduling(
                 memory_mb = 10.0
 
             target_rate = op_inst.rate_hz
+            exec_target = _normalize_execution_target(op_inst.execution_target)
+
+            # Initialize tracking for this target if needed
+            if exec_target not in target_util_lists:
+                target_util_lists[exec_target] = []
+                target_operators[exec_target] = []
+
+            target_operators[exec_target].append(op_inst.id)
+
             if target_rate:
                 # Maximum rate = 1 / latency
                 max_rate = 1000.0 / latency_ms if latency_ms > 0 else float('inf')
@@ -610,12 +690,7 @@ def check_scheduling(
                 # Calculate utilization at target rate
                 # Utilization = (time per invocation) * (invocations per second)
                 utilization = (latency_ms / 1000.0) * target_rate  # fraction of time busy
-
-                exec_target = op_inst.execution_target or "cpu"
-                if exec_target == "gpu":
-                    gpu_util_list.append(utilization)
-                else:
-                    cpu_util_list.append(utilization)
+                target_util_lists[exec_target].append(utilization)
             else:
                 max_rate = None
                 achievable = True
@@ -640,16 +715,27 @@ def check_scheduling(
             if latency_ms > worst_latency:
                 worst_latency = latency_ms
 
-        # Aggregate utilization
-        total_cpu_util = sum(cpu_util_list) * 100 if cpu_util_list else 0.0
-        total_gpu_util = sum(gpu_util_list) * 100 if gpu_util_list else 0.0
+        # Aggregate utilization per target (as percentage)
+        target_utilization_pct: dict[str, float] = {}
+        for target, util_list in target_util_lists.items():
+            target_utilization_pct[target] = sum(util_list) * 100 if util_list else 0.0
+
+        # Check if any target is oversubscribed
+        oversubscribed_targets = [
+            t for t, u in target_utilization_pct.items() if u > 100
+        ]
 
         # Determine verdict
-        if all_feasible and total_cpu_util <= 100 and total_gpu_util <= 100:
+        if all_feasible and not oversubscribed_targets:
             verdict = Verdict.PASS
+            # Build utilization summary for all targets
+            util_parts = [
+                f"{_get_target_display_name(t)}: {u:.1f}%"
+                for t, u in sorted(target_utilization_pct.items())
+            ]
             summary = (
                 f"All operator rates achievable on {hardware_id}. "
-                f"CPU: {total_cpu_util:.1f}%, GPU: {total_gpu_util:.1f}% utilization."
+                f"Utilization: {', '.join(util_parts)}."
             )
         else:
             verdict = Verdict.FAIL
@@ -660,9 +746,13 @@ def check_scheduling(
                     f"Worst case: {infeasible[0].operator_instance_id}"
                 )
             else:
+                oversubscribed_names = [
+                    f"{_get_target_display_name(t)}: {target_utilization_pct[t]:.1f}%"
+                    for t in oversubscribed_targets
+                ]
                 summary = (
                     f"Scheduling FAILS: Utilization exceeds 100%. "
-                    f"CPU: {total_cpu_util:.1f}%, GPU: {total_gpu_util:.1f}%"
+                    f"Oversubscribed: {', '.join(oversubscribed_names)}"
                 )
 
         # Build suggestions
@@ -674,27 +764,30 @@ def check_scheduling(
                         f"Reduce target rate for '{r.operator_instance_id}' "
                         f"(max: {r.actual_rate_hz:.1f}Hz, target: {r.target_rate_hz:.1f}Hz)"
                     )
-        if total_cpu_util > 100:
-            suggestions.append("CPU is oversubscribed - reduce rates or offload to GPU")
-        if total_gpu_util > 100:
-            suggestions.append("GPU is oversubscribed - consider more powerful hardware")
+        for target in oversubscribed_targets:
+            target_name = _get_target_display_name(target)
+            suggestions.append(
+                f"{target_name} is oversubscribed ({target_utilization_pct[target]:.1f}%) - "
+                f"reduce rates or use more powerful hardware"
+            )
 
-        # Create target utilization entries
-        target_utilization = []
-        if cpu_util_list:
-            target_utilization.append(ExecutionTargetUtilization(
-                target_id="cpu",
-                utilization_pct=total_cpu_util,
-                assigned_operators=[op.id for op in arch.operators
-                                    if (op.execution_target or "cpu") == "cpu"],
-            ))
-        if gpu_util_list:
-            target_utilization.append(ExecutionTargetUtilization(
-                target_id="gpu",
-                utilization_pct=total_gpu_util,
-                assigned_operators=[op.id for op in arch.operators
-                                    if op.execution_target == "gpu"],
-            ))
+        # Create target utilization entries (generalized for all accelerator types)
+        target_utilization = [
+            ExecutionTargetUtilization(
+                target_id=target,
+                hardware_name=_get_target_display_name(target),
+                utilization_pct=target_utilization_pct[target],
+                assigned_operators=target_operators[target],
+            )
+            for target in sorted(target_utilization_pct.keys())
+        ]
+
+        # For backward compatibility, extract CPU utilization
+        cpu_util = target_utilization_pct.get("cpu", 0.0)
+        # Sum all non-CPU accelerator utilization
+        accel_util = sum(
+            u for t, u in target_utilization_pct.items() if t != "cpu"
+        )
 
         result = SchedulingAnalysisResult(
             verdict=verdict,
@@ -707,13 +800,13 @@ def check_scheduling(
             target_utilization=target_utilization,
             rate_analysis=rate_analysis,
             all_rates_feasible=all_feasible,
-            total_cpu_utilization_pct=total_cpu_util,
-            total_accelerator_utilization_pct=total_gpu_util if gpu_util_list else None,
+            total_cpu_utilization_pct=cpu_util,
+            total_accelerator_utilization_pct=accel_util if accel_util > 0 else None,
             worst_case_latency_ms=worst_latency,
             suggestions=suggestions,
         )
 
-        # Convert to JSON
+        # Convert to JSON with per-target utilization breakdown
         output = {
             "verdict": result.verdict.value,
             "confidence": result.confidence.value,
@@ -721,9 +814,15 @@ def check_scheduling(
             "architecture_id": result.architecture_id,
             "hardware_id": result.hardware_id,
             "all_rates_feasible": result.all_rates_feasible,
+            # Per-target utilization (generalized)
             "utilization": {
-                "cpu_pct": round(result.total_cpu_utilization_pct, 1),
-                "gpu_pct": round(result.total_accelerator_utilization_pct, 1) if result.total_accelerator_utilization_pct else None,
+                target: {
+                    "name": _get_target_display_name(target),
+                    "percent": round(util, 1),
+                    "operators": target_operators[target],
+                    "oversubscribed": util > 100,
+                }
+                for target, util in target_utilization_pct.items()
             },
             "worst_case_latency_ms": round(result.worst_case_latency_ms, 2),
             "rate_analysis": [
