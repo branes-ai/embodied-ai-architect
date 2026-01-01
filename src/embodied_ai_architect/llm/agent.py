@@ -93,6 +93,20 @@ Example workflow:
 3. suggest_optimizations → "Replace with yolo_detector_n to save 20ms"
 4. compare_variants → "Edge variant meets target at 28ms"
 
+## Benchmarking Tools (Phase 5)
+
+For measuring actual performance (simulated or real):
+- **benchmark_architecture**: Run benchmark with per-operator timing breakdown
+  - Returns measured latency, throughput, and statistical metrics (p50, p95, p99)
+  - Compares measured vs estimated performance
+  - Identifies measured bottleneck with contribution percentage
+
+Example benchmark output:
+- Measured: 28.3ms ± 2.1ms (estimated: 26.5ms, error: +6.8%)
+- Throughput: 35.3 FPS
+- Bottleneck: detector (19.2ms, 68% of total)
+- Per-operator breakdown with p95/p99 latencies
+
 Use these tools to gather data before making recommendations. Don't guess -
 verify with actual analysis when possible.
 """
