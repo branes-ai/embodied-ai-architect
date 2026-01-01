@@ -16,6 +16,18 @@ except ImportError:
     get_graphs_tool_definitions = None
     create_graphs_tool_executors = None
 
+# Architecture analysis tools
+try:
+    from .architecture_tools import (
+        get_architecture_tool_definitions,
+        create_architecture_tool_executors,
+    )
+    HAS_ARCHITECTURE_TOOLS = True
+except ImportError:
+    HAS_ARCHITECTURE_TOOLS = False
+    get_architecture_tool_definitions = None
+    create_architecture_tool_executors = None
+
 __all__ = [
     "LLMClient",
     "ArchitectAgent",
@@ -24,4 +36,7 @@ __all__ = [
     "HAS_GRAPHS",
     "get_graphs_tool_definitions",
     "create_graphs_tool_executors",
+    "HAS_ARCHITECTURE_TOOLS",
+    "get_architecture_tool_definitions",
+    "create_architecture_tool_executors",
 ]
