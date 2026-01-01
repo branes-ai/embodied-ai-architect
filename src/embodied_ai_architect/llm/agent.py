@@ -80,6 +80,19 @@ For complete embodied AI systems (not just individual models):
 - **analyze_architecture**: End-to-end analysis of an architecture on hardware (latency, power, memory)
 - **check_scheduling**: Verify multi-rate scheduling feasibility (can all operators meet their target rates?)
 
+## Optimization Tools (Phase 4)
+
+When an architecture doesn't meet requirements, use these tools to find solutions:
+- **identify_bottleneck**: Find the operator limiting throughput and classify why (compute/memory/IO bound)
+- **suggest_optimizations**: Get actionable recommendations (operator swaps, quantization, hardware upgrades)
+- **compare_variants**: Compare architecture variants to find the best fit for a hardware target
+
+Example workflow:
+1. analyze_architecture → FAIL (52ms exceeds 33ms target)
+2. identify_bottleneck → "yolo_detector_s takes 38ms (73% of total), compute-bound"
+3. suggest_optimizations → "Replace with yolo_detector_n to save 20ms"
+4. compare_variants → "Edge variant meets target at 28ms"
+
 Use these tools to gather data before making recommendations. Don't guess -
 verify with actual analysis when possible.
 """
