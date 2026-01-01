@@ -71,16 +71,29 @@ def _normalize_execution_target(target: str | None) -> str:
 
     # Map common aliases
     aliases = {
+        # GPU aliases
         "cuda": "gpu",
         "rocm": "gpu",
+        "hip": "gpu",
+        "radeon": "gpu",
+        # NPU aliases
         "neural": "npu",
+        "xdna": "npu",
+        "ryzen_ai": "npu",
+        "ryzenai": "npu",
+        "hexagon_npu": "npu",
+        "neural_engine": "npu",
+        # TPU aliases
         "tensor": "tpu",
+        "edge_tpu": "tpu",
+        # Other accelerators
         "knowledge": "kpu",
         "vision": "vpu",
         "hailo": "cvu",
         "mobileye": "cvu",
         "eyeq": "cvu",
         "hexagon": "dsp",
+        "hexagon_dsp": "dsp",
     }
 
     return aliases.get(normalized, normalized)
