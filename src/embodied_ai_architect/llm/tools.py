@@ -25,6 +25,18 @@ except ImportError:
     get_graphs_tool_definitions = lambda: []
     create_graphs_tool_executors = lambda: {}
 
+# Import architecture analysis tools
+try:
+    from .architecture_tools import (
+        get_architecture_tool_definitions,
+        create_architecture_tool_executors,
+    )
+    HAS_ARCHITECTURE_TOOLS = True
+except ImportError:
+    HAS_ARCHITECTURE_TOOLS = False
+    get_architecture_tool_definitions = lambda: []
+    create_architecture_tool_executors = lambda: {}
+
 
 def get_tool_definitions() -> list[dict[str, Any]]:
     """Get tool definitions in Anthropic's tool format.
@@ -181,6 +193,10 @@ def get_tool_definitions() -> list[dict[str, Any]]:
     if HAS_GRAPHS:
         base_tools.extend(get_graphs_tool_definitions())
 
+    # Add architecture analysis tools if available
+    if HAS_ARCHITECTURE_TOOLS:
+        base_tools.extend(get_architecture_tool_definitions())
+
     return base_tools
 
 
@@ -336,5 +352,9 @@ def create_tool_executors() -> dict[str, Callable]:
     # Add graphs executors if available
     if HAS_GRAPHS:
         executors.update(create_graphs_tool_executors())
+
+    # Add architecture analysis executors if available
+    if HAS_ARCHITECTURE_TOOLS:
+        executors.update(create_architecture_tool_executors())
 
     return executors
