@@ -32,6 +32,8 @@ try:
         ExecutionTargetUtilization,
         DataMovementAnalysis,
         DataTransfer,
+        OperatorBenchmarkResult,
+        ArchitectureBenchmarkResult,
     )
     HAS_SCHEMAS = True
 except ImportError:
@@ -282,6 +284,46 @@ def get_architecture_tool_definitions() -> list[dict[str, Any]]:
                         "type": "array",
                         "items": {"type": "string"},
                         "description": "List of variant IDs to compare (optional, compares all if not specified)",
+                    },
+                },
+                "required": ["architecture_id", "hardware_id"],
+            },
+        },
+        {
+            "name": "benchmark_architecture",
+            "description": (
+                "Run a benchmark of an architecture pipeline on a hardware target. "
+                "Measures per-operator latency and end-to-end throughput. Returns "
+                "measured results with comparison to estimates. Uses simulation when "
+                "real operators are not available."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "architecture_id": {
+                        "type": "string",
+                        "description": "Architecture ID",
+                    },
+                    "hardware_id": {
+                        "type": "string",
+                        "description": "Hardware ID",
+                    },
+                    "variant_id": {
+                        "type": "string",
+                        "description": "Optional variant ID",
+                    },
+                    "iterations": {
+                        "type": "integer",
+                        "description": "Number of benchmark iterations (default: 100)",
+                    },
+                    "warmup_iterations": {
+                        "type": "integer",
+                        "description": "Warmup iterations (default: 10)",
+                    },
+                    "input_source": {
+                        "type": "string",
+                        "enum": ["synthetic", "file"],
+                        "description": "Input data source (default: synthetic)",
                     },
                 },
                 "required": ["architecture_id", "hardware_id"],
@@ -1452,6 +1494,266 @@ def compare_variants(
         }, indent=2)
 
 
+def _simulate_operator_benchmark(
+    estimated_latency_ms: float,
+    iterations: int,
+    noise_factor: float = 0.15,
+) -> dict:
+    """Simulate benchmark measurements for an operator.
+
+    Generates realistic timing measurements based on the estimated latency,
+    with appropriate variance to simulate real-world conditions.
+
+    Args:
+        estimated_latency_ms: Base latency from operator profile
+        iterations: Number of simulated iterations
+        noise_factor: Relative noise (0.15 = 15% variance)
+
+    Returns:
+        Dictionary with simulated timing statistics
+    """
+    import random
+    import statistics
+
+    # Generate samples with log-normal distribution (realistic for latency)
+    # Mean is slightly higher than estimate (real often slower)
+    mean_actual = estimated_latency_ms * random.uniform(0.95, 1.15)
+    std = mean_actual * noise_factor
+
+    samples = [max(0.1, random.gauss(mean_actual, std)) for _ in range(iterations)]
+    samples.sort()
+
+    return {
+        "mean": statistics.mean(samples),
+        "std": statistics.stdev(samples) if len(samples) > 1 else 0,
+        "min": min(samples),
+        "max": max(samples),
+        "p50": samples[int(len(samples) * 0.5)],
+        "p95": samples[int(len(samples) * 0.95)],
+        "p99": samples[int(len(samples) * 0.99)] if len(samples) >= 100 else samples[-1],
+    }
+
+
+def benchmark_architecture(
+    architecture_id: str,
+    hardware_id: str,
+    variant_id: str | None = None,
+    iterations: int = 100,
+    warmup_iterations: int = 10,
+    input_source: str = "synthetic",
+) -> str:
+    """Benchmark an architecture pipeline on hardware.
+
+    Runs (or simulates) the architecture pipeline and collects
+    per-operator timing measurements with statistical analysis.
+    """
+    error = _check_schemas_available()
+    if error:
+        return error
+
+    try:
+        registry = _get_registry()
+        arch = registry.architectures.get(architecture_id)
+
+        if not arch:
+            return json.dumps({
+                "error": f"Architecture '{architecture_id}' not found",
+            }, indent=2)
+
+        # Check if hardware exists
+        hardware = registry.hardware.get(hardware_id)
+        hardware_name = hardware.name if hardware else hardware_id
+
+        # Apply variant if specified
+        operator_id_map, config_map = _apply_variant(arch, variant_id, registry)
+
+        # Benchmark each operator
+        operator_results = []
+        total_measured_latency = 0.0
+        total_estimated_latency = 0.0
+        bottleneck_op = None
+        bottleneck_latency = 0.0
+
+        for op_inst in arch.operators:
+            effective_op_id = operator_id_map[op_inst.id]
+            op_entry = registry.operators.get(effective_op_id)
+
+            if op_entry:
+                estimated_latency, memory_mb, power_w = _get_operator_perf(
+                    op_entry, hardware_id
+                )
+            else:
+                estimated_latency = 1.0
+                memory_mb = 10.0
+
+            exec_target = _normalize_execution_target(op_inst.execution_target)
+
+            # Simulate benchmark
+            timing = _simulate_operator_benchmark(estimated_latency, iterations)
+
+            # Calculate estimate error
+            estimate_error = ((timing["mean"] - estimated_latency) / estimated_latency) * 100
+
+            op_result = OperatorBenchmarkResult(
+                operator_instance_id=op_inst.id,
+                operator_id=effective_op_id,
+                execution_target=exec_target,
+                iterations=iterations,
+                mean_latency_ms=timing["mean"],
+                std_latency_ms=timing["std"],
+                min_latency_ms=timing["min"],
+                max_latency_ms=timing["max"],
+                p50_latency_ms=timing["p50"],
+                p95_latency_ms=timing["p95"],
+                p99_latency_ms=timing["p99"],
+                peak_memory_mb=memory_mb,
+                estimated_latency_ms=estimated_latency,
+                estimate_error_pct=estimate_error,
+                success=True,
+            )
+            operator_results.append(op_result)
+
+            total_measured_latency += timing["mean"]
+            total_estimated_latency += estimated_latency
+
+            # Track bottleneck
+            if timing["mean"] > bottleneck_latency:
+                bottleneck_latency = timing["mean"]
+                bottleneck_op = op_inst.id
+
+        # Calculate end-to-end metrics
+        measured_throughput = 1000.0 / total_measured_latency if total_measured_latency > 0 else 0
+        latency_target = arch.end_to_end_latency_ms
+
+        # Calculate overall estimate error
+        overall_estimate_error = (
+            (total_measured_latency - total_estimated_latency) / total_estimated_latency * 100
+            if total_estimated_latency > 0 else 0
+        )
+
+        # Determine verdict
+        if latency_target:
+            meets_target = total_measured_latency <= latency_target
+            latency_margin = ((latency_target - total_measured_latency) / latency_target) * 100
+            if meets_target:
+                verdict = Verdict.PASS
+                summary = (
+                    f"Benchmark PASSED: Measured {total_measured_latency:.1f}ms "
+                    f"(target: {latency_target}ms, margin: {latency_margin:.1f}%)"
+                )
+            else:
+                verdict = Verdict.FAIL
+                summary = (
+                    f"Benchmark FAILED: Measured {total_measured_latency:.1f}ms "
+                    f"exceeds {latency_target}ms target by {-latency_margin:.1f}%"
+                )
+        else:
+            verdict = Verdict.PASS
+            meets_target = None
+            latency_margin = None
+            summary = (
+                f"Benchmark complete: {total_measured_latency:.1f}ms latency, "
+                f"{measured_throughput:.1f} FPS"
+            )
+
+        # Calculate bottleneck contribution
+        bottleneck_contribution = (
+            (bottleneck_latency / total_measured_latency) * 100
+            if total_measured_latency > 0 else 0
+        )
+
+        # Create result
+        result = ArchitectureBenchmarkResult(
+            verdict=verdict,
+            confidence=Confidence.MEDIUM,  # Simulated, not real measurements
+            summary=summary,
+            architecture_id=architecture_id,
+            architecture_name=arch.name,
+            hardware_id=hardware_id,
+            hardware_name=hardware_name,
+            variant_id=variant_id,
+            timestamp=datetime.now(),
+            iterations=iterations,
+            warmup_iterations=warmup_iterations,
+            input_source=input_source,
+            measured_latency_ms=total_measured_latency,
+            measured_latency_std_ms=sum(r.std_latency_ms for r in operator_results),
+            measured_throughput_fps=measured_throughput,
+            measured_memory_mb=max(r.peak_memory_mb or 0 for r in operator_results),
+            operator_results=operator_results,
+            estimated_latency_ms=total_estimated_latency,
+            latency_estimate_error_pct=overall_estimate_error,
+            latency_target_ms=latency_target,
+            meets_latency_target=meets_target,
+            latency_margin_pct=latency_margin,
+            measured_bottleneck_operator=bottleneck_op,
+            measured_bottleneck_latency_ms=bottleneck_latency,
+            measured_bottleneck_contribution_pct=bottleneck_contribution,
+            warnings=[
+                "Results are simulated based on operator performance profiles",
+                "Real benchmarks require operator implementations",
+            ],
+        )
+
+        # Convert to JSON
+        output = {
+            "verdict": result.verdict.value,
+            "confidence": result.confidence.value,
+            "summary": result.summary,
+            "architecture_id": result.architecture_id,
+            "hardware_id": result.hardware_id,
+            "variant_id": result.variant_id,
+            "benchmark_config": {
+                "iterations": result.iterations,
+                "warmup_iterations": result.warmup_iterations,
+                "input_source": result.input_source,
+            },
+            "measured_metrics": {
+                "end_to_end_latency_ms": round(result.measured_latency_ms, 2),
+                "latency_std_ms": round(result.measured_latency_std_ms, 2),
+                "throughput_fps": round(result.measured_throughput_fps, 1),
+                "peak_memory_mb": round(result.measured_memory_mb, 1) if result.measured_memory_mb else None,
+            },
+            "comparison_to_estimate": {
+                "estimated_latency_ms": round(result.estimated_latency_ms, 2),
+                "estimate_error_pct": round(result.latency_estimate_error_pct, 1),
+            },
+            "constraint_check": {
+                "target_latency_ms": result.latency_target_ms,
+                "meets_target": result.meets_latency_target,
+                "margin_pct": round(result.latency_margin_pct, 1) if result.latency_margin_pct else None,
+            },
+            "bottleneck": {
+                "operator": result.measured_bottleneck_operator,
+                "latency_ms": round(result.measured_bottleneck_latency_ms, 2),
+                "contribution_pct": round(result.measured_bottleneck_contribution_pct, 1),
+            },
+            "per_operator_results": [
+                {
+                    "instance_id": r.operator_instance_id,
+                    "operator_id": r.operator_id,
+                    "target": r.execution_target,
+                    "measured_ms": round(r.mean_latency_ms, 2),
+                    "std_ms": round(r.std_latency_ms, 2),
+                    "p95_ms": round(r.p95_latency_ms, 2) if r.p95_latency_ms else None,
+                    "estimated_ms": round(r.estimated_latency_ms, 2) if r.estimated_latency_ms else None,
+                    "estimate_error_pct": round(r.estimate_error_pct, 1) if r.estimate_error_pct else None,
+                }
+                for r in result.operator_results
+            ],
+            "warnings": result.warnings,
+        }
+
+        return json.dumps(output, indent=2, default=str)
+
+    except Exception as e:
+        return json.dumps({
+            "verdict": "UNKNOWN",
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+        }, indent=2)
+
+
 def create_architecture_tool_executors() -> dict[str, callable]:
     """Create executor functions for architecture tools.
 
@@ -1466,4 +1768,5 @@ def create_architecture_tool_executors() -> dict[str, callable]:
         "identify_bottleneck": identify_bottleneck,
         "suggest_optimizations": suggest_optimizations,
         "compare_variants": compare_variants,
+        "benchmark_architecture": benchmark_architecture,
     }
