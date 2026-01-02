@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Run operator benchmarks for AMD Ryzen AI NUCs.
+"""Run operator benchmarks with automatic hardware detection.
 
 Usage:
-    python run_operator_benchmarks.py --hardware amd_ryzen_7_8845hs_nuc --targets cpu gpu npu
-    python run_operator_benchmarks.py --hardware amd_ryzen_9_8945hs_nuc --tdp 35W
-    python run_operator_benchmarks.py --list  # List available benchmarks
+    python run_operator_benchmarks.py                    # Auto-detect hardware, run PGN&C operators
+    python run_operator_benchmarks.py --targets cpu npu  # Specify execution targets
+    python run_operator_benchmarks.py --tdp 35W          # Document TDP mode
+    python run_operator_benchmarks.py --list             # List available benchmarks
+    python run_operator_benchmarks.py --detect           # Show detected hardware and exit
 """
 
 import argparse
@@ -34,6 +36,7 @@ from operators.control import (
     TrajectoryFollowerBenchmark,
 )
 from operators.catalog_updater import CatalogUpdater
+from operators.hardware_detect import detect_hardware, print_hardware_info
 
 
 # Available benchmarks
@@ -66,20 +69,22 @@ PGNC_OPERATORS = [
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run operator benchmarks")
+    parser = argparse.ArgumentParser(
+        description="Run operator benchmarks with automatic hardware detection"
+    )
 
     parser.add_argument(
         "--hardware",
         type=str,
-        default="amd_ryzen_7_8845hs_nuc",
-        help="Hardware ID (default: amd_ryzen_7_8845hs_nuc)",
+        default=None,
+        help="Hardware ID (default: auto-detect)",
     )
     parser.add_argument(
         "--targets",
         type=str,
         nargs="+",
-        default=["cpu"],
-        help="Execution targets: cpu, gpu, npu (default: cpu)",
+        default=None,
+        help="Execution targets: cpu, gpu, npu (default: auto-detect available)",
     )
     parser.add_argument(
         "--operators",
@@ -124,6 +129,11 @@ def main():
         help="List available benchmarks and exit",
     )
     parser.add_argument(
+        "--detect",
+        action="store_true",
+        help="Detect hardware and exit",
+    )
+    parser.add_argument(
         "--pgnc",
         action="store_true",
         help="Run PGN&C pipeline operators only",
@@ -140,6 +150,25 @@ def main():
         for name in PGNC_OPERATORS:
             print(f"  - {name}")
         return 0
+
+    # Detect hardware
+    hw_info = detect_hardware()
+
+    # Detect-only mode
+    if args.detect:
+        print_hardware_info(hw_info)
+        return 0
+
+    # Use detected or specified hardware ID
+    hardware_id = args.hardware or hw_info.get("hardware_id")
+    if not hardware_id:
+        # Fallback to CPU model as ID
+        cpu_model = hw_info.get("cpu_model", "unknown")
+        hardware_id = cpu_model.replace(" ", "_").lower()[:40]
+        print(f"Warning: No catalog match. Using detected: {hardware_id}")
+
+    # Use detected or specified targets
+    targets = args.targets or hw_info.get("execution_targets", ["cpu"])
 
     # Determine operators to run
     if args.pgnc:
@@ -158,8 +187,8 @@ def main():
 
     # Create config
     config = BenchmarkConfig(
-        hardware_id=args.hardware,
-        execution_targets=args.targets,
+        hardware_id=hardware_id,
+        execution_targets=targets,
         iterations=args.iterations,
         warmup_iterations=args.warmup,
         tdp_mode=args.tdp,
@@ -169,7 +198,9 @@ def main():
     print("=" * 60)
     print("OPERATOR BENCHMARK SUITE")
     print("=" * 60)
-    print(f"Hardware: {config.hardware_id}")
+    print_hardware_info(hw_info)
+    print()
+    print(f"Using hardware ID: {config.hardware_id}")
     print(f"Targets: {', '.join(config.execution_targets)}")
     print(f"TDP Mode: {config.tdp_mode or 'Not specified'}")
     print(f"Operators: {len(operators)}")
