@@ -19,13 +19,13 @@ Usage:
 from .base import Operator, OperatorResult, OperatorConfig
 
 # Perception operators
-from .perception import YOLOv8ONNX, ImagePreprocessor, ByteTrack
+from .perception import YOLOv8ONNX, ImagePreprocessor, ByteTrack, SceneGraphManager
 
 # State estimation operators
-from .state_estimation import EKF6DOF
+from .state_estimation import EKF6DOF, TrajectoryPredictor, CollisionDetector
 
 # Control operators
-from .control import PIDController, PathFollower
+from .control import PIDController, PathFollower, PathPlannerAStar
 
 
 # Operator registry mapping operator_id to class
@@ -38,11 +38,15 @@ OPERATOR_REGISTRY: dict[str, type[Operator]] = {
     "yolo_detector_x": YOLOv8ONNX,
     "image_preprocessor": ImagePreprocessor,
     "bytetrack": ByteTrack,
+    "scene_graph_manager": SceneGraphManager,
     # State estimation
     "ekf_6dof": EKF6DOF,
+    "trajectory_predictor": TrajectoryPredictor,
+    "collision_detector": CollisionDetector,
     # Control
     "pid_controller": PIDController,
     "trajectory_follower": PathFollower,
+    "path_planner_astar": PathPlannerAStar,
 }
 
 # Variant mapping for YOLO
@@ -118,11 +122,15 @@ __all__ = [
     "YOLOv8ONNX",
     "ImagePreprocessor",
     "ByteTrack",
+    "SceneGraphManager",
     # State estimation
     "EKF6DOF",
+    "TrajectoryPredictor",
+    "CollisionDetector",
     # Control
     "PIDController",
     "PathFollower",
+    "PathPlannerAStar",
     # Registry functions
     "get_operator_class",
     "create_operator",
