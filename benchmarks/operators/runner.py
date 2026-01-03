@@ -24,6 +24,10 @@ class BenchmarkConfig:
     tdp_mode: str | None = None
     ambient_temp_c: float | None = None
 
+    # SHA fingerprints from graphs auto_detect for reproducibility
+    hardware_fingerprint: str | None = None
+    software_fingerprint: str | None = None
+
     # Software versions
     python_version: str | None = None
     torch_version: str | None = None
@@ -150,14 +154,23 @@ class OperatorBenchmarkRunner:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"benchmark_{self.config.hardware_id}_{timestamp}"
 
+        # Build config dict with fingerprints if available
+        config_dict = {
+            "hardware_id": self.config.hardware_id,
+            "execution_targets": self.config.execution_targets,
+            "iterations": self.config.iterations,
+            "warmup_iterations": self.config.warmup_iterations,
+            "tdp_mode": self.config.tdp_mode,
+        }
+
+        # Include SHA fingerprints for reproducibility tracking
+        if self.config.hardware_fingerprint:
+            config_dict["hardware_fingerprint"] = self.config.hardware_fingerprint
+        if self.config.software_fingerprint:
+            config_dict["software_fingerprint"] = self.config.software_fingerprint
+
         data = {
-            "config": {
-                "hardware_id": self.config.hardware_id,
-                "execution_targets": self.config.execution_targets,
-                "iterations": self.config.iterations,
-                "warmup_iterations": self.config.warmup_iterations,
-                "tdp_mode": self.config.tdp_mode,
-            },
+            "config": config_dict,
             "system_info": self.system_info,
             "results": [self._result_to_dict(r) for r in self.results],
         }
@@ -217,6 +230,9 @@ class OperatorBenchmarkRunner:
         print("BENCHMARK SUMMARY")
         print("=" * 60)
         print(f"Hardware: {self.config.hardware_id}")
+        if self.config.hardware_fingerprint:
+            print(f"HW Fingerprint: {self.config.hardware_fingerprint}")
+            print(f"SW Fingerprint: {self.config.software_fingerprint}")
         print(f"Targets: {', '.join(self.config.execution_targets)}")
         print(f"Iterations: {self.config.iterations}")
         print()

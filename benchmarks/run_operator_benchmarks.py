@@ -185,7 +185,7 @@ def main():
             print(f"Available: {', '.join(sorted(BENCHMARKS.keys()))}")
             return 1
 
-    # Create config
+    # Create config with fingerprints if available
     config = BenchmarkConfig(
         hardware_id=hardware_id,
         execution_targets=targets,
@@ -193,6 +193,8 @@ def main():
         warmup_iterations=args.warmup,
         tdp_mode=args.tdp,
         output_dir=args.output_dir,
+        hardware_fingerprint=hw_info.get("hardware_fingerprint"),
+        software_fingerprint=hw_info.get("software_fingerprint"),
     )
 
     print("=" * 60)
@@ -201,6 +203,9 @@ def main():
     print_hardware_info(hw_info)
     print()
     print(f"Using hardware ID: {config.hardware_id}")
+    if config.hardware_fingerprint:
+        print(f"HW Fingerprint: {config.hardware_fingerprint}")
+        print(f"SW Fingerprint: {config.software_fingerprint}")
     print(f"Targets: {', '.join(config.execution_targets)}")
     print(f"TDP Mode: {config.tdp_mode or 'Not specified'}")
     print(f"Operators: {len(operators)}")

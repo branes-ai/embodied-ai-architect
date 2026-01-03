@@ -12,7 +12,12 @@ Features:
 
 from .runner import OperatorBenchmarkRunner, BenchmarkConfig
 from .base import OperatorBenchmark, OperatorBenchmarkResult
-from .hardware_detect import detect_hardware, print_hardware_info
+from .hardware_detect import (
+    detect_hardware,
+    print_hardware_info,
+    get_calibration_context,
+    GRAPHS_AVAILABLE,
+)
 
 __all__ = [
     "OperatorBenchmarkRunner",
@@ -21,4 +26,6 @@ __all__ = [
     "OperatorBenchmarkResult",
     "detect_hardware",
     "print_hardware_info",
+    "get_calibration_context",
+    "GRAPHS_AVAILABLE",
 ]

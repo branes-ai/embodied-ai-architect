@@ -1,4 +1,14 @@
-"""Auto-detect hardware platform and match against catalog."""
+"""Auto-detect hardware platform and match against catalog.
+
+This module wraps the comprehensive hardware detection from the `graphs` repository
+when available, falling back to simplified detection otherwise.
+
+The graphs auto_detect provides:
+- SHA fingerprints for reproducible hw/sw identification
+- Silicon-level details (CPU stepping, microcode, GPU VBIOS)
+- Complete software stack versioning
+- Environmental context (power mode, thermal state)
+"""
 
 import platform
 import re
@@ -6,9 +16,25 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+# Try to import graphs auto_detect for comprehensive detection
+try:
+    from graphs.hardware.calibration.auto_detect import (
+        CalibrationContext,
+        HardwareIdentity,
+        SoftwareStack,
+        EnvironmentalContext,
+    )
+    GRAPHS_AVAILABLE = True
+except ImportError:
+    GRAPHS_AVAILABLE = False
+    CalibrationContext = None
+
 
 def detect_hardware() -> dict[str, Any]:
     """Detect current hardware platform.
+
+    Uses graphs.hardware.calibration.auto_detect when available for comprehensive
+    detection with SHA fingerprints. Falls back to simplified detection otherwise.
 
     Returns:
         Dictionary with hardware info:
@@ -17,7 +43,83 @@ def detect_hardware() -> dict[str, Any]:
         - gpu_model: GPU model if available
         - npu_available: Whether NPU is detected
         - hardware_id: Matched catalog ID or None
+        - execution_targets: List of available targets (cpu, gpu, npu)
+
+        When graphs is available, also includes:
+        - hardware_fingerprint: SHA256 fingerprint of hardware identity
+        - software_fingerprint: SHA256 fingerprint of software stack
+        - calibration_context: Full CalibrationContext object
     """
+    if GRAPHS_AVAILABLE:
+        return _detect_with_graphs()
+    else:
+        return _detect_fallback()
+
+
+def _detect_with_graphs() -> dict[str, Any]:
+    """Comprehensive detection using graphs auto_detect."""
+    context = CalibrationContext.detect()
+
+    info = {
+        # SHA fingerprints for reproducible identification
+        "hardware_fingerprint": context.hardware.fingerprint,
+        "software_fingerprint": context.software.fingerprint,
+        "run_id": context.run_id,
+
+        # CPU info from graphs
+        "cpu_model": context.hardware.cpu.model,
+        "cpu_vendor": _normalize_vendor(context.hardware.cpu.vendor),
+        "cpu_stepping": context.hardware.cpu.stepping,
+        "cpu_microcode": context.hardware.cpu.microcode,
+        "cpu_cores_physical": context.hardware.cpu.cores_physical,
+        "cpu_cores_logical": context.hardware.cpu.cores_logical,
+
+        # GPU info from graphs
+        "gpu_model": context.hardware.gpu.model if context.hardware.gpu else None,
+        "gpu_vendor": context.hardware.gpu.vendor.lower() if context.hardware.gpu else None,
+        "gpu_memory_mb": context.hardware.gpu.memory_mb if context.hardware.gpu else None,
+        "cuda_available": context.software.cuda_version != "N/A",
+        "rocm_available": context.software.rocm_version != "N/A",
+
+        # Memory info
+        "memory_gb": context.hardware.memory.total_gb,
+
+        # Software stack versions
+        "python_version": context.software.python_version,
+        "pytorch_version": context.software.pytorch_version,
+        "cuda_version": context.software.cuda_version,
+        "cudnn_version": context.software.cudnn_version,
+
+        # Environmental context
+        "power_mode": context.environment.power_mode,
+        "cpu_governor": context.environment.cpu_governor,
+        "thermal_state": context.environment.thermal_state,
+
+        # Full context for advanced use
+        "calibration_context": context,
+
+        # Execution targets
+        "execution_targets": ["cpu"],
+    }
+
+    # Add GPU target if available
+    if context.hardware.gpu:
+        info["execution_targets"].append("gpu")
+
+    # Detect NPU (not covered by graphs yet)
+    npu_info = _detect_npu()
+    info.update(npu_info)
+    if npu_info.get("npu_available"):
+        info["execution_targets"].append("npu")
+
+    # Match against catalog
+    info["hardware_id"] = _match_catalog(info)
+
+    return info
+
+
+def _detect_fallback() -> dict[str, Any]:
+    """Simplified detection when graphs is not available."""
     info = {
         "cpu_model": None,
         "cpu_vendor": None,
@@ -25,6 +127,8 @@ def detect_hardware() -> dict[str, Any]:
         "npu_available": False,
         "hardware_id": None,
         "execution_targets": ["cpu"],
+        "hardware_fingerprint": None,  # Not available without graphs
+        "software_fingerprint": None,
     }
 
     # Detect CPU
@@ -46,6 +150,20 @@ def detect_hardware() -> dict[str, Any]:
     info["hardware_id"] = _match_catalog(info)
 
     return info
+
+
+def _normalize_vendor(vendor: str) -> str:
+    """Normalize vendor string to lowercase identifier."""
+    vendor_lower = vendor.lower()
+    if "intel" in vendor_lower or "genuineintel" in vendor_lower:
+        return "intel"
+    elif "amd" in vendor_lower or "authenticamd" in vendor_lower:
+        return "amd"
+    elif "arm" in vendor_lower:
+        return "arm"
+    elif "apple" in vendor_lower:
+        return "apple"
+    return vendor_lower
 
 
 def _detect_cpu() -> dict[str, Any]:
@@ -270,18 +388,43 @@ def _is_jetson_agx() -> bool:
 def print_hardware_info(info: dict[str, Any]) -> None:
     """Print detected hardware info."""
     print("Detected Hardware:")
+
+    # Show SHA fingerprints if available (from graphs)
+    if info.get("hardware_fingerprint"):
+        print(f"  HW Fingerprint: {info['hardware_fingerprint']}")
+    if info.get("software_fingerprint"):
+        print(f"  SW Fingerprint: {info['software_fingerprint']}")
+
     print(f"  CPU: {info.get('cpu_model', 'Unknown')}")
     print(f"  Vendor: {info.get('cpu_vendor', 'Unknown')}")
 
+    # Show detailed CPU info if available (from graphs)
+    if info.get("cpu_stepping") is not None:
+        print(f"  Stepping: {info['cpu_stepping']}, Microcode: {info.get('cpu_microcode', 'N/A')}")
+    if info.get("cpu_cores_physical"):
+        print(f"  Cores: {info['cpu_cores_physical']}P / {info.get('cpu_cores_logical', '?')}L")
+
     if info.get("gpu_model"):
         print(f"  GPU: {info['gpu_model']}")
+        if info.get("gpu_memory_mb"):
+            print(f"  GPU Memory: {info['gpu_memory_mb']} MB")
         if info.get("cuda_available"):
-            print("  CUDA: Available")
+            cuda_ver = info.get("cuda_version", "")
+            print(f"  CUDA: Available ({cuda_ver})" if cuda_ver and cuda_ver != "N/A" else "  CUDA: Available")
         if info.get("rocm_available"):
             print("  ROCm: Available")
 
     if info.get("npu_available"):
         print(f"  NPU: Available ({info.get('npu_runtime', 'Unknown runtime')})")
+
+    if info.get("memory_gb"):
+        print(f"  Memory: {info['memory_gb']:.1f} GB")
+
+    # Environmental context if available (from graphs)
+    if info.get("power_mode") and info["power_mode"] != "TDP":
+        print(f"  Power Mode: {info['power_mode']}")
+    if info.get("thermal_state") and info["thermal_state"] not in ("unknown", "cool"):
+        print(f"  Thermal: {info['thermal_state']}")
 
     print(f"  Execution targets: {', '.join(info.get('execution_targets', ['cpu']))}")
 
@@ -289,6 +432,25 @@ def print_hardware_info(info: dict[str, Any]) -> None:
         print(f"  Catalog match: {info['hardware_id']}")
     else:
         print("  Catalog match: No match found (using detected specs)")
+
+    # Note if using graphs or fallback
+    if not info.get("hardware_fingerprint"):
+        print("  Note: Install 'graphs' package for full hw/sw fingerprinting")
+
+
+def get_calibration_context():
+    """Get the full CalibrationContext from graphs if available.
+
+    Returns:
+        CalibrationContext object or None if graphs is not installed.
+        The context includes:
+        - hardware.fingerprint: SHA256 of hw identity
+        - software.fingerprint: SHA256 of sw stack
+        - environment: Power mode, thermal state, etc.
+    """
+    if not GRAPHS_AVAILABLE:
+        return None
+    return CalibrationContext.detect()
 
 
 if __name__ == "__main__":
