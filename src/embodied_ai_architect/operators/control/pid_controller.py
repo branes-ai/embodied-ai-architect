@@ -84,6 +84,7 @@ class PIDController(Operator):
             inputs: Dictionary with:
                 - 'setpoint': Target value(s) (scalar or array)
                 - 'measurement': Current value(s) (scalar or array)
+                - 'path': Alternative to setpoint (uses first waypoint)
                 - 'dt': Optional timestep override
 
         Returns:
@@ -91,8 +92,41 @@ class PIDController(Operator):
                 - 'output': Control output(s)
                 - 'error': Current error(s)
         """
-        setpoint = np.atleast_1d(inputs["setpoint"])
-        measurement = np.atleast_1d(inputs["measurement"])
+        # Get setpoint - can come from 'setpoint', 'path', or default
+        if "setpoint" in inputs:
+            setpoint = np.atleast_1d(inputs["setpoint"]).flatten()
+        elif "path" in inputs and inputs["path"]:
+            # Use next waypoint from path planner (skip current position)
+            path = inputs["path"]
+            if isinstance(path, list) and len(path) > 1:
+                # Take the second waypoint (first step from current)
+                waypoint = np.atleast_1d(path[1]).flatten()
+            elif isinstance(path, list) and len(path) == 1:
+                waypoint = np.atleast_1d(path[0]).flatten()
+            else:
+                waypoint = np.zeros(self.num_axes)
+            setpoint = waypoint
+        else:
+            setpoint = np.zeros(self.num_axes)
+
+        # Ensure setpoint matches num_axes (take first N or pad)
+        setpoint = np.atleast_1d(setpoint).flatten()
+        if len(setpoint) > self.num_axes:
+            setpoint = setpoint[:self.num_axes]
+        elif len(setpoint) < self.num_axes:
+            setpoint = np.pad(setpoint, (0, self.num_axes - len(setpoint)))
+
+        # Get measurement - can come from 'measurement' or default to zeros
+        if "measurement" in inputs:
+            measurement = np.atleast_1d(inputs["measurement"]).flatten()
+            # Ensure measurement matches num_axes
+            if len(measurement) > self.num_axes:
+                measurement = measurement[:self.num_axes]
+            elif len(measurement) < self.num_axes:
+                measurement = np.pad(measurement, (0, self.num_axes - len(measurement)))
+        else:
+            measurement = np.zeros(self.num_axes)
+
         dt = inputs.get("dt", self.dt)
 
         # Compute error
