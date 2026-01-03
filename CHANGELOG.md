@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Operator Benchmarking Infrastructure with Graphs Auto-Detect Integration (2026-01-02):
+  - Created `benchmarks/operators/` framework for systematic operator profiling
+  - Base classes: `OperatorBenchmark`, `OperatorBenchmarkResult` with standardized timing methodology
+  - Benchmark runner with warmup, iterations, percentile statistics (p50, p95, p99)
+  - Perception benchmarks: YOLO detector (PyTorch/ONNX), ByteTrack, ImagePreprocessor
+  - State estimation benchmarks: Kalman filter, Scene graph manager, EKF 6-DOF
+  - Control benchmarks: PID controller, A* path planner, Trajectory follower
+  - Integrated with `graphs.hardware.calibration.auto_detect` for SHA fingerprinting
+  - Hardware fingerprint: SHA256 of hw identity (CPU stepping, microcode, GPU VBIOS)
+  - Software fingerprint: SHA256 of sw stack (PyTorch, CUDA, drivers, etc.)
+  - NPU detection: ONNX Runtime providers (RyzenAI, QNN, CoreML), AMD XDNA driver
+  - Fallback to simplified detection when graphs not installed
+  - Catalog updater for embodied-schemas operator YAML files
+  - CLI script `run_operator_benchmarks.py` with `--detect` flag
+  - Fingerprints included in YAML/JSON benchmark results for reproducibility
+  - Documentation: docs/sessions/2026-01-02-operator-benchmarking-graphs-integration.md
 - SoC Optimizer LangGraph Workflow Improvements (2025-12-23):
   - Fixed GraphRecursionError by adding dynamic recursion_limit to LangGraph config
   - Formula: `(max_iterations + 1) * 6 + 10` accounts for 5 nodes per iteration plus syntax retry loops
