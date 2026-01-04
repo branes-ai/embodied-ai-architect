@@ -8,6 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Architecture Benchmark Harness and Runnable Operators (2026-01-03):
+  - **Benchmark Harness** (`src/embodied_ai_architect/benchmark/`):
+    - `ArchitectureRunner`: Executes complete architecture pipelines with per-operator timing
+    - `PowerMonitor`: Power measurement via Intel RAPL, AMD SMU, or external meters
+    - `ArchitectureBenchmarkResult`: Comprehensive results with timing, power, and requirement validation
+    - Automatic requirement checking against architecture specs (latency, throughput, power)
+  - **Runnable Operators** (`src/embodied_ai_architect/operators/`):
+    - Base `Operator` ABC with `setup()`, `process()`, `teardown()`, `benchmark()` interface
+    - Perception: `YOLOv8ONNX` (NPU support), `ImagePreprocessor`, `ByteTrack`, `SceneGraphManager`
+    - State Estimation: `EKF6DOF`, `TrajectoryPredictor`, `CollisionDetector`
+    - Control: `PIDController`, `PathFollower`, `PathPlannerAStar`
+    - Operator registry with 14 operators mapped to embodied-schemas catalog IDs
+  - **CLI Commands**:
+    - `embodied-ai benchmark arch <id>`: Benchmark architecture pipeline
+    - `embodied-ai benchmark arch-list`: List available architectures
+    - JSON output support, result export to file
+  - **Test Results**: All 3 reference architectures benchmark successfully
+    - `pick_and_place_v1`: 24.4 fps (target: 10 fps)
+    - `drone_perception_v1`: 15.6 fps (target: 30 fps)
+    - `simple_adas_v1`: All operators functional
+  - Documentation: `docs/benchmark-harness.md`, `docs/sessions/2026-01-03-benchmark-harness-operators.md`
 - Operator Benchmarking Infrastructure with Graphs Auto-Detect Integration (2026-01-02):
   - Created `benchmarks/operators/` framework for systematic operator profiling
   - Base classes: `OperatorBenchmark`, `OperatorBenchmarkResult` with standardized timing methodology
