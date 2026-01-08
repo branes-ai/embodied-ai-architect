@@ -27,13 +27,13 @@ def workflow():
     \b
     Examples:
       # Run on local CPU
-      embodied-ai workflow run my_model.pt
+      branes workflow run my_model.pt
 
       # Use Kubernetes backend
-      embodied-ai workflow run my_model.pt --backend kubernetes
+      branes workflow run my_model.pt --backend kubernetes
 
       # Custom constraints
-      embodied-ai workflow run my_model.pt \\
+      branes workflow run my_model.pt \\
         --max-latency 50 \\
         --max-power 100 \\
         --max-cost 3000
@@ -232,7 +232,7 @@ def run(
                 report_path = report_data.get("report_html")
                 console.print(f"[bold]📄 Report:[/bold] {report_path}")
                 console.print(
-                    f"\n[dim]View report:[/dim] embodied-ai report view {result.summary.get('workflow_id', '')}"
+                    f"\n[dim]View report:[/dim] branes report view {result.summary.get('workflow_id', '')}"
                 )
 
     except FileNotFoundError:

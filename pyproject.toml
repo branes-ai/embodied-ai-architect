@@ -51,7 +51,7 @@ all = [
 ]
 
 [project.scripts]
-embodied-ai = "embodied_ai_architect.cli:main"
+branes = "embodied_ai_architect.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

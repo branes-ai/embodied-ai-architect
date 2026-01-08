@@ -21,9 +21,9 @@ def analyze(ctx, model_path, input_shape):
 
     \b
     Examples:
-      embodied-ai analyze my_model.pt
-      embodied-ai analyze my_model.pt --input-shape 1,3,224,224
-      embodied-ai analyze my_model.pt --json
+      branes analyze my_model.pt
+      branes analyze my_model.pt --input-shape 1,3,224,224
+      branes analyze my_model.pt --json
     """
     json_output = ctx.obj.get("json", False)
     quiet = ctx.obj.get("quiet", False)

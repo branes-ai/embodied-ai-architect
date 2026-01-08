@@ -14,7 +14,7 @@ console = Console()
 
 
 @click.group()
-@click.version_option(version=__version__, prog_name="embodied-ai")
+@click.version_option(version=__version__, prog_name="branes")
 @click.option(
     "-v",
     "--verbose",
@@ -25,14 +25,14 @@ console = Console()
 @click.option("--quiet", is_flag=True, help="Minimal output")
 @click.pass_context
 def cli(ctx, verbose, json, quiet):
-    """Embodied AI Architect - Design environment for Embodied AI systems.
+    """Branes Embodied AI Platform - Design environment for Embodied AI systems.
 
     \b
     Examples:
-      embodied-ai workflow run my_model.pt
-      embodied-ai analyze my_model.pt
-      embodied-ai benchmark my_model.pt --backend kubernetes
-      embodied-ai report view --latest
+      branes workflow run my_model.pt
+      branes analyze my_model.pt
+      branes benchmark my_model.pt --backend kubernetes
+      branes report view --latest
     """
     # Store settings in context for subcommands
     ctx.ensure_object(dict)
@@ -44,7 +44,7 @@ def cli(ctx, verbose, json, quiet):
     if not quiet and not json and ctx.invoked_subcommand:
         console.print(
             Panel.fit(
-                "[bold cyan]Embodied AI Architect[/bold cyan]\n"
+                "[bold cyan]Branes Embodied AI Platform[/bold cyan]\n"
                 f"Version {__version__}",
                 border_style="cyan",
             )
@@ -63,6 +63,8 @@ def main():
     from embodied_ai_architect.cli.commands import secrets
     from embodied_ai_architect.cli.commands import chat
     from embodied_ai_architect.cli.commands import pipeline
+    from embodied_ai_architect.cli.commands import model
+    from embodied_ai_architect.cli.commands import zoo
 
     # Register command groups
     cli.add_command(workflow.workflow)
@@ -74,6 +76,8 @@ def main():
     cli.add_command(secrets.secrets)
     cli.add_command(chat.chat)
     cli.add_command(pipeline.pipeline)
+    cli.add_command(model.model)
+    cli.add_command(zoo.zoo)
 
     # Run CLI
     cli(obj={})

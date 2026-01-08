@@ -17,10 +17,10 @@ def config():
     \b
     Examples:
       # Show current configuration
-      embodied-ai config show
+      branes config show
 
       # Initialize configuration
-      embodied-ai config init
+      branes config init
     """
     pass
 
@@ -31,7 +31,7 @@ def init(ctx):
     """Initialize configuration file."""
     json_output = ctx.obj.get("json", False)
 
-    config_dir = Path(".embodied-ai")
+    config_dir = Path(".branes")
     config_file = config_dir / "config.yaml"
 
     if config_file.exists():
@@ -51,8 +51,8 @@ default_backend: local_cpu
 # Backends configuration
 backends:
   kubernetes:
-    namespace: embodied-ai
-    image: embodied-ai-benchmark:latest
+    namespace: branes
+    image: branes-benchmark:latest
     cpu_request: "2"
     memory_request: "4Gi"
 
@@ -88,11 +88,11 @@ def show(ctx):
     """Show current configuration."""
     json_output = ctx.obj.get("json", False)
 
-    config_file = Path(".embodied-ai") / "config.yaml"
+    config_file = Path(".branes") / "config.yaml"
 
     if not config_file.exists():
         console.print("[yellow]⚠[/yellow] No configuration file found")
-        console.print("\n[dim]Run 'embodied-ai config init' to create one[/dim]")
+        console.print("\n[dim]Run 'branes config init' to create one[/dim]")
         ctx.exit(1)
 
     config_content = config_file.read_text()
@@ -112,7 +112,7 @@ def show(ctx):
 def set(ctx, key, value):
     """Set a configuration value."""
     console.print("[yellow]⚠[/yellow] Configuration editing not yet implemented")
-    console.print("\n[dim]Edit .embodied-ai/config.yaml manually for now[/dim]")
+    console.print("\n[dim]Edit .branes/config.yaml manually for now[/dim]")
 
 
 @config.command()
@@ -121,7 +121,7 @@ def validate(ctx):
     """Validate configuration."""
     json_output = ctx.obj.get("json", False)
 
-    config_file = Path(".embodied-ai") / "config.yaml"
+    config_file = Path(".branes") / "config.yaml"
 
     if not config_file.exists():
         if json_output:

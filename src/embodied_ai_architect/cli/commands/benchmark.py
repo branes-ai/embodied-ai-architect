@@ -38,13 +38,13 @@ def benchmark():
     \b
     Examples:
       # Benchmark on local CPU
-      embodied-ai benchmark run my_model.pt
+      branes benchmark run my_model.pt
 
       # Benchmark on specific backend
-      embodied-ai benchmark run my_model.pt --backend kubernetes
+      branes benchmark run my_model.pt --backend kubernetes
 
       # List available backends
-      embodied-ai benchmark list
+      branes benchmark list
     """
     pass
 
@@ -171,13 +171,13 @@ def list(ctx):
             "name": "remote_ssh",
             "description": "Run benchmarks on remote machine via SSH",
             "available": "paramiko" in dir(),
-            "requirements": "pip install embodied-ai-architect[remote]",
+            "requirements": "pip install branes[remote]",
         },
         {
             "name": "kubernetes",
             "description": "Run benchmarks on Kubernetes cluster",
             "available": "kubernetes" in dir(),
-            "requirements": "pip install embodied-ai-architect[kubernetes]",
+            "requirements": "pip install branes[kubernetes]",
         },
     ]
 
@@ -215,13 +215,13 @@ def arch(ctx, architecture_id, variant, iterations, warmup, power, output):
     \b
     Examples:
       # Benchmark drone perception pipeline
-      embodied-ai benchmark arch drone_perception_v1
+      branes benchmark arch drone_perception_v1
 
       # Use a specific variant
-      embodied-ai benchmark arch drone_perception_v1 --variant edge
+      branes benchmark arch drone_perception_v1 --variant edge
 
       # Save results to file
-      embodied-ai benchmark arch pick_and_place_v1 -o results.json
+      branes benchmark arch pick_and_place_v1 -o results.json
     """
     json_output = ctx.obj.get("json", False)
     quiet = ctx.obj.get("quiet", False)
