@@ -62,6 +62,7 @@ def main():
     from embodied_ai_architect.cli.commands import backends
     from embodied_ai_architect.cli.commands import secrets
     from embodied_ai_architect.cli.commands import chat
+    from embodied_ai_architect.cli.commands import pipeline
 
     # Register command groups
     cli.add_command(workflow.workflow)
@@ -72,6 +73,7 @@ def main():
     cli.add_command(backends.backends)
     cli.add_command(secrets.secrets)
     cli.add_command(chat.chat)
+    cli.add_command(pipeline.pipeline)
 
     # Run CLI
     cli(obj={})
