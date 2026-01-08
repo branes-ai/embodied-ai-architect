@@ -68,10 +68,11 @@ class YOLOv8ONNX(Operator):
         self.conf_threshold = config.get("conf_threshold", 0.25)
         self.iou_threshold = config.get("iou_threshold", 0.45)
 
-        # Get model path
+        # Get model path - use model zoo for automatic acquisition
         model_path = config.get("model_path")
         if model_path is None:
-            model_path = self._get_or_download_model()
+            from embodied_ai_architect.model_zoo import acquire
+            model_path = acquire(f"yolov8{self.variant}", format="onnx")
 
         # Select providers based on target
         providers = self.PROVIDER_MAP.get(execution_target, ["CPUExecutionProvider"])
@@ -102,40 +103,6 @@ class YOLOv8ONNX(Operator):
 
         self._is_setup = True
         print(f"[YOLOv8ONNX] Ready on {execution_target} (input: {self.input_shape})")
-
-    def _get_or_download_model(self) -> Path:
-        """Get or download the ONNX model."""
-        # Check cache directory
-        cache_dir = Path.home() / ".cache" / "embodied-ai" / "models"
-        cache_dir.mkdir(parents=True, exist_ok=True)
-
-        model_name = f"yolov8{self.variant}.onnx"
-        model_path = cache_dir / model_name
-
-        if model_path.exists():
-            return model_path
-
-        # Try to export from ultralytics
-        try:
-            from ultralytics import YOLO
-
-            print(f"[YOLOv8ONNX] Exporting {model_name} from ultralytics...")
-            model = YOLO(f"yolov8{self.variant}.pt")
-            model.export(format="onnx", imgsz=640, simplify=True)
-
-            # Move to cache
-            exported = Path(f"yolov8{self.variant}.onnx")
-            if exported.exists():
-                exported.rename(model_path)
-                return model_path
-
-        except ImportError:
-            pass
-
-        raise FileNotFoundError(
-            f"ONNX model not found: {model_path}\n"
-            f"Either provide model_path in config or install ultralytics to export."
-        )
 
     def process(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """Run detection on input image.
