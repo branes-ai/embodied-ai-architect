@@ -1,7 +1,13 @@
 """Embodied AI Architect - Design environment for Embodied AI systems."""
 
-__version__ = "0.1.0"
+from importlib.metadata import version, PackageNotFoundError
+
+try:
+    __version__ = version("embodied-ai-architect")
+except PackageNotFoundError:
+    # Package not installed (running from source without pip install -e)
+    __version__ = "0.0.0.dev"
 
 from .orchestrator import Orchestrator
 
-__all__ = ["Orchestrator"]
+__all__ = ["Orchestrator", "__version__"]
