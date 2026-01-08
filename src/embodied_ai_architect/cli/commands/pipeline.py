@@ -19,9 +19,9 @@ def pipeline():
 
     \b
     Examples:
-      embodied-ai pipeline run perception --input image.jpg
-      embodied-ai pipeline run autonomy --input video.mp4 --stream
-      embodied-ai pipeline benchmark perception --input image.jpg --iterations 100
+      branes pipeline run perception --input image.jpg
+      branes pipeline run autonomy --input video.mp4 --stream
+      branes pipeline benchmark perception --input image.jpg --iterations 100
     """
     pass
 

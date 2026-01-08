@@ -16,10 +16,10 @@ def backends():
     \b
     Examples:
       # List available backends
-      embodied-ai backends list
+      branes backends list
 
       # Test backend connection
-      embodied-ai backends test kubernetes
+      branes backends test kubernetes
     """
     pass
 
@@ -61,7 +61,7 @@ def list(ctx):
                 "type": "Remote",
                 "description": "Run benchmarks on remote machine via SSH",
                 "status": "✗ Not installed",
-                "requirements": "pip install 'embodied-ai-architect[remote]'",
+                "requirements": "pip install 'branes[remote]'",
             }
         )
 
@@ -84,7 +84,7 @@ def list(ctx):
                 "type": "Cloud",
                 "description": "Run benchmarks on Kubernetes cluster",
                 "status": "✗ Not installed",
-                "requirements": "pip install 'embodied-ai-architect[kubernetes]'",
+                "requirements": "pip install 'branes[kubernetes]'",
             }
         )
 
@@ -136,7 +136,7 @@ def test(ctx, backend_name):
                 click.echo(json.dumps({"backend": "remote_ssh", "available": False, "error": "Not installed"}))
             else:
                 console.print("[red]✗[/red] remote_ssh backend not installed")
-                console.print("\n[dim]Install with: pip install 'embodied-ai-architect[remote]'[/dim]")
+                console.print("\n[dim]Install with: pip install 'branes[remote]'[/dim]")
             ctx.exit(1)
 
     elif backend_name == "kubernetes":
@@ -164,7 +164,7 @@ def test(ctx, backend_name):
                 click.echo(json.dumps({"backend": "kubernetes", "available": False, "error": "Not installed"}))
             else:
                 console.print("[red]✗[/red] kubernetes backend not installed")
-                console.print("\n[dim]Install with: pip install 'embodied-ai-architect[kubernetes]'[/dim]")
+                console.print("\n[dim]Install with: pip install 'branes[kubernetes]'[/dim]")
             ctx.exit(1)
 
     else:
@@ -182,4 +182,4 @@ def test(ctx, backend_name):
 def add(ctx, backend_type, name, host, user):
     """Add a new backend configuration."""
     console.print("[yellow]⚠[/yellow] Adding backends not yet implemented")
-    console.print("\n[dim]Edit .embodied-ai/config.yaml manually for now[/dim]")
+    console.print("\n[dim]Edit .branes/config.yaml manually for now[/dim]")

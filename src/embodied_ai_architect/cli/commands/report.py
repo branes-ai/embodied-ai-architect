@@ -18,13 +18,13 @@ def report():
     \b
     Examples:
       # View latest report in browser
-      embodied-ai report view --latest
+      branes report view --latest
 
       # View specific report
-      embodied-ai report view abc123
+      branes report view abc123
 
       # List all reports
-      embodied-ai report list
+      branes report list
     """
     pass
 
@@ -128,7 +128,7 @@ def list(ctx, limit):
 
         console.print(table)
         console.print(
-            f"\n[dim]Tip:[/dim] Use 'embodied-ai report view <workflow_id>' to open a report"
+            f"\n[dim]Tip:[/dim] Use 'branes report view <workflow_id>' to open a report"
         )
 
 

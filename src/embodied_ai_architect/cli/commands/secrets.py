@@ -18,13 +18,13 @@ def secrets():
     \b
     Examples:
       # List available secrets (keys only, not values!)
-      embodied-ai secrets list
+      branes secrets list
 
       # Set a secret interactively
-      embodied-ai secrets set ssh_key
+      branes secrets set ssh_key
 
       # Validate secrets setup
-      embodied-ai secrets validate
+      branes secrets validate
     """
     pass
 
@@ -166,4 +166,4 @@ def validate(ctx):
             status_style = "green" if check["valid"] else "yellow"
             console.print(f"  [{status_style}]{check['status']}[/{status_style}] {check['name']}")
 
-        console.print("\n[dim]Use 'embodied-ai secrets list' to see all secrets[/dim]")
+        console.print("\n[dim]Use 'branes secrets list' to see all secrets[/dim]")

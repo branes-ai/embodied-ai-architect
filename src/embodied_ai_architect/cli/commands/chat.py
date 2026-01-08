@@ -33,9 +33,9 @@ def chat(ctx, model: str, verbose: bool):
 
     \b
     Examples:
-      embodied-ai chat
-      embodied-ai chat --model claude-sonnet-4-20250514
-      embodied-ai chat -v
+      branes chat
+      branes chat --model claude-sonnet-4-20250514
+      branes chat -v
 
     \b
     In the session, you can ask questions like:
@@ -83,7 +83,7 @@ def chat(ctx, model: str, verbose: bool):
     console.print()
     console.print(
         Panel(
-            "[bold cyan]Embodied AI Architect[/bold cyan]\n"
+            "[bold cyan]Branes Embodied AI Platform[/bold cyan]\n"
             "Interactive AI assistant for edge deployment\n\n"
             "[dim]Commands:[/dim]\n"
             "  [green]exit[/green] or [green]quit[/green] - End session\n"
