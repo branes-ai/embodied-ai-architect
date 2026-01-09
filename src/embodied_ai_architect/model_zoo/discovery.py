@@ -81,10 +81,12 @@ class ModelDiscoveryService:
         """Register built-in providers."""
         # Import here to avoid circular imports
         from .providers.ultralytics import UltralyticsProvider
+        from .providers.torchvision import TorchVisionProvider
+        from .providers.huggingface import HuggingFaceProvider
 
         self.register_provider(UltralyticsProvider())
-
-        # TorchVision and HuggingFace will be added in Phase 2
+        self.register_provider(TorchVisionProvider())
+        self.register_provider(HuggingFaceProvider())
 
     def register_provider(self, provider: ModelProvider) -> None:
         """Register a model provider."""
