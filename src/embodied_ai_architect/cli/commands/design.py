@@ -171,6 +171,11 @@ def design_show(ctx, requirements_file: str):
     is_flag=True,
     help="Show what would be done without executing",
 )
+@click.option(
+    "--validate/--no-validate",
+    default=False,
+    help="Run inference benchmark on downloaded models",
+)
 @click.pass_context
 def design_synthesize(
     ctx,
@@ -178,6 +183,7 @@ def design_synthesize(
     output: str,
     download: bool,
     dry_run: bool,
+    validate: bool,
 ):
     """Synthesize a pipeline from requirements.
 
@@ -220,8 +226,14 @@ def design_synthesize(
         console.print("\n[dim]Skipping model download (--no-download)[/dim]")
         model_paths = {}
 
-    # Step 3: Generate pipeline
-    console.print("\n[bold]Step 3: Generating pipeline...[/bold]")
+    # Step 3: Validate models (optional)
+    if validate and model_paths:
+        console.print("\n[bold]Step 3: Validating models...[/bold]")
+        _validate_models(models, model_paths, requirements)
+
+    # Step 4: Generate pipeline
+    step_num = 4 if validate else 3
+    console.print(f"\n[bold]Step {step_num}: Generating pipeline...[/bold]")
     pipeline_config = _generate_pipeline(requirements, models, model_paths)
 
     # Save pipeline
@@ -332,6 +344,66 @@ def _acquire_models(models: list[dict]) -> dict[str, Path]:
             console.print(f"[red]✗[/red] {e}")
 
     return paths
+
+
+def _validate_models(models: list[dict], model_paths: dict, requirements) -> None:
+    """Run inference benchmark on downloaded models."""
+    import time
+
+    import numpy as np
+
+    for model in models:
+        model_id = model["id"]
+        model_path = model_paths.get(model_id)
+
+        if not model_path or not model_path.exists():
+            console.print(f"  [yellow]![/yellow] {model_id}: Model not found")
+            continue
+
+        console.print(f"  Benchmarking {model_id}...", end=" ")
+
+        try:
+            # Load ONNX model
+            import onnxruntime as ort
+
+            session = ort.InferenceSession(str(model_path))
+            input_info = session.get_inputs()[0]
+            input_name = input_info.name
+
+            # Get input shape, default to standard detection shape
+            shape = input_info.shape
+            if any(isinstance(d, str) or d is None for d in shape):
+                shape = [1, 3, 640, 640]  # Default YOLO shape
+
+            # Create dummy input
+            dummy_input = np.random.randn(*shape).astype(np.float32)
+
+            # Warmup
+            for _ in range(5):
+                session.run(None, {input_name: dummy_input})
+
+            # Benchmark
+            latencies = []
+            for _ in range(20):
+                start = time.perf_counter()
+                session.run(None, {input_name: dummy_input})
+                latencies.append((time.perf_counter() - start) * 1000)
+
+            avg_latency = np.mean(latencies)
+            fps = 1000.0 / avg_latency
+
+            # Check against requirements
+            status = "[green]✓[/green]"
+            if requirements.perception.max_latency_ms:
+                if avg_latency > requirements.perception.max_latency_ms:
+                    status = "[yellow]![/yellow]"
+
+            console.print(f"{status} {avg_latency:.1f}ms ({fps:.1f} FPS)")
+
+        except ImportError:
+            console.print("[yellow]![/yellow] onnxruntime not installed")
+        except Exception as e:
+            console.print(f"[red]✗[/red] {e}")
 
 
 def _generate_pipeline(requirements, models: list[dict], model_paths: dict) -> dict:
