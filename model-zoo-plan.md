@@ -348,3 +348,107 @@ For this project, I'd prioritize:
   2. ONNX Model Zoo - Already deployment-ready
   3. MediaPipe - Excellent for real-time embodied AI (pose, hands, objects)
 
+## TIMM Provider
+
+Timm provider added. Here's the summary:
+
+File created: model_zoo/providers/timm.py
+
+Curated Model Catalog (53 models)
+
+  | Family          | Models                        | Notable                             |
+  |-----------------|-------------------------------|-------------------------------------|
+  | EfficientNet    | B0-B3, Lite0, V2-S/M          | Google's efficient CNNs             |
+  | FastViT         | T8, T12, S12, SA12, SA24      | Apple's state-of-the-art mobile ViT |
+  | EdgeNeXt        | XX-Small, X-Small, Small      | Samsung's edge architecture         |
+  | ConvNeXtV2      | Atto, Femto, Pico, Nano, Tiny | Meta's modern pure ConvNet          |
+  | EfficientFormer | L1, L3, V2-S0/S1/S2           | Snap's efficient ViT                |
+  | MobileViTV2     | 0.5, 0.75, 1.0, 1.5           | Apple's improved MobileViT          |
+  | MobileNetV3/V4  | Small, Large, V4 variants     | Google's mobile CNNs                |
+  | GhostNet        | V1, V2 (1.0/1.3/1.6)          | Huawei's efficient features         |
+  | RepVGG          | A0, A1, A2, B0                | Fast inference via reparam          |
+  | TinyNet         | A, B, C, D, E                 | NAS-optimized tiny models           |
+  | LCNet           | 0.5, 0.75, 1.0                | Baidu's CPU-optimized               |
+  | MaxViT          | Tiny, Small                   | Multi-axis attention                |
+
+Model Zoo Summary
+
+  | Provider    | Models | Focus                                |
+  |-------------|--------|--------------------------------------|
+  | ultralytics | 15     | YOLO detection/segmentation/pose     |
+  | torchvision | 34     | Classic CNNs, ViT, Swin              |
+  | huggingface | 27     | Transformers for vision tasks        |
+  | timm        | 53     | Edge-optimized, modern architectures |
+  | Total       | 129    |                                      |
+
+Edge-Optimized Models (< 3M params)
+
+```
+  $ branes zoo search --max-params 3000000
+  Available Models (22 found)
+  ├── edgenext_xx_small     │ 1.3M │ 71.2% │ timm
+  ├── mobilevitv2_050       │ 1.4M │ 70.3% │ timm
+  ├── tinynet_d             │ 1.8M │ 66.7% │ timm
+  ├── apple/mobilevit-xx-sm │ 1.3M │ 69.0% │ huggingface
+  └── ...
+```
+
+Current Cache
+
+```
+  Cached Models (5)
+  ├── apple/mobilevit-xx-small │ huggingface │  5.1 MB
+  ├── edgenext_xx_small.in1k   │ timm        │  5.2 MB
+  ├── mobilenet_v3_small       │ torchvision │  9.7 MB
+  ├── yolov8n                  │ ultralytics │ 12.3 MB
+  └── yolov8s                  │ ultralytics │ 42.8 MB
+  Total: 75.1 MB
+```
+
+## ONNX Model Zoo
+
+ONNX Model Zoo provider added. Here's the summary:
+
+File created: model_zoo/providers/onnx_zoo.py
+
+Model Catalog (30 models)
+
+  | Task             | Models                                                                                            |
+  |------------------|---------------------------------------------------------------------------------------------------|
+  | Classification   | ResNet (18/50/101 v1/v2), MobileNetV2, SqueezeNet, ShuffleNet, VGG, GoogLeNet, EfficientNet Lite4 |
+  | Detection        | YOLOv3, YOLOv4, Tiny-YOLOv3, SSD-MobileNet, Faster R-CNN, RetinaNet                               |
+  | Segmentation     | FCN-ResNet50, FCN-ResNet101                                                                       |
+  | Face Detection   | UltraFace (320/640) - ultra-lightweight                                                           |
+  | Face Recognition | ArcFace                                                                                           |
+  | Pose Estimation  | HRNet                                                                                             |
+  | Depth Estimation | MiDaS v2, MiDaS v2 Small                                                                          |
+  | Style Transfer   | Neural Style (mosaic, candy, pointilism)                                                          |
+  | Super Resolution | ESPCN                                                                                             |
+
+Key Advantage
+
+  No conversion needed - models are already in validated ONNX format, ready for deployment.
+
+Model Zoo Summary
+
+  | Provider    | Models | Focus                            |
+  |-------------|--------|----------------------------------|
+  | ultralytics | 15     | YOLO detection/segmentation/pose |
+  | torchvision | 34     | Classic CNNs, ViT, Swin          |
+  | huggingface | 27     | Transformers for vision          |
+  | timm        | 53     | Edge-optimized architectures     |
+  | onnx-zoo    | 30     | Deployment-ready ONNX            |
+  | Total       | 159    |                                  |
+
+Current Cache
+
+```
+  Cached Models (6)
+  ├── ultraface-320            │ onnx-zoo    │  1.2 MB
+  ├── apple/mobilevit-xx-small │ huggingface │  5.1 MB
+  ├── edgenext_xx_small.in1k   │ timm        │  5.2 MB
+  ├── mobilenet_v3_small       │ torchvision │  9.7 MB
+  ├── yolov8n                  │ ultralytics │ 12.3 MB
+  └── yolov8s                  │ ultralytics │ 42.8 MB
+  Total: 76.3 MB
+```

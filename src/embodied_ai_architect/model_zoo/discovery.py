@@ -83,10 +83,14 @@ class ModelDiscoveryService:
         from .providers.ultralytics import UltralyticsProvider
         from .providers.torchvision import TorchVisionProvider
         from .providers.huggingface import HuggingFaceProvider
+        from .providers.timm import TimmProvider
+        from .providers.onnx_zoo import ONNXModelZooProvider
 
         self.register_provider(UltralyticsProvider())
         self.register_provider(TorchVisionProvider())
         self.register_provider(HuggingFaceProvider())
+        self.register_provider(TimmProvider())
+        self.register_provider(ONNXModelZooProvider())
 
     def register_provider(self, provider: ModelProvider) -> None:
         """Register a model provider."""
