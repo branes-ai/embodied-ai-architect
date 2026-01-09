@@ -65,6 +65,7 @@ def main():
     from embodied_ai_architect.cli.commands import pipeline
     from embodied_ai_architect.cli.commands import model
     from embodied_ai_architect.cli.commands import zoo
+    from embodied_ai_architect.cli.commands import design
 
     # Register command groups
     cli.add_command(workflow.workflow)
@@ -78,6 +79,7 @@ def main():
     cli.add_command(pipeline.pipeline)
     cli.add_command(model.model)
     cli.add_command(zoo.zoo)
+    cli.add_command(design.design)
 
     # Run CLI
     cli(obj={})
