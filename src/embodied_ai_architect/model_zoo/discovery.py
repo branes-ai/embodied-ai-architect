@@ -85,12 +85,14 @@ class ModelDiscoveryService:
         from .providers.huggingface import HuggingFaceProvider
         from .providers.timm import TimmProvider
         from .providers.onnx_zoo import ONNXModelZooProvider
+        from .providers.mediapipe import MediaPipeProvider
 
         self.register_provider(UltralyticsProvider())
         self.register_provider(TorchVisionProvider())
         self.register_provider(HuggingFaceProvider())
         self.register_provider(TimmProvider())
         self.register_provider(ONNXModelZooProvider())
+        self.register_provider(MediaPipeProvider())
 
     def register_provider(self, provider: ModelProvider) -> None:
         """Register a model provider."""
