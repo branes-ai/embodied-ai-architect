@@ -452,3 +452,89 @@ Current Cache
   └── yolov8s                  │ ultralytics │ 42.8 MB
   Total: 76.3 MB
 ```
+## MediaPipe Provider
+
+The MediaPipe provider is fully functional. Let me complete the testing:
+
+```bash
+> branes zoo search --task detection 2>&1 | head -30)
+  ⎿  ╭─────────────────────────────╮
+     │ Branes Embodied AI Platform │
+     │ Version 0.3.0               │
+     … +27 lines (ctrl+o to expand)
+```
+
+MediaPipe provider is complete and fully integrated. Here's the summary:
+
+  MediaPipe Provider Complete
+
+  28 models added covering real-time ML tasks:
+  - Hand detection/tracking (palm_detection, hand_landmark variants)
+  - Face detection/mesh (face_detector, face_landmarker, face_mesh)
+  - Pose estimation (pose_landmarker lite/full/heavy)
+  - Object detection (EfficientDet Lite0/Lite2, SSD MobileNet)
+  - Segmentation (selfie_segmenter, hair_segmenter, deeplab_v3)
+  - Gesture recognition, image classification, embedding
+
+Model Zoo now has 6 providers with 187+ models:
+
+  | Provider    | Models | Focus                                          |
+  |-------------|--------|------------------------------------------------|
+  | Ultralytics | 15     | YOLO v5/v8/v11 detection/segmentation          |
+  | TorchVision | 34     | Classic CNNs (ResNet, EfficientNet, MobileNet) |
+  | HuggingFace | 27     | Transformers (ViT, DETR, SegFormer, DPT)       |
+  | Timm        | 53     | Edge-optimized (FastViT, EdgeNeXt, GhostNet)   |
+  | ONNX Zoo    | 30     | Deployment-ready ONNX models                   |
+  | MediaPipe   | 28     | Real-time ML (hands, face, pose)               |
+
+  Cache status: 7 models cached (76.5 MB) across all providers
+
+Phase 2 of the Model Zoo plan is now complete. The remaining phases are:
+  - Phase 3: Requirements Wizard (branes design new/from-usecase)
+  - Phase 4: Testbench and Synthesis
+
+## Phase 3: Requirements Wizard Complete
+
+  Files created:
+
+  | File                     | Description                                                          |
+  |--------------------------|----------------------------------------------------------------------|
+  | requirements/__init__.py | Public API exports                                                   |
+  | requirements/models.py   | Pydantic models (PipelineRequirements, PerceptionRequirements, etc.) |
+  | requirements/wizard.py   | Interactive CLI wizard                                               |
+  | requirements/loader.py   | YAML load/save utilities                                             |
+  | cli/commands/design.py   | CLI commands for design workflow                                     |
+
+  CLI Commands:
+
+  branes design new                    # Interactive wizard
+  branes design new -o reqs.yaml       # Save to file
+  branes design from-usecase <id>      # From embodied-schemas use case
+  branes design show reqs.yaml         # Display requirements
+  branes design synthesize reqs.yaml   # Generate pipeline
+  branes design synthesize reqs.yaml --dry-run  # Preview model selection
+
+  Workflow demonstrated:
+
+  1. Create requirements YAML:
+```yaml
+  name: detection-pipeline
+  perception:
+    tasks: [object_detection]
+    target_classes: [person, car]
+    min_accuracy: 0.5
+  hardware:
+    execution_target: gpu
+    max_params_millions: 15
+  deployment:
+    runtime: onnxruntime
+    quantization: fp16
+```
+
+  2. Synthesize finds matching models from Model Zoo (6 providers, 187+ models)
+  3. Downloads required models automatically
+  4. Generates pipeline YAML ready for execution
+
+  Multi-task support: Successfully tested with detection + depth estimation, selecting models from different providers (Ultralytics + ONNX Zoo).
+
+## 
