@@ -1,10 +1,10 @@
 # Model Zoo Plan
 
- Phase 1 of the Model Zoo is complete. Here's what was implemented:
+Phase 1 of the Model Zoo is complete. Here's what was implemented:
 
-  Model Zoo Implementation Summary
+Model Zoo Implementation Summary
 
-  New Files Created
+New Files Created
 
   | File                               | Purpose                                                   |
   |------------------------------------|-----------------------------------------------------------|
@@ -16,15 +16,17 @@
   | model_zoo/acquisition.py           | Unified acquire() API with provider auto-detection        |
   | cli/commands/zoo.py                | CLI commands: search, download, list, info, clear         |
 
-  CLI Commands Available
+CLI Commands Available
 
+```bash
   branes zoo search --task detection --max-params 5000000
   branes zoo download yolov8n --format onnx
   branes zoo list --cached
   branes zoo info yolov8n
   branes zoo clear
+```
 
-  Key Features
+Key Features
 
   - 15 YOLO models in catalog (v5, v8, v11 variants for detection, segmentation, pose, classification)
   - Automatic caching at ~/.cache/branes/models/
@@ -32,13 +34,12 @@
   - Provider auto-detection from model names
   - embodied-schemas integration hooks (ready for catalog enrichment)
 
-  Remaining Work (Phases 2-4)
+Remaining Work (Phases 2-4)
 
   - TorchVision and HuggingFace providers
   - Operator integration (update YOLOv8ONNX.setup() to use acquire())
   - Requirements wizard (branes design new)
   - Testbench integration for accuracy validation
-
 
 ## YOLO operator integration complete.
 
