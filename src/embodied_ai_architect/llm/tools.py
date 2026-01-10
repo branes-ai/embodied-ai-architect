@@ -187,6 +187,61 @@ def get_tool_definitions() -> list[dict[str, Any]]:
                 "required": ["file_path"],
             },
         },
+        {
+            "name": "deploy_model",
+            "description": (
+                "Deploy a model to an edge device target (Jetson, Coral, etc.) with optional "
+                "quantization. Supports INT8 quantization with calibration data for optimal "
+                "edge performance. Returns deployment artifacts and validation results. "
+                "Requires TensorRT for Jetson targets."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "model_path": {
+                        "type": "string",
+                        "description": "Path to the model file (.pt, .pth, or .onnx)",
+                    },
+                    "target": {
+                        "type": "string",
+                        "enum": ["jetson", "coral", "openvino"],
+                        "description": "Deployment target (default: jetson)",
+                    },
+                    "precision": {
+                        "type": "string",
+                        "enum": ["fp32", "fp16", "int8"],
+                        "description": "Target precision (default: int8)",
+                    },
+                    "input_shape": {
+                        "type": "array",
+                        "items": {"type": "integer"},
+                        "description": "Model input shape, e.g. [1, 3, 224, 224]",
+                    },
+                    "calibration_data": {
+                        "type": "string",
+                        "description": "Path to calibration dataset directory (required for INT8)",
+                    },
+                    "calibration_samples": {
+                        "type": "integer",
+                        "description": "Number of calibration samples (default: 100)",
+                    },
+                    "calibration_preprocessing": {
+                        "type": "string",
+                        "enum": ["imagenet", "yolo", "coco", "none"],
+                        "description": "Preprocessing for calibration images (default: imagenet)",
+                    },
+                    "test_data": {
+                        "type": "string",
+                        "description": "Path to test dataset for validation",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Output directory for deployment artifacts (default: ./deployments)",
+                    },
+                },
+                "required": ["model_path", "input_shape"],
+            },
+        },
     ]
 
     # Add graphs tools if available (more detailed analysis)
@@ -341,12 +396,61 @@ def create_tool_executors() -> dict[str, Callable]:
         except Exception as e:
             return f"Error reading file: {str(e)}"
 
+    def deploy_model(
+        model_path: str,
+        input_shape: list[int],
+        target: str = "jetson",
+        precision: str = "int8",
+        calibration_data: str | None = None,
+        calibration_samples: int = 100,
+        calibration_preprocessing: str = "imagenet",
+        test_data: str | None = None,
+        output_dir: str = "./deployments",
+    ) -> str:
+        """Execute model deployment."""
+        try:
+            from embodied_ai_architect.agents.deployment import DeploymentAgent
+
+            agent = DeploymentAgent()
+
+            input_data = {
+                "model": model_path,
+                "target": target,
+                "precision": precision,
+                "input_shape": tuple(input_shape),
+                "output_dir": output_dir,
+            }
+
+            if calibration_data:
+                input_data["calibration_data"] = calibration_data
+                input_data["calibration_samples"] = calibration_samples
+                input_data["calibration_preprocessing"] = calibration_preprocessing
+
+            if test_data:
+                input_data["test_data"] = test_data
+
+            result = agent.execute(input_data)
+
+            if result.success:
+                return json.dumps(result.data, indent=2, default=str)
+            else:
+                return f"Deployment failed: {result.error}"
+
+        except ImportError:
+            return (
+                "Deployment dependencies not installed. "
+                "Install with: pip install embodied-ai-architect[jetson]"
+            )
+        except Exception as e:
+            return f"Error: {str(e)}\n{traceback.format_exc()}"
+
     executors = {
         "analyze_model": analyze_model,
         "recommend_hardware": recommend_hardware,
         "run_benchmark": run_benchmark,
         "list_files": list_files,
         "read_file": read_file,
+        "deploy_model": deploy_model,
     }
 
     # Add graphs executors if available

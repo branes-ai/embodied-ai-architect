@@ -6,4 +6,20 @@ from .benchmark import BenchmarkAgent
 from .hardware_profile import HardwareProfileAgent
 from .report_synthesis import ReportSynthesisAgent
 
-__all__ = ["BaseAgent", "ModelAnalyzerAgent", "BenchmarkAgent", "HardwareProfileAgent", "ReportSynthesisAgent"]
+_exports = [
+    "BaseAgent",
+    "ModelAnalyzerAgent",
+    "BenchmarkAgent",
+    "HardwareProfileAgent",
+    "ReportSynthesisAgent",
+]
+
+# Deployment agent (optional: tensorrt)
+try:
+    from .deployment import DeploymentAgent
+
+    _exports.append("DeploymentAgent")
+except ImportError:
+    pass
+
+__all__ = _exports

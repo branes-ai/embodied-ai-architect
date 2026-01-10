@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "embodied-ai-architect"
-version = "0.3.7"
+version = "0.4.1"
 description = "Hardware/Software Codesign Space Exploration and Optimization Environment for Embodied AI systems"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -42,12 +42,20 @@ langgraph = [
     "langgraph>=0.2.0",             # State machine framework
     "langchain-anthropic>=0.3.0",   # Claude integration for LangGraph
 ]
+jetson = [
+    "tensorrt>=8.6.0",              # TensorRT for Jetson deployment
+    "pycuda>=2022.1",               # CUDA Python bindings for calibration
+    "onnxruntime>=1.16.0",          # ONNX Runtime for validation baseline
+    "Pillow>=9.0.0",                # Image loading for calibration
+]
 all = [
     "paramiko>=3.0.0",
     "kubernetes>=28.0.0",
     "anthropic>=0.39.0",
     "langgraph>=0.2.0",
     "langchain-anthropic>=0.3.0",
+    "onnxruntime>=1.16.0",
+    "Pillow>=9.0.0",
 ]
 
 [project.scripts]
