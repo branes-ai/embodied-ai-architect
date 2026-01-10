@@ -1057,3 +1057,461 @@ class TestDeploymentAgentCoral:
 
         assert not result.success
         assert "int8" in result.error.lower()
+
+
+# =============================================================================
+# Power Validation Tests
+# =============================================================================
+
+
+class TestPowerMonitor:
+    """Tests for power monitoring infrastructure."""
+
+    def test_power_sample_creation(self):
+        """Test PowerSample dataclass."""
+        from embodied_ai_architect.agents.deployment.power.monitor import PowerSample
+        import time
+
+        sample = PowerSample(
+            timestamp=time.time(),
+            total_watts=15.5,
+            gpu_watts=10.0,
+            cpu_watts=5.5,
+        )
+
+        assert sample.total_watts == 15.5
+        assert sample.gpu_watts == 10.0
+        assert sample.cpu_watts == 5.5
+
+    def test_power_measurement_aggregation(self):
+        """Test PowerMeasurement aggregation properties."""
+        from embodied_ai_architect.agents.deployment.power.monitor import (
+            PowerSample,
+            PowerMeasurement,
+        )
+        import time
+
+        base_time = time.time()
+        samples = [
+            PowerSample(timestamp=base_time + i, total_watts=10.0 + i)
+            for i in range(5)
+        ]
+
+        measurement = PowerMeasurement(
+            samples=samples,
+            duration_sec=4.0,
+            method="test",
+        )
+
+        assert measurement.mean_watts == 12.0  # (10+11+12+13+14)/5
+        assert measurement.peak_watts == 14.0
+        assert measurement.std_watts > 0
+
+    def test_power_measurement_empty(self):
+        """Test PowerMeasurement with no samples."""
+        from embodied_ai_architect.agents.deployment.power.monitor import PowerMeasurement
+
+        measurement = PowerMeasurement(samples=[], duration_sec=0.0, method="test")
+
+        assert measurement.mean_watts == 0.0
+        assert measurement.peak_watts == 0.0
+        assert measurement.std_watts == 0.0
+
+    def test_get_power_monitor_returns_available(self):
+        """Test that get_power_monitor returns an available monitor."""
+        from embodied_ai_architect.agents.deployment.power import get_power_monitor
+
+        monitor = get_power_monitor()
+        # May be None on systems without power monitoring, but shouldn't error
+        if monitor is not None:
+            assert monitor.is_available()
+
+    def test_psutil_monitor_availability(self):
+        """Test PsutilMonitor availability."""
+        from embodied_ai_architect.agents.deployment.power.monitor import PsutilMonitor
+
+        monitor = PsutilMonitor(cpu_tdp_watts=65.0)
+
+        # Should be available if psutil is installed
+        try:
+            import psutil  # noqa: F401
+            assert monitor.is_available()
+        except ImportError:
+            assert not monitor.is_available()
+
+    def test_psutil_monitor_read_power(self):
+        """Test PsutilMonitor power reading."""
+        pytest.importorskip("psutil")
+        from embodied_ai_architect.agents.deployment.power.monitor import PsutilMonitor
+
+        monitor = PsutilMonitor(cpu_tdp_watts=65.0)
+
+        if monitor.is_available():
+            sample = monitor._read_power()
+            assert sample.total_watts > 0
+            assert sample.cpu_watts is not None
+
+
+class TestPowerPredictor:
+    """Tests for power prediction model."""
+
+    def test_power_profile_enum(self):
+        """Test PowerProfile enum values."""
+        from embodied_ai_architect.agents.deployment.power.predictor import PowerProfile
+
+        assert PowerProfile.JETSON_ORIN_NANO.value == "jetson_orin_nano"
+        assert PowerProfile.CORAL_TPU.value == "coral_tpu"
+        assert PowerProfile.NVIDIA_RTX_4090.value == "nvidia_rtx_4090"
+
+    def test_hardware_power_specs(self):
+        """Test hardware power specifications."""
+        from embodied_ai_architect.agents.deployment.power.predictor import (
+            HARDWARE_POWER_SPECS,
+            PowerProfile,
+        )
+
+        # Check Jetson Orin Nano specs
+        orin_nano = HARDWARE_POWER_SPECS[PowerProfile.JETSON_ORIN_NANO]
+        assert orin_nano.tdp_watts == 15.0
+        assert orin_nano.idle_watts < orin_nano.tdp_watts
+
+        # Check Coral TPU specs
+        coral = HARDWARE_POWER_SPECS[PowerProfile.CORAL_TPU]
+        assert coral.tdp_watts == 2.0
+        assert coral.tops_per_watt_peak > 0
+
+    def test_power_predictor_basic(self):
+        """Test basic power prediction."""
+        from embodied_ai_architect.agents.deployment.power.predictor import (
+            PowerPredictor,
+            PowerProfile,
+        )
+
+        predictor = PowerPredictor()
+
+        prediction = predictor.predict_from_model_info(
+            total_params=1_000_000,
+            total_macs=100_000_000,
+            hardware=PowerProfile.JETSON_ORIN_NANO,
+            precision="fp32",
+        )
+
+        assert prediction.mean_watts > 0
+        assert prediction.min_watts <= prediction.mean_watts
+        assert prediction.max_watts >= prediction.mean_watts
+        assert 0 <= prediction.confidence <= 1
+
+    def test_power_predictor_precision_effects(self):
+        """Test that INT8 predicts lower power than FP32."""
+        from embodied_ai_architect.agents.deployment.power.predictor import (
+            PowerPredictor,
+            PowerProfile,
+        )
+
+        predictor = PowerPredictor()
+
+        fp32_pred = predictor.predict_from_model_info(
+            total_params=1_000_000,
+            total_macs=100_000_000,
+            hardware=PowerProfile.JETSON_ORIN_NANO,
+            precision="fp32",
+        )
+
+        int8_pred = predictor.predict_from_model_info(
+            total_params=1_000_000,
+            total_macs=100_000_000,
+            hardware=PowerProfile.JETSON_ORIN_NANO,
+            precision="int8",
+        )
+
+        # INT8 should predict lower power
+        assert int8_pred.mean_watts < fp32_pred.mean_watts
+
+    def test_power_predictor_unknown_hardware(self):
+        """Test prediction with unknown hardware."""
+        from embodied_ai_architect.agents.deployment.power.predictor import PowerPredictor
+
+        predictor = PowerPredictor()
+
+        prediction = predictor.predict_from_model_info(
+            total_params=1_000_000,
+            total_macs=100_000_000,
+            hardware="unknown_device",
+            precision="fp32",
+        )
+
+        assert prediction.mean_watts == 0.0
+        assert prediction.confidence == 0.0
+        assert len(prediction.notes) > 0
+
+    def test_power_predictor_calibration(self):
+        """Test adding calibration data improves confidence."""
+        from embodied_ai_architect.agents.deployment.power.predictor import (
+            PowerPredictor,
+            PowerProfile,
+        )
+
+        predictor = PowerPredictor()
+
+        # Get baseline confidence
+        pred_before = predictor.predict_from_model_info(
+            total_params=1_000_000,
+            total_macs=100_000_000,
+            hardware=PowerProfile.JETSON_ORIN_NANO,
+            precision="fp32",
+        )
+
+        # Add calibration data
+        predictor.add_calibration(
+            model_name="test_model",
+            hardware=PowerProfile.JETSON_ORIN_NANO,
+            measured_watts=8.5,
+            precision="fp32",
+        )
+
+        pred_after = predictor.predict_from_model_info(
+            total_params=1_000_000,
+            total_macs=100_000_000,
+            hardware=PowerProfile.JETSON_ORIN_NANO,
+            precision="fp32",
+        )
+
+        # Confidence should increase with calibration data
+        assert pred_after.confidence >= pred_before.confidence
+
+    def test_list_hardware_profiles(self):
+        """Test listing available hardware profiles."""
+        from embodied_ai_architect.agents.deployment.power.predictor import PowerPredictor
+
+        predictor = PowerPredictor()
+        profiles = predictor.list_hardware_profiles()
+
+        assert len(profiles) > 0
+        assert all("profile" in p for p in profiles)
+        assert all("tdp_watts" in p for p in profiles)
+
+    def test_estimate_model_power_convenience(self):
+        """Test convenience function for power estimation."""
+        from embodied_ai_architect.agents.deployment.power.predictor import (
+            estimate_model_power,
+        )
+
+        prediction = estimate_model_power(
+            total_params=10_000_000,
+            total_macs=1_000_000_000,
+            hardware="jetson_orin_nano",
+            precision="int8",
+        )
+
+        assert prediction.mean_watts > 0
+        assert len(prediction.breakdown) > 0
+
+
+class TestPowerMetrics:
+    """Tests for PowerMetrics model."""
+
+    def test_power_metrics_creation(self):
+        """Test PowerMetrics model creation."""
+        from embodied_ai_architect.agents.deployment.models import PowerMetrics
+
+        metrics = PowerMetrics(
+            measured_watts=12.5,
+            predicted_watts=10.0,
+            deviation_percent=25.0,
+            within_budget=True,
+            energy_per_inference_mj=5.0,
+            inferences_per_joule=200.0,
+            measurement_method="tegrastats",
+        )
+
+        assert metrics.measured_watts == 12.5
+        assert metrics.predicted_watts == 10.0
+        assert metrics.deviation_percent == 25.0
+        assert metrics.within_budget is True
+        assert metrics.measurement_method == "tegrastats"
+
+    def test_power_metrics_optional_fields(self):
+        """Test PowerMetrics with only required fields."""
+        from embodied_ai_architect.agents.deployment.models import PowerMetrics
+
+        metrics = PowerMetrics(measured_watts=15.0)
+
+        assert metrics.measured_watts == 15.0
+        assert metrics.predicted_watts is None
+        assert metrics.within_budget is None
+
+
+class TestPowerConfig:
+    """Tests for PowerConfig model."""
+
+    def test_power_config_defaults(self):
+        """Test PowerConfig default values."""
+        from embodied_ai_architect.agents.deployment.models import PowerConfig
+
+        config = PowerConfig()
+
+        assert config.enabled is True
+        assert config.measurement_duration_sec == 5.0
+        assert config.warmup_iterations == 10
+        assert config.measurement_iterations == 50
+        assert config.power_budget_watts is None
+        assert config.tolerance_percent == 20.0
+
+    def test_power_config_with_budget(self):
+        """Test PowerConfig with power budget."""
+        from embodied_ai_architect.agents.deployment.models import PowerConfig
+
+        config = PowerConfig(
+            power_budget_watts=10.0,
+            tolerance_percent=15.0,
+        )
+
+        assert config.power_budget_watts == 10.0
+        assert config.tolerance_percent == 15.0
+
+
+class TestDeploymentTargetPowerValidation:
+    """Tests for power validation in deployment targets."""
+
+    def test_measure_power_disabled(self):
+        """Test that measure_power returns None when disabled."""
+        from embodied_ai_architect.agents.deployment.models import PowerConfig
+        from embodied_ai_architect.agents.deployment.targets.openvino import OpenVINOTarget
+
+        target = OpenVINOTarget()
+        config = PowerConfig(enabled=False)
+
+        result = target.measure_power(
+            workload=lambda: None,
+            config=config,
+        )
+
+        assert result is None
+
+    def test_validate_power_result_no_metrics(self):
+        """Test validate_power_result with no metrics."""
+        from embodied_ai_architect.agents.deployment.models import PowerConfig
+        from embodied_ai_architect.agents.deployment.targets.openvino import OpenVINOTarget
+
+        target = OpenVINOTarget()
+        config = PowerConfig()
+
+        result = target.validate_power_result(None, config)
+        assert result is True  # No metrics means not required
+
+    def test_validate_power_result_within_budget(self):
+        """Test validate_power_result with metrics within budget."""
+        from embodied_ai_architect.agents.deployment.models import PowerConfig, PowerMetrics
+        from embodied_ai_architect.agents.deployment.targets.openvino import OpenVINOTarget
+
+        target = OpenVINOTarget()
+        config = PowerConfig(power_budget_watts=20.0)
+
+        metrics = PowerMetrics(measured_watts=15.0)
+
+        result = target.validate_power_result(metrics, config)
+        assert result is True
+
+    def test_validate_power_result_exceeds_budget(self):
+        """Test validate_power_result with metrics exceeding budget."""
+        from embodied_ai_architect.agents.deployment.models import PowerConfig, PowerMetrics
+        from embodied_ai_architect.agents.deployment.targets.openvino import OpenVINOTarget
+
+        target = OpenVINOTarget()
+        config = PowerConfig(power_budget_watts=10.0)
+
+        metrics = PowerMetrics(measured_watts=15.0)
+
+        result = target.validate_power_result(metrics, config)
+        assert result is False
+
+    def test_validate_power_result_deviation_ok(self):
+        """Test validate_power_result with acceptable deviation."""
+        from embodied_ai_architect.agents.deployment.models import PowerConfig, PowerMetrics
+        from embodied_ai_architect.agents.deployment.targets.openvino import OpenVINOTarget
+
+        target = OpenVINOTarget()
+        config = PowerConfig(tolerance_percent=20.0)
+
+        metrics = PowerMetrics(
+            measured_watts=12.0,
+            predicted_watts=10.0,
+            deviation_percent=20.0,
+        )
+
+        result = target.validate_power_result(metrics, config)
+        assert result is True
+
+    def test_validate_power_result_deviation_exceeded(self):
+        """Test validate_power_result with excessive deviation."""
+        from embodied_ai_architect.agents.deployment.models import PowerConfig, PowerMetrics
+        from embodied_ai_architect.agents.deployment.targets.openvino import OpenVINOTarget
+
+        target = OpenVINOTarget()
+        config = PowerConfig(tolerance_percent=15.0)
+
+        metrics = PowerMetrics(
+            measured_watts=12.0,
+            predicted_watts=10.0,
+            deviation_percent=20.0,
+        )
+
+        result = target.validate_power_result(metrics, config)
+        assert result is False
+
+
+class TestValidationResultPowerIntegration:
+    """Tests for ValidationResult with power metrics."""
+
+    def test_validation_result_with_power(self):
+        """Test ValidationResult includes power metrics."""
+        from embodied_ai_architect.agents.deployment.models import (
+            PowerMetrics,
+            ValidationResult,
+        )
+
+        power = PowerMetrics(
+            measured_watts=12.5,
+            predicted_watts=10.0,
+            deviation_percent=25.0,
+            within_budget=True,
+        )
+
+        result = ValidationResult(
+            passed=True,
+            baseline_latency_ms=10.0,
+            deployed_latency_ms=5.0,
+            speedup=2.0,
+            power=power,
+            power_validation_passed=True,
+        )
+
+        assert result.power is not None
+        assert result.power.measured_watts == 12.5
+        assert result.power_validation_passed is True
+
+    def test_validation_result_power_failure(self):
+        """Test ValidationResult with power validation failure."""
+        from embodied_ai_architect.agents.deployment.models import (
+            PowerMetrics,
+            ValidationResult,
+        )
+
+        power = PowerMetrics(
+            measured_watts=25.0,
+            within_budget=False,
+        )
+
+        result = ValidationResult(
+            passed=False,  # Overall fails due to power
+            baseline_latency_ms=10.0,
+            deployed_latency_ms=5.0,
+            speedup=2.0,
+            power=power,
+            power_validation_passed=False,
+            errors=["Power 25.0W exceeds budget 20.0W"],
+        )
+
+        assert not result.passed
+        assert not result.power_validation_passed
+        assert len(result.errors) > 0
