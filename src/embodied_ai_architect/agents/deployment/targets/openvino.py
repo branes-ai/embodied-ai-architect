@@ -336,16 +336,73 @@ class OpenVINOTarget(DeploymentTarget):
         deployed_latency = float(np.mean(latencies_deployed) * 1000)
         speedup = baseline_latency / deployed_latency if deployed_latency > 0 else 0.0
 
-        # Determine pass/fail
-        passed = max_diff < (config.tolerance_percent / 100.0)
+        # Determine pass/fail for accuracy
+        accuracy_passed = max_diff < (config.tolerance_percent / 100.0)
+
+        # Power validation if configured
+        power_metrics = None
+        power_passed = True
+        if config.power_validation is not None:
+            # Create workload function for power measurement
+            test_input = np.random.randn(*input_shape).astype(np.float32)
+
+            def inference_workload():
+                input_tensor = ov.Tensor(test_input)
+                infer_request.set_input_tensor(input_tensor)
+                infer_request.infer()
+
+            # Get power prediction if available
+            predicted_watts = None
+            try:
+                from ..power.predictor import PowerPredictor, PowerProfile
+
+                predictor = PowerPredictor()
+                # Estimate model characteristics from artifact
+                total_params = deployed_artifact.metadata.get("total_params", 1_000_000)
+                total_macs = deployed_artifact.metadata.get("total_macs", 100_000_000)
+                precision = deployed_artifact.precision.value
+
+                prediction = predictor.predict_from_model_info(
+                    total_params=total_params,
+                    total_macs=total_macs,
+                    hardware=PowerProfile.INTEL_CORE_I7,  # Default for OpenVINO CPU
+                    precision=precision,
+                )
+                predicted_watts = prediction.mean_watts
+            except Exception:
+                pass  # Prediction not available
+
+            power_metrics = self.measure_power(
+                workload=inference_workload,
+                config=config.power_validation,
+                predicted_watts=predicted_watts,
+            )
+
+            if power_metrics is not None:
+                power_passed = self.validate_power_result(
+                    power_metrics, config.power_validation
+                )
+                if not power_passed:
+                    if config.power_validation.power_budget_watts:
+                        errors.append(
+                            f"Power {power_metrics.measured_watts:.1f}W exceeds budget "
+                            f"{config.power_validation.power_budget_watts:.1f}W"
+                        )
+                    if power_metrics.deviation_percent and abs(power_metrics.deviation_percent) > config.power_validation.tolerance_percent:
+                        errors.append(
+                            f"Power deviation {power_metrics.deviation_percent:.1f}% exceeds "
+                            f"tolerance {config.power_validation.tolerance_percent:.1f}%"
+                        )
 
         return ValidationResult(
-            passed=passed,
+            passed=accuracy_passed and power_passed,
             baseline_latency_ms=baseline_latency,
             deployed_latency_ms=deployed_latency,
             speedup=speedup,
             max_output_diff=max_diff,
             samples_compared=samples_compared,
+            power=power_metrics,
+            power_validation_passed=power_passed if power_metrics else None,
             errors=errors,
         )
 

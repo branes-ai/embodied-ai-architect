@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import torch.nn as nn
 
@@ -10,9 +10,12 @@ from ..models import (
     CalibrationConfig,
     DeploymentArtifact,
     DeploymentPrecision,
+    PowerConfig,
+    PowerMetrics,
     ValidationConfig,
     ValidationResult,
 )
+from ..power import get_power_monitor
 
 
 class DeploymentTarget(ABC):
@@ -95,6 +98,99 @@ class DeploymentTarget(ABC):
         """Check if target supports a precision level."""
         caps = self.get_capabilities()
         return precision.value in caps.get("supported_precisions", [])
+
+    def measure_power(
+        self,
+        workload: Callable[[], None],
+        config: PowerConfig,
+        predicted_watts: float | None = None,
+    ) -> PowerMetrics | None:
+        """Measure power during workload execution.
+
+        Args:
+            workload: Function to call repeatedly during measurement
+            config: Power measurement configuration
+            predicted_watts: Optional predicted power for comparison
+
+        Returns:
+            PowerMetrics or None if power monitoring unavailable
+        """
+        if not config.enabled:
+            return None
+
+        monitor = get_power_monitor()
+        if monitor is None:
+            return None
+
+        measurement = monitor.measure_during(
+            workload=workload,
+            warmup_iterations=config.warmup_iterations,
+            measurement_iterations=config.measurement_iterations,
+        )
+
+        mean_watts = measurement.mean_watts
+        if mean_watts == 0.0:
+            return None
+
+        # Calculate metrics
+        deviation = None
+        if predicted_watts is not None and predicted_watts > 0:
+            deviation = ((mean_watts - predicted_watts) / predicted_watts) * 100.0
+
+        within_budget = None
+        if config.power_budget_watts is not None:
+            within_budget = mean_watts <= config.power_budget_watts
+
+        # Energy per inference
+        energy_per_inference = None
+        inferences_per_joule = None
+        if measurement.duration_sec > 0 and config.measurement_iterations > 0:
+            total_energy_joules = mean_watts * measurement.duration_sec
+            energy_per_inference = (total_energy_joules / config.measurement_iterations) * 1000  # mJ
+            if total_energy_joules > 0:
+                inferences_per_joule = config.measurement_iterations / total_energy_joules
+
+        return PowerMetrics(
+            measured_watts=round(mean_watts, 2),
+            predicted_watts=round(predicted_watts, 2) if predicted_watts else None,
+            deviation_percent=round(deviation, 1) if deviation is not None else None,
+            within_budget=within_budget,
+            energy_per_inference_mj=round(energy_per_inference, 3) if energy_per_inference else None,
+            inferences_per_joule=round(inferences_per_joule, 2) if inferences_per_joule else None,
+            measurement_method=monitor.name,
+            gpu_power_watts=measurement.mean_gpu_watts,
+            cpu_power_watts=measurement.mean_cpu_watts,
+            total_power_watts=mean_watts,
+        )
+
+    def validate_power_result(
+        self,
+        power_metrics: PowerMetrics | None,
+        config: PowerConfig,
+    ) -> bool:
+        """Check if power validation passed.
+
+        Args:
+            power_metrics: Measured power metrics
+            config: Power validation configuration
+
+        Returns:
+            True if power validation passed or was not required
+        """
+        if power_metrics is None:
+            return True  # No measurement = not required
+
+        # Check budget constraint
+        if config.power_budget_watts is not None:
+            if power_metrics.measured_watts > config.power_budget_watts:
+                return False
+
+        # Check prediction tolerance
+        if power_metrics.predicted_watts is not None:
+            if abs(power_metrics.deviation_percent or 0) > config.tolerance_percent:
+                return False
+
+        return True
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(name='{self.name}')"

@@ -36,6 +36,17 @@ class CalibrationConfig(BaseModel):
     preprocessing: str = "imagenet"  # "imagenet", "coco", "yolo", "none"
 
 
+class PowerConfig(BaseModel):
+    """Configuration for power measurement and validation."""
+
+    enabled: bool = True
+    measurement_duration_sec: float = 5.0  # Duration to measure power
+    warmup_iterations: int = 10  # Warmup before measurement
+    measurement_iterations: int = 50  # Iterations during measurement
+    power_budget_watts: float | None = None  # Target power budget
+    tolerance_percent: float = 20.0  # Allowed deviation from prediction
+
+
 class ValidationConfig(BaseModel):
     """Configuration for deployment validation."""
 
@@ -44,6 +55,7 @@ class ValidationConfig(BaseModel):
     tolerance_percent: float = 1.0  # Max accuracy drop allowed
     compare_outputs: bool = True
     latency_check: bool = True
+    power_validation: PowerConfig | None = None  # Power measurement config
 
 
 class DeploymentArtifact(BaseModel):
@@ -58,6 +70,21 @@ class DeploymentArtifact(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+class PowerMetrics(BaseModel):
+    """Power measurement results."""
+
+    measured_watts: float  # Actual measured power
+    predicted_watts: float | None = None  # Model-predicted power
+    deviation_percent: float | None = None  # (measured - predicted) / predicted * 100
+    within_budget: bool | None = None  # True if under power_budget_watts
+    energy_per_inference_mj: float | None = None  # millijoules per inference
+    inferences_per_joule: float | None = None  # Efficiency metric
+    measurement_method: str = "unknown"  # e.g., "tegrastats", "rapl", "nvidia-smi"
+    gpu_power_watts: float | None = None  # GPU-specific power if available
+    cpu_power_watts: float | None = None  # CPU-specific power if available
+    total_power_watts: float | None = None  # System total if available
+
+
 class ValidationResult(BaseModel):
     """Result of deployment validation."""
 
@@ -70,6 +97,9 @@ class ValidationResult(BaseModel):
     speedup: float | None = None
     max_output_diff: float | None = None
     samples_compared: int = 0
+    # Power metrics
+    power: PowerMetrics | None = None
+    power_validation_passed: bool | None = None
     errors: list[str] = Field(default_factory=list)
 
 
