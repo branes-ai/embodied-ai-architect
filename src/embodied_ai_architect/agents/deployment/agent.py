@@ -56,6 +56,15 @@ class DeploymentAgent(BaseAgent):
         except ImportError:
             pass
 
+        try:
+            from .targets.openvino import OpenVINOTarget
+
+            target = OpenVINOTarget()
+            if target.is_available():
+                self._register_target(target)
+        except ImportError:
+            pass
+
     def _register_target(self, target: DeploymentTarget) -> None:
         """Register a deployment target."""
         if target.is_available():
@@ -222,7 +231,7 @@ class DeploymentAgent(BaseAgent):
 
             # Load PyTorch model
             logs.append(f"  Loading PyTorch model: {model_path}")
-            model = torch.load(model_path, map_location="cpu")
+            model = torch.load(model_path, map_location="cpu", weights_only=False)
 
         # Handle state_dict vs full model
         if isinstance(model, dict):

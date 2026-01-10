@@ -273,9 +273,9 @@ def list_targets(ctx):
 
     # Add unavailable targets for reference
     all_possible = [
-        {"name": "jetson", "requires": "tensorrt, pycuda"},
+        {"name": "jetson", "requires": "tensorrt, pycuda (pip install embodied-ai-architect[jetson])"},
+        {"name": "openvino", "requires": "openvino, nncf (pip install embodied-ai-architect[openvino])"},
         {"name": "coral", "requires": "edgetpu_runtime"},
-        {"name": "openvino", "requires": "openvino"},
     ]
 
     for possible in all_possible:

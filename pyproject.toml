@@ -48,6 +48,12 @@ jetson = [
     "onnxruntime>=1.16.0",          # ONNX Runtime for validation baseline
     "Pillow>=9.0.0",                # Image loading for calibration
 ]
+openvino = [
+    "openvino>=2024.0.0",           # OpenVINO for Intel/AMD deployment
+    "nncf>=2.7.0",                  # Neural Network Compression Framework for INT8
+    "onnxruntime>=1.16.0",          # ONNX Runtime for validation baseline
+    "Pillow>=9.0.0",                # Image loading for calibration
+]
 all = [
     "paramiko>=3.0.0",
     "kubernetes>=28.0.0",

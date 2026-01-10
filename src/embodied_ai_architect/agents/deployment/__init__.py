@@ -30,4 +30,11 @@ try:
 except ImportError:
     pass
 
+try:
+    from .targets.openvino import OpenVINOTarget
+
+    _exports.append("OpenVINOTarget")
+except ImportError:
+    pass
+
 __all__ = _exports
