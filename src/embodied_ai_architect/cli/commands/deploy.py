@@ -275,7 +275,7 @@ def list_targets(ctx):
     all_possible = [
         {"name": "jetson", "requires": "tensorrt, pycuda (pip install embodied-ai-architect[jetson])"},
         {"name": "openvino", "requires": "openvino, nncf (pip install embodied-ai-architect[openvino])"},
-        {"name": "coral", "requires": "edgetpu_runtime"},
+        {"name": "coral", "requires": "tensorflow, onnx2tf (pip install embodied-ai-architect[coral])"},
     ]
 
     for possible in all_possible:

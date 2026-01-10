@@ -23,6 +23,13 @@ try:
 except ImportError:
     HAS_NNCF = False
 
+# Check for TensorFlow availability (for Coral)
+try:
+    import tensorflow as tf  # noqa: F401
+    HAS_TENSORFLOW = True
+except ImportError:
+    HAS_TENSORFLOW = False
+
 
 class SimpleModel(nn.Module):
     """Simple test model for deployment tests."""
@@ -819,3 +826,234 @@ class TestCalibrationImageLoading:
         # Should be in range [0, 1]
         assert img_array.min() >= 0
         assert img_array.max() <= 1
+
+
+# =============================================================================
+# Coral Edge TPU Tests
+# =============================================================================
+
+class TestCoralTargetBasic:
+    """Basic tests for Coral Edge TPU target (no TensorFlow required)."""
+
+    def test_coral_target_import(self):
+        """Test that CoralTarget can be imported."""
+        from embodied_ai_architect.agents.deployment.targets.coral import CoralTarget
+
+        target = CoralTarget()
+        assert target.name == "coral"
+
+    def test_coral_capabilities_without_tf(self):
+        """Test capabilities structure even without TensorFlow."""
+        from embodied_ai_architect.agents.deployment.targets.coral import CoralTarget
+
+        target = CoralTarget()
+        caps = target.get_capabilities()
+
+        assert caps["name"] == "coral"
+        assert caps["supported_precisions"] == ["int8"]  # Edge TPU is INT8 only
+        assert caps["supports_dynamic_batch"] is False
+        assert caps["output_format"] == ".tflite"
+
+    def test_coral_int8_only_requirement(self):
+        """Test that Coral enforces INT8-only precision."""
+        from embodied_ai_architect.agents.deployment.targets.coral import CoralTarget
+        from embodied_ai_architect.agents.deployment.models import DeploymentPrecision
+
+        target = CoralTarget()
+
+        # Should only support INT8
+        caps = target.get_capabilities()
+        assert "int8" in caps["supported_precisions"]
+        assert "fp32" not in caps["supported_precisions"]
+        assert "fp16" not in caps["supported_precisions"]
+
+    def test_coral_requires_calibration(self, simple_onnx_model, tmp_path):
+        """Test that Coral deployment requires calibration data."""
+        from embodied_ai_architect.agents.deployment.targets.coral import CoralTarget
+        from embodied_ai_architect.agents.deployment.models import DeploymentPrecision
+
+        target = CoralTarget()
+
+        if not target.is_available():
+            pytest.skip("TensorFlow not installed")
+
+        with pytest.raises(ValueError, match="calibration"):
+            target.deploy(
+                model=simple_onnx_model,
+                precision=DeploymentPrecision.INT8,
+                output_path=tmp_path / "model.tflite",
+                input_shape=(1, 3, 32, 32),
+                calibration=None,
+            )
+
+    def test_coral_rejects_fp32(self, simple_onnx_model, calibration_images, tmp_path):
+        """Test that Coral rejects non-INT8 precision."""
+        from embodied_ai_architect.agents.deployment.targets.coral import CoralTarget
+        from embodied_ai_architect.agents.deployment.models import (
+            CalibrationConfig,
+            DeploymentPrecision,
+        )
+
+        target = CoralTarget()
+
+        if not target.is_available():
+            pytest.skip("TensorFlow not installed")
+
+        calib_config = CalibrationConfig(
+            data_path=calibration_images,
+            num_samples=5,
+            batch_size=1,
+            input_shape=(1, 3, 32, 32),
+            preprocessing="imagenet",
+        )
+
+        with pytest.raises(ValueError, match="INT8"):
+            target.deploy(
+                model=simple_onnx_model,
+                precision=DeploymentPrecision.FP32,
+                output_path=tmp_path / "model.tflite",
+                input_shape=(1, 3, 32, 32),
+                calibration=calib_config,
+            )
+
+
+@pytest.mark.skipif(not HAS_TENSORFLOW, reason="TensorFlow not installed")
+@pytest.mark.skipif(not HAS_PIL, reason="PIL not installed")
+class TestCoralTargetWithTensorFlow:
+    """Tests for Coral Edge TPU target with TensorFlow available."""
+
+    def test_coral_is_available(self):
+        """Test Coral availability detection with TensorFlow."""
+        from embodied_ai_architect.agents.deployment.targets.coral import CoralTarget
+
+        target = CoralTarget()
+        assert target.is_available() is True
+
+    def test_coral_capabilities_with_tf(self):
+        """Test capabilities with TensorFlow available."""
+        from embodied_ai_architect.agents.deployment.targets.coral import CoralTarget
+
+        target = CoralTarget()
+        caps = target.get_capabilities()
+
+        assert "tensorflow_version" in caps
+        assert caps["supported_precisions"] == ["int8"]
+
+    def test_coral_deploy_int8(self, simple_onnx_model, calibration_images, tmp_path):
+        """Test INT8 deployment to TFLite format."""
+        pytest.importorskip("onnx2tf", reason="onnx2tf required for ONNX to TF conversion")
+
+        from embodied_ai_architect.agents.deployment.targets.coral import CoralTarget
+        from embodied_ai_architect.agents.deployment.models import (
+            CalibrationConfig,
+            DeploymentPrecision,
+        )
+
+        target = CoralTarget()
+
+        calib_config = CalibrationConfig(
+            data_path=calibration_images,
+            num_samples=10,
+            batch_size=1,
+            input_shape=(1, 3, 32, 32),
+            preprocessing="imagenet",
+        )
+
+        artifact = target.deploy(
+            model=simple_onnx_model,
+            precision=DeploymentPrecision.INT8,
+            output_path=tmp_path / "model.tflite",
+            input_shape=(1, 3, 32, 32),
+            calibration=calib_config,
+        )
+
+        # Verify artifact
+        assert artifact.engine_path.exists()
+        assert artifact.precision == DeploymentPrecision.INT8
+        assert artifact.target == "coral"
+        assert artifact.size_bytes > 0
+        assert str(artifact.engine_path).endswith(".tflite")
+
+
+class TestCoralEdgeCases:
+    """Edge case tests for Coral target."""
+
+    def test_coral_nhwc_input_shape(self, calibration_images):
+        """Test that Coral handles NHWC input shape."""
+        from embodied_ai_architect.agents.deployment.models import CalibrationConfig
+
+        # NHWC format (batch, height, width, channels)
+        nhwc_shape = (1, 32, 32, 3)
+
+        config = CalibrationConfig(
+            data_path=calibration_images,
+            num_samples=5,
+            batch_size=1,
+            input_shape=nhwc_shape,
+            preprocessing="imagenet",
+        )
+
+        assert config.input_shape == nhwc_shape
+
+    def test_coral_nchw_input_shape(self, calibration_images):
+        """Test that Coral handles NCHW input shape."""
+        from embodied_ai_architect.agents.deployment.models import CalibrationConfig
+
+        # NCHW format (batch, channels, height, width)
+        nchw_shape = (1, 3, 32, 32)
+
+        config = CalibrationConfig(
+            data_path=calibration_images,
+            num_samples=5,
+            batch_size=1,
+            input_shape=nchw_shape,
+            preprocessing="imagenet",
+        )
+
+        assert config.input_shape == nchw_shape
+
+
+class TestDeploymentAgentCoral:
+    """Integration tests for Coral through DeploymentAgent."""
+
+    def test_agent_coral_missing_calibration(self, simple_onnx_model, tmp_path):
+        """Test agent fails gracefully for Coral without calibration."""
+        from embodied_ai_architect.agents.deployment import DeploymentAgent
+
+        agent = DeploymentAgent()
+
+        if "coral" not in agent.list_targets():
+            pytest.skip("Coral target not available")
+
+        result = agent.execute({
+            "model": str(simple_onnx_model),
+            "target": "coral",
+            "precision": "int8",
+            "input_shape": [1, 3, 32, 32],
+            "output_dir": str(tmp_path),
+            # No calibration_data
+        })
+
+        assert not result.success
+        assert "calibration" in result.error.lower()
+
+    def test_agent_coral_wrong_precision(self, simple_onnx_model, calibration_images, tmp_path):
+        """Test agent fails for Coral with non-INT8 precision."""
+        from embodied_ai_architect.agents.deployment import DeploymentAgent
+
+        agent = DeploymentAgent()
+
+        if "coral" not in agent.list_targets():
+            pytest.skip("Coral target not available")
+
+        result = agent.execute({
+            "model": str(simple_onnx_model),
+            "target": "coral",
+            "precision": "fp16",  # Wrong precision
+            "input_shape": [1, 3, 32, 32],
+            "calibration_data": str(calibration_images),
+            "output_dir": str(tmp_path),
+        })
+
+        assert not result.success
+        assert "int8" in result.error.lower()

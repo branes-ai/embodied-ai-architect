@@ -20,4 +20,12 @@ try:
 except ImportError:
     pass
 
+# Coral Edge TPU target (optional: tensorflow, onnx2tf)
+try:
+    from .coral import CoralTarget
+
+    _available_targets.append("CoralTarget")
+except ImportError:
+    pass
+
 __all__ = _available_targets
