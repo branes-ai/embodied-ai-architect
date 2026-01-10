@@ -1515,3 +1515,721 @@ class TestValidationResultPowerIntegration:
         assert not result.passed
         assert not result.power_validation_passed
         assert len(result.errors) > 0
+
+
+# =============================================================================
+# Stillwater KPU Target Tests
+# =============================================================================
+
+
+class TestKPUSpec:
+    """Tests for KPU specification models."""
+
+    def test_kpu_precision_enum(self):
+        """Test KPUPrecision enum values."""
+        from embodied_ai_architect.agents.deployment.targets.kpu.spec import KPUPrecision
+
+        assert KPUPrecision.INT8.value == "int8"
+        assert KPUPrecision.FP16.value == "fp16"
+        assert KPUPrecision.POSIT8.value == "posit8"
+
+    def test_kpu_config_defaults(self):
+        """Test KPUConfig default values."""
+        from embodied_ai_architect.agents.deployment.targets.kpu.spec import KPUConfig
+
+        config = KPUConfig()
+
+        assert config.name == "stillwater-kpu-v1"
+        assert config.memory.sram_l1_bytes == 256 * 1024
+        assert config.compute.clock_mhz == 500.0
+        assert len(config.native_ops) > 0
+
+    def test_kpu_config_validation(self):
+        """Test KPUConfig validation."""
+        from embodied_ai_architect.agents.deployment.targets.kpu.spec import KPUConfig, MemoryConfig
+
+        config = KPUConfig(memory=MemoryConfig(sram_l1_bytes=-1))
+        errors = config.validate()
+
+        assert len(errors) > 0
+        assert "L1 SRAM" in errors[0]
+
+    def test_kpu_tensor_size(self):
+        """Test KPUTensor size calculation."""
+        from embodied_ai_architect.agents.deployment.targets.kpu.spec import (
+            KPUTensor,
+            KPUPrecision,
+            MemoryLayout,
+        )
+
+        tensor = KPUTensor(
+            id="t1",
+            name="input",
+            shape=(1, 3, 224, 224),
+            dtype=KPUPrecision.INT8,
+            layout=MemoryLayout(),
+        )
+
+        # 1 * 3 * 224 * 224 * 1 byte = 150528 bytes
+        assert tensor.size_bytes == 1 * 3 * 224 * 224
+
+    def test_kpu_program_validation(self):
+        """Test KPUProgram validation."""
+        from embodied_ai_architect.agents.deployment.targets.kpu.spec import (
+            KPUProgram,
+            KPUOp,
+        )
+
+        program = KPUProgram(name="test")
+        program.ops.append(KPUOp(id="op1", op_type="Conv", input_ids=["missing"]))
+
+        errors = program.validate()
+        assert len(errors) > 0
+
+
+class TestKPUTargetBasic:
+    """Basic tests for Stillwater KPU target."""
+
+    def test_kpu_target_import(self):
+        """Test that KPU target can be imported."""
+        from embodied_ai_architect.agents.deployment.targets.kpu import StillwaterKPUTarget
+
+        target = StillwaterKPUTarget()
+        assert target.name == "stillwater-kpu"
+
+    def test_kpu_is_available(self):
+        """Test KPU availability check."""
+        from embodied_ai_architect.agents.deployment.targets.kpu import StillwaterKPUTarget
+
+        target = StillwaterKPUTarget()
+
+        # Available if onnx is installed
+        try:
+            import onnx  # noqa: F401
+            assert target.is_available() is True
+        except ImportError:
+            assert target.is_available() is False
+
+    def test_kpu_capabilities(self):
+        """Test KPU capabilities reporting."""
+        from embodied_ai_architect.agents.deployment.targets.kpu import StillwaterKPUTarget
+
+        target = StillwaterKPUTarget()
+        caps = target.get_capabilities()
+
+        assert caps["name"] == "stillwater-kpu"
+        assert "int8" in caps["supported_precisions"]
+        assert "fp16" in caps["supported_precisions"]
+        assert caps["output_format"] == ".kpu"
+        assert "Conv" in caps["native_ops"]
+
+    def test_kpu_custom_config(self):
+        """Test KPU with custom configuration."""
+        from embodied_ai_architect.agents.deployment.targets.kpu import (
+            StillwaterKPUTarget,
+            KPUConfig,
+        )
+        from embodied_ai_architect.agents.deployment.targets.kpu.spec import (
+            ComputeConfig,
+            KPUPrecision,
+        )
+
+        config = KPUConfig(
+            name="kpu-custom",
+            version="2.0",
+            compute=ComputeConfig(clock_mhz=1000.0, tops_int8=8.0),
+            supported_precisions=[KPUPrecision.INT8],
+        )
+
+        target = StillwaterKPUTarget(config=config)
+        caps = target.get_capabilities()
+
+        assert caps["kpu_version"] == "2.0"
+        assert caps["peak_tops_int8"] == 8.0
+
+
+class TestKPUTargetDeploy:
+    """Deployment tests for KPU target."""
+
+    def test_kpu_deploy_fp16(self, simple_onnx_model, tmp_path):
+        """Test FP16 deployment to KPU."""
+        pytest.importorskip("onnx")
+        from embodied_ai_architect.agents.deployment.targets.kpu import StillwaterKPUTarget
+        from embodied_ai_architect.agents.deployment.models import DeploymentPrecision
+
+        target = StillwaterKPUTarget()
+
+        if not target.is_available():
+            pytest.skip("KPU target not available")
+
+        artifact = target.deploy(
+            model=simple_onnx_model,
+            precision=DeploymentPrecision.FP16,
+            output_path=tmp_path / "model.kpu",
+            input_shape=(1, 3, 32, 32),
+        )
+
+        assert artifact.engine_path.exists()
+        assert artifact.precision == DeploymentPrecision.FP16
+        assert artifact.target == "stillwater-kpu"
+        assert artifact.size_bytes > 0
+        assert "kpu_version" in artifact.metadata
+
+    def test_kpu_deploy_int8_requires_calibration(self, simple_onnx_model, tmp_path):
+        """Test that INT8 deployment requires calibration."""
+        pytest.importorskip("onnx")
+        from embodied_ai_architect.agents.deployment.targets.kpu import StillwaterKPUTarget
+        from embodied_ai_architect.agents.deployment.models import DeploymentPrecision
+
+        target = StillwaterKPUTarget()
+
+        if not target.is_available():
+            pytest.skip("KPU target not available")
+
+        with pytest.raises(ValueError, match="calibration"):
+            target.deploy(
+                model=simple_onnx_model,
+                precision=DeploymentPrecision.INT8,
+                output_path=tmp_path / "model.kpu",
+                input_shape=(1, 3, 32, 32),
+            )
+
+    def test_kpu_deploy_int8_with_calibration(
+        self, simple_onnx_model, calibration_images, tmp_path
+    ):
+        """Test INT8 deployment with calibration data."""
+        pytest.importorskip("onnx")
+        from embodied_ai_architect.agents.deployment.targets.kpu import StillwaterKPUTarget
+        from embodied_ai_architect.agents.deployment.models import (
+            CalibrationConfig,
+            DeploymentPrecision,
+        )
+
+        target = StillwaterKPUTarget()
+
+        if not target.is_available():
+            pytest.skip("KPU target not available")
+
+        calib_config = CalibrationConfig(
+            data_path=calibration_images,
+            num_samples=5,
+            batch_size=1,
+            input_shape=(1, 3, 32, 32),
+            preprocessing="imagenet",
+        )
+
+        artifact = target.deploy(
+            model=simple_onnx_model,
+            precision=DeploymentPrecision.INT8,
+            output_path=tmp_path / "model.kpu",
+            input_shape=(1, 3, 32, 32),
+            calibration=calib_config,
+        )
+
+        assert artifact.engine_path.exists()
+        assert artifact.precision == DeploymentPrecision.INT8
+
+
+class TestKPUTargetValidation:
+    """Validation tests for KPU target."""
+
+    def test_kpu_validate(self, simple_onnx_model, tmp_path):
+        """Test KPU validation against baseline."""
+        pytest.importorskip("onnx")
+        pytest.importorskip("onnxruntime")
+        from embodied_ai_architect.agents.deployment.targets.kpu import StillwaterKPUTarget
+        from embodied_ai_architect.agents.deployment.models import (
+            DeploymentPrecision,
+            ValidationConfig,
+        )
+
+        target = StillwaterKPUTarget()
+
+        if not target.is_available():
+            pytest.skip("KPU target not available")
+
+        # Deploy first
+        artifact = target.deploy(
+            model=simple_onnx_model,
+            precision=DeploymentPrecision.FP16,
+            output_path=tmp_path / "model.kpu",
+            input_shape=(1, 3, 32, 32),
+        )
+
+        # Validate
+        config = ValidationConfig(num_samples=5, tolerance_percent=5.0)
+        result = target.validate(artifact, simple_onnx_model, config)
+
+        assert result.samples_compared > 0
+        assert result.baseline_latency_ms > 0
+        assert result.deployed_latency_ms > 0
+
+
+class TestKPUPowerProfile:
+    """Tests for KPU power profile."""
+
+    def test_kpu_power_profile_exists(self):
+        """Test that Stillwater KPU power profile exists."""
+        from embodied_ai_architect.agents.deployment.power.predictor import (
+            PowerProfile,
+            HARDWARE_POWER_SPECS,
+        )
+
+        assert PowerProfile.STILLWATER_KPU in HARDWARE_POWER_SPECS
+
+        kpu_spec = HARDWARE_POWER_SPECS[PowerProfile.STILLWATER_KPU]
+        assert kpu_spec.tdp_watts == 5.0
+        assert kpu_spec.tops_per_watt_peak > 0
+
+    def test_kpu_power_prediction(self):
+        """Test power prediction for KPU."""
+        from embodied_ai_architect.agents.deployment.power.predictor import (
+            PowerPredictor,
+            PowerProfile,
+        )
+
+        predictor = PowerPredictor()
+
+        prediction = predictor.predict_from_model_info(
+            total_params=1_000_000,
+            total_macs=100_000_000,
+            hardware=PowerProfile.STILLWATER_KPU,
+            precision="int8",
+        )
+
+        assert prediction.mean_watts > 0
+        assert prediction.mean_watts <= 5.0  # Within TDP
+        assert prediction.confidence > 0
+
+
+class TestStubCompiler:
+    """Tests for stub KPU compiler."""
+
+    def test_stub_compiler_compile(self, simple_onnx_model):
+        """Test stub compiler can compile ONNX model."""
+        pytest.importorskip("onnx")
+        from embodied_ai_architect.agents.deployment.targets.kpu.target import StubKPUCompiler
+        from embodied_ai_architect.agents.deployment.targets.kpu.spec import (
+            KPUConfig,
+            KPUPrecision,
+        )
+
+        compiler = StubKPUCompiler()
+        config = KPUConfig()
+
+        program = compiler.compile(
+            onnx_path=simple_onnx_model,
+            config=config,
+            precision=KPUPrecision.FP16,
+        )
+
+        assert program.name == simple_onnx_model.stem
+        assert len(program.ops) > 0
+        assert len(program.tensors) > 0
+        assert len(program.input_ids) > 0
+        assert len(program.output_ids) > 0
+
+    def test_stub_compiler_validate(self, simple_onnx_model):
+        """Test stub compiler validation."""
+        pytest.importorskip("onnx")
+        from embodied_ai_architect.agents.deployment.targets.kpu.target import StubKPUCompiler
+        from embodied_ai_architect.agents.deployment.targets.kpu.spec import KPUConfig
+
+        compiler = StubKPUCompiler()
+        config = KPUConfig()
+
+        issues = compiler.validate_model(simple_onnx_model, config)
+        # Simple model should be compatible
+        assert len(issues) == 0
+
+    def test_stub_compiler_memory_estimate(self, simple_onnx_model):
+        """Test stub compiler memory estimation."""
+        pytest.importorskip("onnx")
+        from embodied_ai_architect.agents.deployment.targets.kpu.target import StubKPUCompiler
+        from embodied_ai_architect.agents.deployment.targets.kpu.spec import (
+            KPUConfig,
+            KPUPrecision,
+        )
+
+        compiler = StubKPUCompiler()
+        config = KPUConfig()
+
+        estimate = compiler.estimate_memory(
+            simple_onnx_model, config, KPUPrecision.INT8
+        )
+
+        assert "weights" in estimate
+        assert "activations" in estimate
+        assert estimate["weights"] > 0
+
+
+class TestStubRuntime:
+    """Tests for stub KPU runtime."""
+
+    def test_stub_runtime_execute(self, simple_onnx_model):
+        """Test stub runtime execution."""
+        pytest.importorskip("onnx")
+        pytest.importorskip("onnxruntime")
+        from embodied_ai_architect.agents.deployment.targets.kpu.target import (
+            StubKPUCompiler,
+            StubKPURuntime,
+        )
+        from embodied_ai_architect.agents.deployment.targets.kpu.spec import (
+            KPUConfig,
+            KPUPrecision,
+            SimulationMode,
+        )
+
+        config = KPUConfig()
+        compiler = StubKPUCompiler()
+        runtime = StubKPURuntime(config)
+
+        # Compile
+        program = compiler.compile(
+            onnx_path=simple_onnx_model,
+            config=config,
+            precision=KPUPrecision.FP16,
+        )
+
+        # Load
+        runtime.load_program(program)
+
+        # Execute
+        inputs = {"input": np.random.randn(1, 3, 32, 32).astype(np.float32)}
+        result = runtime.execute(inputs, SimulationMode.FUNCTIONAL)
+
+        assert result.success
+        assert len(result.outputs) > 0
+        assert result.metrics.total_cycles > 0
+
+        # Cleanup
+        runtime.unload_program()
+
+
+# =============================================================================
+# NVIDIA NVDLA Target Tests
+# =============================================================================
+
+
+class TestNVDLASpec:
+    """Tests for NVDLA specification models."""
+
+    def test_nvdla_precision_enum(self):
+        """Test NVDLAPrecision enum values."""
+        from embodied_ai_architect.agents.deployment.targets.nvdla.spec import NVDLAPrecision
+
+        assert NVDLAPrecision.FP16.value == "fp16"
+        assert NVDLAPrecision.INT8.value == "int8"
+
+    def test_nvdla_variant_enum(self):
+        """Test NVDLAVariant enum values."""
+        from embodied_ai_architect.agents.deployment.targets.nvdla.spec import NVDLAVariant
+
+        assert NVDLAVariant.NV_SMALL.value == "nv_small"
+        assert NVDLAVariant.NV_LARGE.value == "nv_large"
+        assert NVDLAVariant.NV_FULL.value == "nv_full"
+
+    def test_nvdla_config_defaults(self):
+        """Test NVDLAConfig default values."""
+        from embodied_ai_architect.agents.deployment.targets.nvdla.spec import NVDLAConfig
+
+        config = NVDLAConfig()
+
+        assert config.variant.value == "nv_full"
+        assert config.clock_mhz == 500.0
+        assert len(config.native_ops) > 0
+        assert "Conv" in config.native_ops
+
+    def test_nvdla_hardware_config(self):
+        """Test NVDLAHardwareConfig properties."""
+        from embodied_ai_architect.agents.deployment.targets.nvdla.spec import NVDLAHardwareConfig
+
+        hw = NVDLAHardwareConfig()
+
+        assert hw.mac_atomic_c == 64
+        assert hw.cbuf_size_bytes > 0
+
+    def test_nvdla_loadable(self):
+        """Test NVDLALoadable dataclass."""
+        from embodied_ai_architect.agents.deployment.targets.nvdla.spec import (
+            NVDLALoadable,
+            NVDLAPrecision,
+        )
+        from pathlib import Path
+
+        loadable = NVDLALoadable(
+            path=Path("/tmp/model.nvdla"),
+            precision=NVDLAPrecision.FP16,
+            input_names=["input"],
+            input_shapes=[(1, 3, 224, 224)],
+            output_names=["output"],
+            output_shapes=[(1, 1000)],
+        )
+
+        assert loadable.precision == NVDLAPrecision.FP16
+        assert len(loadable.input_names) == 1
+
+
+class TestNVDLATargetBasic:
+    """Basic tests for NVDLA target."""
+
+    def test_nvdla_target_import(self):
+        """Test that NVDLA target can be imported."""
+        from embodied_ai_architect.agents.deployment.targets.nvdla import NVDLATarget
+
+        target = NVDLATarget()
+        assert target.name == "nvdla"
+
+    def test_nvdla_is_available(self):
+        """Test NVDLA availability check."""
+        from embodied_ai_architect.agents.deployment.targets.nvdla import NVDLATarget
+
+        target = NVDLATarget()
+
+        # Available if onnx is installed
+        try:
+            import onnx  # noqa: F401
+            assert target.is_available() is True
+        except ImportError:
+            assert target.is_available() is False
+
+    def test_nvdla_capabilities(self):
+        """Test NVDLA capabilities reporting."""
+        from embodied_ai_architect.agents.deployment.targets.nvdla import NVDLATarget
+
+        target = NVDLATarget()
+        caps = target.get_capabilities()
+
+        assert caps["name"] == "nvdla"
+        assert "fp16" in caps["supported_precisions"]
+        assert "int8" in caps["supported_precisions"]
+        assert caps["output_format"] == ".nvdla"
+        assert caps["requires_caffe_conversion"] is True
+        assert "Conv" in caps["native_ops"]
+
+    def test_nvdla_custom_variant(self):
+        """Test NVDLA with different variant."""
+        from embodied_ai_architect.agents.deployment.targets.nvdla import NVDLATarget
+        from embodied_ai_architect.agents.deployment.targets.nvdla.spec import (
+            NVDLAConfig,
+            NVDLAVariant,
+        )
+
+        config = NVDLAConfig(variant=NVDLAVariant.NV_SMALL)
+        target = NVDLATarget(config=config)
+        caps = target.get_capabilities()
+
+        assert caps["variant"] == "nv_small"
+
+
+class TestNVDLATargetDeploy:
+    """Deployment tests for NVDLA target."""
+
+    def test_nvdla_deploy_fp16(self, simple_onnx_model, tmp_path):
+        """Test FP16 deployment to NVDLA."""
+        pytest.importorskip("onnx")
+        from embodied_ai_architect.agents.deployment.targets.nvdla import NVDLATarget
+        from embodied_ai_architect.agents.deployment.models import DeploymentPrecision
+
+        target = NVDLATarget()
+
+        if not target.is_available():
+            pytest.skip("NVDLA target not available")
+
+        artifact = target.deploy(
+            model=simple_onnx_model,
+            precision=DeploymentPrecision.FP16,
+            output_path=tmp_path / "model.nvdla",
+            input_shape=(1, 3, 32, 32),
+        )
+
+        assert artifact.engine_path.exists()
+        assert artifact.precision == DeploymentPrecision.FP16
+        assert artifact.target == "nvdla"
+        assert artifact.size_bytes > 0
+        assert "variant" in artifact.metadata
+
+    def test_nvdla_deploy_int8_requires_calibration(self, simple_onnx_model, tmp_path):
+        """Test that INT8 deployment requires calibration."""
+        pytest.importorskip("onnx")
+        from embodied_ai_architect.agents.deployment.targets.nvdla import NVDLATarget
+        from embodied_ai_architect.agents.deployment.models import DeploymentPrecision
+
+        target = NVDLATarget()
+
+        if not target.is_available():
+            pytest.skip("NVDLA target not available")
+
+        with pytest.raises(ValueError, match="calibration"):
+            target.deploy(
+                model=simple_onnx_model,
+                precision=DeploymentPrecision.INT8,
+                output_path=tmp_path / "model.nvdla",
+                input_shape=(1, 3, 32, 32),
+            )
+
+
+class TestNVDLATargetValidation:
+    """Validation tests for NVDLA target."""
+
+    def test_nvdla_validate(self, simple_onnx_model, tmp_path):
+        """Test NVDLA validation against baseline."""
+        pytest.importorskip("onnx")
+        pytest.importorskip("onnxruntime")
+        from embodied_ai_architect.agents.deployment.targets.nvdla import NVDLATarget
+        from embodied_ai_architect.agents.deployment.models import (
+            DeploymentPrecision,
+            ValidationConfig,
+        )
+
+        target = NVDLATarget()
+
+        if not target.is_available():
+            pytest.skip("NVDLA target not available")
+
+        # Deploy first
+        artifact = target.deploy(
+            model=simple_onnx_model,
+            precision=DeploymentPrecision.FP16,
+            output_path=tmp_path / "model.nvdla",
+            input_shape=(1, 3, 32, 32),
+        )
+
+        # Validate
+        config = ValidationConfig(num_samples=5, tolerance_percent=5.0)
+        result = target.validate(artifact, simple_onnx_model, config)
+
+        assert result.samples_compared > 0
+        assert result.baseline_latency_ms > 0
+        assert result.deployed_latency_ms > 0
+
+
+class TestNVDLAPowerProfile:
+    """Tests for NVDLA power profiles."""
+
+    def test_nvdla_power_profiles_exist(self):
+        """Test that NVDLA power profiles exist."""
+        from embodied_ai_architect.agents.deployment.power.predictor import (
+            PowerProfile,
+            HARDWARE_POWER_SPECS,
+        )
+
+        assert PowerProfile.NVDLA_SMALL in HARDWARE_POWER_SPECS
+        assert PowerProfile.NVDLA_LARGE in HARDWARE_POWER_SPECS
+        assert PowerProfile.NVDLA_FULL in HARDWARE_POWER_SPECS
+
+        small = HARDWARE_POWER_SPECS[PowerProfile.NVDLA_SMALL]
+        assert small.tdp_watts == 1.0
+
+        full = HARDWARE_POWER_SPECS[PowerProfile.NVDLA_FULL]
+        assert full.tdp_watts == 5.0
+
+    def test_nvdla_power_prediction(self):
+        """Test power prediction for NVDLA variants."""
+        from embodied_ai_architect.agents.deployment.power.predictor import (
+            PowerPredictor,
+            PowerProfile,
+        )
+
+        predictor = PowerPredictor()
+
+        # Test small variant
+        small_pred = predictor.predict_from_model_info(
+            total_params=1_000_000,
+            total_macs=100_000_000,
+            hardware=PowerProfile.NVDLA_SMALL,
+            precision="int8",
+        )
+        assert small_pred.mean_watts <= 1.5  # Within peak
+
+        # Test full variant
+        full_pred = predictor.predict_from_model_info(
+            total_params=1_000_000,
+            total_macs=100_000_000,
+            hardware=PowerProfile.NVDLA_FULL,
+            precision="int8",
+        )
+        assert full_pred.mean_watts <= 6.0  # Within peak
+
+
+class TestStubNVDLACompiler:
+    """Tests for stub NVDLA compiler."""
+
+    def test_stub_compiler_compile(self, simple_onnx_model, tmp_path):
+        """Test stub compiler can compile ONNX model."""
+        pytest.importorskip("onnx")
+        from embodied_ai_architect.agents.deployment.targets.nvdla.target import StubNVDLACompiler
+        from embodied_ai_architect.agents.deployment.targets.nvdla.spec import (
+            NVDLAConfig,
+            NVDLAPrecision,
+        )
+
+        config = NVDLAConfig()
+        compiler = StubNVDLACompiler(config)
+
+        loadable = compiler.compile(
+            model_path=simple_onnx_model,
+            config=config,
+            precision=NVDLAPrecision.FP16,
+            output_path=tmp_path / "model.nvdla",
+        )
+
+        assert loadable.path.exists()
+        assert len(loadable.input_names) > 0
+        assert len(loadable.output_names) > 0
+
+    def test_stub_compiler_validate(self, simple_onnx_model):
+        """Test stub compiler validation."""
+        pytest.importorskip("onnx")
+        from embodied_ai_architect.agents.deployment.targets.nvdla.target import StubNVDLACompiler
+        from embodied_ai_architect.agents.deployment.targets.nvdla.spec import NVDLAConfig
+
+        config = NVDLAConfig()
+        compiler = StubNVDLACompiler(config)
+
+        issues = compiler.validate_model(simple_onnx_model, config)
+        # Simple model should be compatible
+        assert len(issues) == 0
+
+
+class TestStubNVDLARuntime:
+    """Tests for stub NVDLA runtime."""
+
+    def test_stub_runtime_execute(self, simple_onnx_model, tmp_path):
+        """Test stub runtime execution."""
+        pytest.importorskip("onnx")
+        pytest.importorskip("onnxruntime")
+        from embodied_ai_architect.agents.deployment.targets.nvdla.target import (
+            StubNVDLACompiler,
+            StubNVDLARuntime,
+        )
+        from embodied_ai_architect.agents.deployment.targets.nvdla.spec import (
+            NVDLAConfig,
+            NVDLAPrecision,
+        )
+
+        config = NVDLAConfig()
+        compiler = StubNVDLACompiler(config)
+        runtime = StubNVDLARuntime(config)
+
+        # Compile
+        loadable = compiler.compile(
+            model_path=simple_onnx_model,
+            config=config,
+            precision=NVDLAPrecision.FP16,
+            output_path=tmp_path / "model.nvdla",
+        )
+
+        # Load
+        runtime.load(loadable)
+
+        # Execute
+        inputs = {"input": np.random.randn(1, 3, 32, 32).astype(np.float32)}
+        result = runtime.execute(inputs)
+
+        assert result.success
+        assert len(result.outputs) > 0
+        assert result.metrics.total_cycles > 0
+
+        # Cleanup
+        runtime.unload()

@@ -17,6 +17,10 @@ class PowerProfile(str, Enum):
 
     # Ultra-low power edge devices
     CORAL_TPU = "coral_tpu"  # ~2W TDP
+    STILLWATER_KPU = "stillwater_kpu"  # ~5W TDP
+    NVDLA_SMALL = "nvdla_small"  # ~1W (nv_small config)
+    NVDLA_LARGE = "nvdla_large"  # ~3W (nv_large config)
+    NVDLA_FULL = "nvdla_full"  # ~5W (nv_full config)
     JETSON_NANO = "jetson_nano"  # 5-10W modes
     JETSON_ORIN_NANO = "jetson_orin_nano"  # 7-15W modes
 
@@ -65,6 +69,39 @@ HARDWARE_POWER_SPECS: dict[PowerProfile, HardwarePowerSpec] = {
         peak_watts=2.5,
         tops_per_watt_peak=2.0,  # 4 TOPS @ 2W
         tops_per_watt_typical=1.5,
+    ),
+    PowerProfile.STILLWATER_KPU: HardwarePowerSpec(
+        name="Stillwater KPU",
+        tdp_watts=5.0,
+        idle_watts=0.5,
+        peak_watts=5.0,
+        tops_per_watt_peak=0.8,  # 4 TOPS INT8 @ 5W
+        tops_per_watt_typical=0.6,
+        power_exponent=1.3,  # More linear scaling
+    ),
+    PowerProfile.NVDLA_SMALL: HardwarePowerSpec(
+        name="NVDLA nv_small",
+        tdp_watts=1.0,
+        idle_watts=0.1,
+        peak_watts=1.5,
+        tops_per_watt_peak=0.5,  # 0.5 TOPS @ 1W (64 MACs @ 500MHz)
+        tops_per_watt_typical=0.3,
+    ),
+    PowerProfile.NVDLA_LARGE: HardwarePowerSpec(
+        name="NVDLA nv_large",
+        tdp_watts=3.0,
+        idle_watts=0.3,
+        peak_watts=4.0,
+        tops_per_watt_peak=0.67,  # 2 TOPS @ 3W (2048 MACs @ 500MHz)
+        tops_per_watt_typical=0.5,
+    ),
+    PowerProfile.NVDLA_FULL: HardwarePowerSpec(
+        name="NVDLA nv_full",
+        tdp_watts=5.0,
+        idle_watts=0.5,
+        peak_watts=6.0,
+        tops_per_watt_peak=0.8,  # 4 TOPS @ 5W (4096 MACs @ 500MHz)
+        tops_per_watt_typical=0.6,
     ),
     PowerProfile.JETSON_NANO: HardwarePowerSpec(
         name="NVIDIA Jetson Nano",

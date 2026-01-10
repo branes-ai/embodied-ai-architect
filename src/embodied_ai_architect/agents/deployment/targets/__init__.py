@@ -28,4 +28,20 @@ try:
 except ImportError:
     pass
 
+# Stillwater KPU target (optional: onnx)
+try:
+    from .kpu import StillwaterKPUTarget
+
+    _available_targets.append("StillwaterKPUTarget")
+except ImportError:
+    pass
+
+# NVIDIA NVDLA target (optional: onnx)
+try:
+    from .nvdla import NVDLATarget
+
+    _available_targets.append("NVDLATarget")
+except ImportError:
+    pass
+
 __all__ = _available_targets
