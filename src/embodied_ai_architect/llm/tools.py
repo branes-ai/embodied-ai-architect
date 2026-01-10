@@ -204,8 +204,8 @@ def get_tool_definitions() -> list[dict[str, Any]]:
                     },
                     "target": {
                         "type": "string",
-                        "enum": ["jetson", "coral", "openvino"],
-                        "description": "Deployment target (default: jetson)",
+                        "enum": ["jetson", "openvino", "coral"],
+                        "description": "Deployment target: jetson (TensorRT), openvino (Intel/AMD), coral (Edge TPU). Default: jetson",
                     },
                     "precision": {
                         "type": "string",

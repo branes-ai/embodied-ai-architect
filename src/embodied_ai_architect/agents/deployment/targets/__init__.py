@@ -12,4 +12,12 @@ try:
 except ImportError:
     pass
 
+# OpenVINO target (optional: openvino, nncf)
+try:
+    from .openvino import OpenVINOTarget
+
+    _available_targets.append("OpenVINOTarget")
+except ImportError:
+    pass
+
 __all__ = _available_targets

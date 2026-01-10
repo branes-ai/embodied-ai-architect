@@ -164,10 +164,9 @@ pip install embodied-ai-architect
 pip install embodied-ai-architect[branes]     # Branes.ai hw/sw co-design platform
 
 # With COTS deployment support
-pip install embodied-ai-architect[jetson]     # NVIDIA Jetson
-pip install embodied-ai-architect[ryzen]      # AMD Ryzen AI
-pip install embodied-ai-architect[coral]      # Google Coral
-pip install embodied-ai-architect[openvino]   # Intel OpenVINO
+pip install embodied-ai-architect[jetson]     # NVIDIA Jetson (TensorRT)
+pip install embodied-ai-architect[openvino]   # Intel/AMD (OpenVINO, supports Ryzen AI)
+pip install embodied-ai-architect[coral]      # Google Coral (Edge TPU)
 
 # With interactive AI architect
 pip install embodied-ai-architect[chat]
@@ -192,13 +191,14 @@ autonomous vehicles and AMRs.
 
 The commodity platform support is best for experimentation and competitive analysis.
 
-| Platform | Best For | Precision Support |
-|----------|----------|-------------------|
-| **Ryzen AI NUC** | Desktop and industrial applications | FP32, FP16, INT8 |
-| **Jetson Orin** | High-performance edge AI | FP32, FP16, INT8 |
-| **Jetson Nano** | Cost-effective edge deployment | FP16, INT8 |
-| **Coral Edge TPU** | Ultra-low-power inference | INT8 |
-| **Intel OpenVINO** | Intel CPU and VPU deployment | FP32, FP16, INT8 |
+| Platform | Best For | Precision Support | Install |
+|----------|----------|-------------------|---------|
+| **Intel/AMD (OpenVINO)** | Desktop, industrial, x86 embedded | FP32, FP16, INT8 | `[openvino]` |
+| **Jetson Orin** | High-performance edge AI | FP32, FP16, INT8 | `[jetson]` |
+| **Jetson Nano** | Cost-effective edge deployment | FP16, INT8 | `[jetson]` |
+| **Coral Edge TPU** | Ultra-low-power inference | INT8 | `[coral]` |
+
+*OpenVINO supports Intel CPUs, Intel GPUs, Intel NPUs (Meteor Lake, Lunar Lake), and AMD Ryzen AI NPUs.*
 
 
 ---
@@ -427,17 +427,44 @@ scp deployments/model_int8.engine jetson@device:/models/
 | ResNet50 | 28ms | 14ms | 6ms |
 | MobileNetV3 | 12ms | 6ms | 3ms |
 
-### AMD Ryzen AI NUC
+### AMD Ryzen AI / Intel OpenVINO
 
-**Ideal for**: Desktop, industrial, and robotics applications
+**Ideal for**: Desktop, industrial, robotics, and x86-based embedded applications
+
+OpenVINO supports Intel CPUs, integrated GPUs, NPUs (Meteor Lake, Lunar Lake), and AMD Ryzen AI NPUs through a unified API.
 
 ```bash
 # Install dependencies
-pip install embodied-ai-architect[ryzen]
+pip install embodied-ai-architect[openvino]
 
-# Deploy for NPU acceleration
-branes deploy run model.pt --target ryzen --precision int8 \
+# Deploy with INT8 quantization (requires calibration images)
+branes deploy run model.pt --target openvino --precision int8 \
+  --calibration-data ./calib_images --input-shape 1,3,640,640
+
+# Deploy with FP16 (no calibration needed)
+branes deploy run model.onnx --target openvino --precision fp16 \
   --input-shape 1,3,640,640
+
+# Check available devices
+branes deploy info openvino
+```
+
+**Python API:**
+```python
+from embodied_ai_architect.agents.deployment import DeploymentAgent
+
+agent = DeploymentAgent()
+
+# Deploy to OpenVINO with FP16
+result = agent.execute({
+    "model": "yolov8n.pt",
+    "target": "openvino",
+    "precision": "fp16",
+    "input_shape": [1, 3, 640, 640],
+    "output_dir": "./deployments",
+})
+
+print(f"Engine saved: {result.data['artifact']['engine_path']}")
 ```
 
 **Compute allocation strategy:**
