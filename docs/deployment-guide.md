@@ -1,255 +1,263 @@
 # Branes Embodied AI Platform: Deployment Guide
 
-## Why This Platform Exists
+## The Opportunity: Embodied AI for Humanity
 
-### The Hidden Crisis in Embodied AI
+We stand at a remarkable moment in history. For the first time, we can build machines that perceive, reason, and act in the physical world—autonomous systems that extend human capability into places we cannot go, perform tasks we cannot do safely, and operate at scales we cannot achieve alone.
 
-Most organizations building autonomous systems—drones, robots, autonomous vehicles—are unknowingly creating **systems that cannot work**.
+**Embodied AI** is the intelligence that powers:
+- Drones that inspect infrastructure, deliver medicine, and assist in search and rescue
+- Robots that care for the elderly, assist surgeons, and explore hazardous environments
+- Autonomous vehicles that provide mobility to those who cannot drive
+- Agricultural systems that feed a growing population sustainably
+- Space systems that extend humanity's reach beyond Earth
 
-They select hardware based on benchmark scores, deploy neural networks that run "fast enough" in demos, and discover too late that their systems fail in the field. The failures are not bugs. They are **architectural impossibilities** baked in from day one.
-
-**The root cause**: existing accelerators were never designed for embodied AI.
-
-| Platform | Original Purpose | What It's Good At | What It Cannot Do |
-|----------|------------------|-------------------|-------------------|
-| **NVIDIA Jetson (GPU)** | 3D graphics, games | Parallel floating-point, CNN inference | Deterministic latency, real-time control, energy efficiency at edge |
-| **Google Coral (Edge TPU)** | Cloud vision CNNs | INT8 matrix multiplication | Kalman filters, eigenvalue solvers, multi-rate control, sensor fusion |
-| **Intel Movidius (VPU)** | Computer vision | Image processing pipelines | Linear algebra, Bayesian inference, constraint optimization |
-
-These platforms excel at their designed purpose. But embodied AI is not their designed purpose.
-
-### What Embodied AI Actually Requires
-
-A perception, guidance, navigation & control (PGN&C) system demands capabilities that no existing accelerator provides:
-
-| Capability | Why It's Essential | GPU/TPU Reality |
-|------------|-------------------|-----------------|
-| **High-bandwidth data acquisition** | Cameras, LiDAR, IMU, force sensors at 100Hz-1kHz | Designed for batch processing, not streaming |
-| **Real-time signal processing** | Filter noise, fuse sensors, detect anomalies | No latency guarantees |
-| **Linear algebra solvers** | Constraint optimization, inverse kinematics, MPC | Poor at small-matrix operations |
-| **Eigenvalue decomposition** | Stability analysis, PCA, covariance estimation | Not accelerated |
-| **Bayesian inference** | Kalman filters, particle filters, SLAM | Must run on CPU |
-| **Statistical inference** | Uncertainty quantification, decision-making | Not a design priority |
-| **Model Predictive Control** | Plan optimal trajectories under constraints | Iterative solvers are slow on GPUs |
-| **Multi-rate control** | 1kHz motor control, 30Hz perception, 10Hz planning | Single-clock architectures struggle |
-
-### Latency and Energy Are Functional Requirements
-
-This is the insight most engineers miss:
-
-> **In embodied AI, latency and energy are not performance metrics—they are functional requirements.**
-
-If a drone's obstacle avoidance takes 100ms instead of 20ms, the drone crashes. It doesn't crash *slower*—it crashes. The latency requirement is binary: meet it or fail.
-
-If a robot's PGN&C pipeline consumes 50W instead of 15W, the battery dies in 20 minutes instead of 60. The mission fails. The robot becomes a liability, not an asset.
-
-**This is why benchmarks lie.** A system that achieves 50 FPS in a lab demo may be worthless if:
-- Latency variance causes 1-in-1000 frames to take 200ms (crash)
-- Power consumption prevents mission completion
-- The GPU cannot run Kalman filters at the required rate alongside perception
-
-### The Organizational Risk
-
-When an autonomous system fails in deployment, the consequences extend beyond engineering:
-
-- **Safety incidents** → regulatory scrutiny, liability
-- **Mission failures** → lost revenue, damaged reputation
-- **Delayed programs** → burned runway, missed market windows
-- **Technical debt** → years spent working around architectural limitations
-
-Most organizations discover these problems after committing to a hardware platform. By then, the only options are:
-1. Accept degraded performance
-2. Redesign the system (expensive, slow)
-3. Cancel the program
-
-The Branes platform exists to prevent this outcome.
+The Branes platform exists to help you build these systems—quickly, correctly, and with confidence that they will perform when it matters.
 
 ---
 
-## The Branes Solution
+## What Makes Embodied AI Unique
 
-### Platform Overview
+Embodied AI systems operate in the real world under real constraints. Unlike cloud applications that can retry failed requests, an autonomous drone must perceive and react within milliseconds. Unlike data center workloads that draw from the grid, a surgical robot runs on a power budget measured in watts.
 
-The Branes Embodied AI Platform is a **hardware/software codesign environment** that helps you:
+These systems integrate multiple computational domains:
 
-1. **Identify** where latency and energy bottlenecks will occur—before you build
-2. **Analyze** whether your target hardware can meet functional requirements
-3. **Optimize** your architecture to eliminate bottlenecks
-4. **Deploy** to the right hardware with validated performance
-5. **Design** custom accelerators when no existing hardware suffices
+| Domain | Examples | Why It Matters |
+|--------|----------|----------------|
+| **Perception** | Object detection, depth estimation, SLAM | See and understand the environment |
+| **State Estimation** | Kalman filters, sensor fusion, localization | Know where you are and how you're moving |
+| **Planning** | Path planning, trajectory optimization, MPC | Decide what to do next |
+| **Control** | PID, impedance control, force feedback | Execute movements precisely |
+| **Reasoning** | Behavior trees, decision networks, LLMs | Handle complex situations intelligently |
+
+The Branes platform helps you design systems that integrate all of these—and validates that your design will meet real-world requirements before you build.
+
+---
+
+## The Branes Platform
+
+### Design with Confidence
+
+The Branes Embodied AI Platform is a **hardware/software codesign environment** that helps you move from concept to deployment with confidence:
 
 ```
-┌────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                        Branes Embodied AI Platform                                             │
-├────────────────────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                                │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌───────────┐      ┌───────────┐  │
-│  │  Model Zoo   │───→│   Analyze    │───→│  Hardware    │───→│  Deploy   │  ───→│    CPU    │  │
-│  │              │    │              │    │  Profiler    │    │           │      └───────────┘  │
-│  │ 100+ models  │    │ Compute/     │    │              │    │ TensorRT  │      ┌───────────┐  │
-│  │ YOLO, ViT,   │    │ Memory/      │    │ 50+ targets  │    │ ONNX-RT   │  ───→│    GPU    │  │
-│  │ EfficientNet │    │ Bandwidth    │    │ Bottleneck   │    │ OpenVINO  │      └───────────┘  │
-│  └──────────────┘    └──────────────┘    │ Detection    │    │ Branes-RT │      ┌───────────┐  │
-│                                          └──────────────┘    └───────────┘  ───→│    NPU    │  │
-│                                                 │                               └───────────┘  │
-│                                                 ▼                               ┌───────────┐  │
-│                              ┌─────────────────────────────────┐            ───→│    KPU    │  │
-│                              │     Benchmark & Validate        │                └───────────┘  │
-│                              │                                 │                               │
-│                              │  • Latency distribution         │                               │
-│                              │  • Power consumption            │                               │
-│                              │  • Functional requirement check │                               │
-│                              └─────────────────────────────────┘                               │
-│                                                                                                │
-└────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────────────────────────┐
+│                              Branes Embodied AI Platform                                   │
+├────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                            │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌─────────────┐               │
+│  │  Model Zoo   │───→│   Analyze    │───→│    HW/SW     │───→│    Deploy   │               │
+│  │              │    │              │    │  Optimizer   │    │             │               │
+│  │ 100+ models  │    │   Compute    │    │              │    │  Optimized  │               │
+│  │ Detection    │    │    Memory    │    │ 50+ targets  │    │             │               │
+│  │ Segmentation │    │   Latency    │    │ Multi-core   │    │  for your   │               │
+│  │ Tracking     │    │    Energy    │    │ Many-core    │    │             │               │
+│  │ Planning     │    │  Accuracy    │    │ Data-flow    │    │ application │               │
+│  │ Control      │    │              │    │ Domain-flow  │    │             │               │
+│  └──────────────┘    └──────────────┘    └──────────────┘    └─────────────┘               │
+│         │                   │                   │                   │                      │
+│         ▼                   ▼                   ▼                   ▼                      │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────┐   │
+│  │                         Interactive AI Architect                                    │   │
+│  │                                                                                     │   │
+│  │   "Design a drone perception pipeline to id a landmark at 300 mph, under 15W"       │   │
+│  │   → Analyzes requirements, recommends architecture, validates feasibility           │   │
+│  │   → Identifies optimization opportunities, deploys to target hardware               │   │
+│  │                                                                                     │   │
+│  └─────────────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                            │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### The Knowledge Processing Unit (KPU)
+### What Branes Provides
 
-When existing hardware cannot meet your requirements, the Branes platform enables design of a **custom embodied AI accelerator**: the Knowledge Processing Unit (KPU).
+1. **Model Zoo**: 100+ pre-validated models for perception, tracking, and control
+2. **Architecture Analysis**: Understand compute, memory, and bandwidth requirements
+3. **Hardware Profiling**: Match your application to the best hardware target
+4. **Deployment Tools**: Export optimized models for your target platform
+5. **Interactive Architect**: AI-powered design assistant for complex decisions
+6. **Validation**: Verify that your system meets requirements before deployment
 
-The KPU is purpose-built for the computational patterns of embodied AI:
+---
 
-| KPU Capability | Implementation | Embodied AI Application |
-|----------------|----------------|------------------------|
-| **Streaming data acquisition** | Hardware DMA, sensor interfaces | Camera, LiDAR, IMU fusion at 1kHz |
-| **Real-time linear algebra** | Systolic array, configurable precision | Kalman filters, MPC, inverse kinematics |
-| **Eigenvalue acceleration** | QR iteration hardware | Stability analysis, PCA |
-| **Constraint solver** | Interior point method accelerator | Trajectory optimization, collision avoidance |
-| **Multi-rate scheduler** | Hardware task dispatcher | 1kHz control, 30Hz perception, 10Hz planning |
-| **Deterministic latency** | Worst-case execution time guarantees | Hard real-time requirements |
-| **Energy-proportional compute** | Clock/voltage scaling per operator | Mission-duration power budgets |
+## The Knowledge Processing Unit (KPU)
 
-**The KPU is not a general-purpose accelerator.** It is a specialized engine for the specific computational needs of PGN&C systems—the workloads that GPUs and TPUs handle poorly or not at all.
+### Purpose-Built for Embodied AI
 
-### How Branes Helps You
+As embodied AI applications grow more sophisticated, specialized hardware enables new capabilities. The **Knowledge Processing Unit (KPU)** is designed specifically for the computational patterns of perception, guidance, navigation, and control:
 
-The platform provides tools for every stage of embodied AI development:
+| KPU Capability | What It Enables |
+|----------------|-----------------|
+| **Streaming data acquisition** | Fuse cameras, LiDAR, IMU, and force sensors at 1kHz |
+| **Real-time linear algebra** | Run Kalman filters and MPC at control-loop rates |
+| **Eigenvalue acceleration** | Enable real-time stability analysis and covariance estimation |
+| **Constraint optimization** | Solve trajectory planning and collision avoidance problems |
+| **Multi-rate scheduling** | Coordinate 1kHz control with 30Hz perception seamlessly |
+| **Deterministic execution** | Guarantee worst-case timing for safety-critical applications |
+| **Energy-proportional compute** | Extend mission duration with efficient power management |
+
+The KPU complements existing platforms by handling the workloads that benefit most from specialized acceleration—freeing CPUs, GPUs and NPUs to do what they do best.
+
+### When to Consider KPU
+
+The KPU is ideal for applications requiring:
+- Sub-millisecond control loops
+- Hard real-time guarantees
+- Extended battery life
+- Integrated sensor-to-actuator pipelines
+
+The Branes platform helps you determine whether your application would benefit from KPU acceleration through detailed architectural analysis.
+
+---
+
+## Development Workflow
+
+### From Concept to Deployment
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                         Development Workflow                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  1. REQUIREMENTS CAPTURE                                                    │
-│     ├─ Latency budget (e.g., 33ms for 30 FPS)                               │
+│  1. DEFINE REQUIREMENTS                                                     │
+│     ├─ Latency budget (e.g., 33ms for 30 FPS perception)                    │
 │     ├─ Power budget (e.g., 15W for 1-hour flight)                           │
-│     ├─ Accuracy requirements (e.g., mAP > 0.5)                              │
-│     └─ Throughput requirements (e.g., 6 cameras × 30 FPS)                   │
+│     ├─ Accuracy targets (e.g., mAP > 0.5 for detection)                     │
+│     └─ Throughput needs (e.g., 6 cameras at 30 FPS)                         │
 │                                                                             │
-│  2. ARCHITECTURE DESIGN                                                     │
+│  2. DESIGN ARCHITECTURE                                                     │
 │     ├─ Select operators (detection, tracking, control)                      │
-│     ├─ Define data flow and rates                                           │
-│     ├─ Allocate operators to compute units                                  │
-│     └─ Estimate latency and power                                           │
+│     ├─ Define data flow between operators                                   │
+│     ├─ Specify execution rates for each stage                               │
+│     └─ Estimate resource requirements                                       │
 │                                                                             │
-│  3. BOTTLENECK ANALYSIS                                                     │
-│     ├─ Identify critical path                                               │
-│     ├─ Find compute/memory/bandwidth bottlenecks                            │
-│     ├─ Quantify gap to requirements                                         │
-│     └─ Generate optimization recommendations                                │
+│  3. ANALYZE & OPTIMIZE                                                      │
+│     ├─ Profile compute and memory usage                                     │
+│     ├─ Identify optimization opportunities                                  │
+│     ├─ Apply quantization, fusion, and tuning                               │
+│     └─ Match operators to compute resources                                 │
 │                                                                             │
-│  4. OPTIMIZATION                                                            │
-│     ├─ Quantization (FP32 → INT8)                                           │
-│     ├─ Operator fusion                                                      │
-│     ├─ Hardware reallocation (GPU → NPU)                                    │
-│     └─ Algorithm substitution (EKF → complementary filter)                  │
+│  4. GENERATE HARDWARE/SOFTWARE CONFIGURATION                                │
+│     ├─ Compare candidate platforms                                          │
+│     ├─ Evaluate trade-offs (performance, power, cost)                       │
+│     └─ Validate that requirements can be met                                │
 │                                                                             │
-│  5. VALIDATION                                                              │
+│  5. DEPLOY & VALIDATE                                                       │
+│     ├─ Export optimized models to target format                             │
 │     ├─ Benchmark on target hardware                                         │
-│     ├─ Measure latency distribution (P50, P99, P99.9)                       │
-│     ├─ Measure power under load                                             │
-│     └─ Verify functional requirements met                                   │
-│                                                                             │
-│  6. DEPLOYMENT                                                              │
-│     ├─ Export optimized models                                              │
-│     ├─ Generate deployment artifacts                                        │
-│     └─ Produce validation report                                            │
+│     ├─ Measure latency distribution and power                               │
+│     └─ Confirm requirements are satisfied                                   │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Prerequisites
+## Getting Started
 
-### Software Requirements
+### Installation
 
 ```bash
 # Core platform
 pip install embodied-ai-architect
 
-# For Jetson deployment
-pip install embodied-ai-architect[jetson]
+# with HW/SW optimization support
+pip install embodied-ai-architect[branes]     # Branes.ai hw/sw co-design platform
 
-# For interactive design sessions
+# With COTS deployment support
+pip install embodied-ai-architect[jetson]     # NVIDIA Jetson
+pip install embodied-ai-architect[ryzen]      # AMD Ryzen AI
+pip install embodied-ai-architect[coral]      # Google Coral
+pip install embodied-ai-architect[openvino]   # Intel OpenVINO
+
+# With interactive AI architect
 pip install embodied-ai-architect[chat]
 export ANTHROPIC_API_KEY=your-key-here
-
-# For Kubernetes-based benchmarking
-pip install embodied-ai-architect[kubernetes]
 ```
 
-### Supported Hardware Targets
+### Supported Platforms
 
-| Target | Precision | Use Case | Installation |
-|--------|-----------|----------|--------------|
-| **Jetson Orin** | FP32, FP16, INT8 | High-performance edge | `[jetson]` - requires TensorRT |
-| **Jetson Nano** | FP16, INT8 | Cost-constrained edge | `[jetson]` - requires TensorRT |
-| **Coral Edge TPU** | INT8 only | Ultra-low power | `[coral]` - requires Edge TPU runtime |
-| **Ryzen AI NUC** | FP32, FP16, INT8 | Desktop/industrial | `[ryzen]` - requires ONNX Runtime + Ryzen AI EP |
-| **Intel OpenVINO** | FP32, FP16, INT8 | Intel CPUs/VPUs | `[openvino]` - requires OpenVINO |
-| **Stillwater KPU** | Configurable | Custom embodied AI | Contact Stillwater for SDK |
+#### HW/SW Co-design platforms
 
-### Data Requirements
+The Branes HW/SW co-design platform is best for use-cases that require custom embodied AI acceleration
+to meet the demand of the application. Examples are autonomous drone missions, scouting quadrupeds,
+autonomous vehicles and AMRs.
 
-For INT8 quantization, you need:
-- **Calibration dataset**: 100-500 representative images
-- **Validation dataset**: Test set for accuracy verification
+| Platform | Best For | Precision Support |
+|----------|----------|-------------------|
+| **Microchip PolarFire** | Custom Sensor and Edge AI | Configurable |
+| **Achronix Speedster** | Experimentation and Emulation | Configurable |
+| **Stillwater KPU** | Custom embodied AI acceleration | Configurable |
+
+#### Commodity Platforms
+
+The commodity platform support is best for experimentation and competitive analysis.
+
+| Platform | Best For | Precision Support |
+|----------|----------|-------------------|
+| **Ryzen AI NUC** | Desktop and industrial applications | FP32, FP16, INT8 |
+| **Jetson Orin** | High-performance edge AI | FP32, FP16, INT8 |
+| **Jetson Nano** | Cost-effective edge deployment | FP16, INT8 |
+| **Coral Edge TPU** | Ultra-low-power inference | INT8 |
+| **Intel OpenVINO** | Intel CPU and VPU deployment | FP32, FP16, INT8 |
+
 
 ---
 
-## Workflow: From Model to Deployment
+## Workflow Examples
 
-### Step 1: Select a Model
+### Step 1: Explore the Model Zoo
 
-Use the Model Zoo to find models suited to your task:
+Find models suited to your application:
 
 ```bash
-# Search for detection models under 10M parameters
+# Search for detection models
+branes zoo search --task detection
+
+# Filter by size for edge deployment
 branes zoo search --task detection --max-params 10M
 
-# Download YOLOv8n for edge deployment
+# Download a model
 branes zoo download yolov8n --format onnx
 ```
 
-**Available model families:**
-- Detection: YOLOv5/v8/v11, DETR, EfficientDet
-- Classification: ResNet, MobileNet, EfficientNet, ViT
-- Segmentation: SegFormer, Mask R-CNN
-- Depth: DPT, MiDaS
-- Pose: MediaPipe, YOLOv8-pose
+**Available model categories:**
+- **Detection**: YOLOv5, YOLOv8, YOLOv11, DETR, EfficientDet
+- **Classification**: ResNet, MobileNet, EfficientNet, ViT, ConvNeXt
+- **Segmentation**: SegFormer, Mask R-CNN
+- **Depth Estimation**: DPT, MiDaS
+- **Pose Estimation**: MediaPipe, YOLOv8-pose
 
-### Step 2: Analyze Model Requirements
+### Step 2: Analyze Your Model
+
+Understand compute and memory requirements:
 
 ```bash
-# Analyze compute and memory requirements
 branes analyze yolov8n.onnx
-
-# Output:
-#   Parameters: 3.2M
-#   FLOPs: 8.7G
-#   Memory: 12.4 MB (FP32)
-#   Layer breakdown:
-#     Conv2d: 72% compute
-#     Upsample: 12% compute
-#     Concat: 8% memory bandwidth
 ```
 
-### Step 3: Profile Hardware Fit
+**Example output:**
+```
+Model Analysis: YOLOv8n
+=======================
+Parameters: 3.2M
+FLOPs: 8.7G
+Memory footprint: 12.4 MB (FP32)
+
+Layer breakdown:
+  Conv2d: 72% compute
+  Upsample: 12% compute
+  Concat: 8% memory bandwidth
+
+Recommendations:
+  ✓ Suitable for edge deployment
+  ✓ INT8 quantization recommended for best performance
+```
+
+### Step 3: Find the Best Hardware
+
+Match your application to available platforms:
 
 ```bash
-# Get hardware recommendations with constraints
 branes workflow run yolov8n.onnx \
   --latency-target 33 \
   --power-budget 15 \
@@ -261,64 +269,27 @@ branes workflow run yolov8n.onnx \
 Hardware Recommendations for YOLOv8n
 =====================================
 
-Constraints:
-  Latency target: ≤33ms
-  Power budget: ≤15W
-  Use case: drone
+Your requirements:
+  Latency: ≤33ms | Power: ≤15W | Use case: drone
 
-Top Recommendations:
-┏━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━┓
-┃ Hardware         ┃ Est. Time ┃ Power    ┃ Meets Reqs?  ┃ Score  ┃
-┡━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━┩
-│ Jetson Orin Nano │ 18ms      │ 10W      │ ✓ Yes        │ 0.92   │
-│ Coral Edge TPU   │ 12ms      │ 2W       │ ✓ Yes        │ 0.88   │
-│ Jetson Nano      │ 45ms      │ 8W       │ ✗ Latency    │ 0.61   │
-│ Ryzen AI NUC     │ 8ms       │ 25W      │ ✗ Power      │ 0.54   │
-└──────────────────┴───────────┴──────────┴──────────────┴────────┘
+Recommended platforms:
+┏━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━┓
+┃ Hardware         ┃ Latency   ┃ Power  ┃ Meets Reqs   ┃ Score  ┃
+┡━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━┩
+│ Jetson Orin Nano │ 18ms      │ 10W    │ ✓ Yes        │ 0.92   │
+│ Coral Edge TPU   │ 12ms      │ 2W     │ ✓ Yes        │ 0.88   │
+│ Ryzen AI NUC     │ 8ms       │ 25W    │ ✓ Latency    │ 0.76   │
+└──────────────────┴───────────┴────────┴──────────────┴────────┘
 
-⚠ Warning: Jetson Nano cannot meet 33ms latency requirement
-  Recommendation: Use Jetson Orin Nano or apply INT8 quantization
+Top recommendation: Jetson Orin Nano
+  • Excellent latency headroom (18ms vs 33ms target)
+  • Well within power budget (10W vs 15W)
+  • Strong ecosystem and tooling support
 ```
 
-### Step 4: Identify Bottlenecks
+### Step 4: Deploy with Optimization
 
-```bash
-# Interactive session for bottleneck analysis
-branes chat
-```
-
-```
-You: Analyze the drone_perception_v1 architecture for Jetson Orin Nano
-
-Agent: [analyze_architecture]
-
-Architecture Analysis: drone_perception_v1
-==========================================
-
-Pipeline: Camera → Preprocess → Detect → Track → Scene Graph
-Target: Jetson Orin Nano (10W)
-
-Operator Breakdown:
-┏━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Operator      ┃ Latency  ┃ % Total ┃ Bottleneck                       ┃
-┡━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ Preprocess    │ 2.1ms    │ 6%      │                                  │
-│ YOLOv8n       │ 18.4ms   │ 55%     │ ← COMPUTE BOUND (GPU saturated)  │
-│ ByteTrack     │ 8.2ms    │ 25%     │ ← MEMORY BOUND (association)     │
-│ Scene Graph   │ 4.8ms    │ 14%     │                                  │
-├───────────────┼──────────┼─────────┼──────────────────────────────────┤
-│ TOTAL         │ 33.5ms   │ 100%    │ ✗ Exceeds 33ms target by 0.5ms   │
-└───────────────┴──────────┴─────────┴──────────────────────────────────┘
-
-Critical Path: Preprocess → Detect → Track → Scene Graph (sequential)
-
-Recommendations:
-1. Quantize YOLOv8n to INT8: 18.4ms → ~9ms (50% reduction)
-2. Optimize ByteTrack association: use spatial hashing for O(n) instead of O(n²)
-3. Pipeline scene graph update: overlap with next frame preprocessing
-```
-
-### Step 5: Deploy with Optimization
+Export your model optimized for the target platform:
 
 ```bash
 # Deploy to Jetson with INT8 quantization
@@ -329,449 +300,411 @@ branes deploy run yolov8n.pt \
   --input-shape 1,3,640,640 \
   --test-data ./validation_images \
   --validate
-
-# Output:
-# Step 1: Preparing ONNX model...
-#   Exporting to ONNX...
-#   ONNX exported: deployments/model.onnx
-#
-# Step 2: Deploying to jetson with int8 precision...
-#   Running INT8 calibration with 100 samples...
-#   Calibration complete, building engine...
-#   Engine saved: deployments/model_int8.engine
-#   Engine size: 4.82 MB
-#
-# Step 3: Running validation...
-#   Validation passed: True
-#   Speedup: 2.1x
-#   Max output diff: 0.0023
-#
-# Deployment completed
-#   Engine: deployments/model_int8.engine
-#   Precision: int8
-#   Latency: 8.7ms (was 18.4ms)
 ```
 
-### Step 6: Validate Functional Requirements
+**Example output:**
+```
+Deployment: YOLOv8n → Jetson (INT8)
+===================================
+
+Step 1: Preparing ONNX model...
+  ✓ Exported to ONNX format
+
+Step 2: Building TensorRT engine...
+  ✓ INT8 calibration complete (100 samples)
+  ✓ Engine optimized and serialized
+
+Step 3: Validating accuracy...
+  ✓ Accuracy within tolerance (0.2% difference)
+
+Deployment complete!
+  Engine: deployments/model_int8.engine
+  Size: 4.8 MB
+  Latency: 8.7ms (2.1x faster than FP32)
+  Speedup: 2.1x with <1% accuracy impact
+```
+
+### Step 5: Validate Performance
+
+Confirm your system meets requirements:
 
 ```bash
-# Benchmark the deployed model
 branes benchmark run deployments/model_int8.engine \
   --iterations 1000 \
   --report latency-distribution
+```
 
-# Output:
-# Latency Distribution (1000 iterations)
-# ======================================
-#   P50:   8.7ms
-#   P90:   9.1ms
-#   P99:   10.2ms
-#   P99.9: 12.8ms
-#   Max:   14.1ms
-#
-# ✓ P99.9 (12.8ms) < target (33ms): PASS
-# ✓ Deterministic: 99.9% of frames under 13ms
+**Example output:**
+```
+Performance Validation (1000 iterations)
+========================================
+
+Latency distribution:
+  Mean:  8.7ms
+  P50:   8.6ms
+  P90:   9.1ms
+  P99:   10.2ms
+  P99.9: 12.8ms
+
+✓ P99.9 latency (12.8ms) well under target (33ms)
+✓ Consistent performance with low variance
+✓ Ready for deployment
 ```
 
 ---
 
-## Target-Specific Guides
+## Interactive AI Architect
 
-### Jetson (Orin, Xavier, Nano)
+For complex design decisions, use the interactive AI architect:
 
-**Best for**: High-performance edge inference with power constraints
-
-**Workflow**:
 ```bash
-# 1. Install TensorRT dependencies
+branes chat
+```
+
+**Example session:**
+
+```
+You: Design a perception pipeline for an agricultural robot that needs to:
+     - Detect crops and weeds at 15 FPS
+     - Estimate plant health from RGB images
+     - Run on solar power (10W budget)
+     - Operate in outdoor lighting conditions
+
+Agent: I'll design an architecture optimized for your requirements.
+
+Proposed Architecture:
+┌─────────────────────────────────────────────────────────────────┐
+│ Agricultural Perception Pipeline                                │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Camera (15 FPS) ──→ Preprocess ──→ YOLOv8n ──→ Health Model    │
+│       │                 2ms          8ms          5ms           │
+│       │                                                         │
+│       └──────────────→ Exposure Control (adaptive)              │
+│                                                                 │
+│  Total latency: 15ms (66 FPS capable)                           │
+│  Power estimate: 7W (30% headroom)                              │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+Model recommendations:
+  • YOLOv8n: Efficient detection, 3.2M parameters
+  • MobileNetV3: Plant health classification, 2.5M parameters
+
+Hardware recommendation: Coral Edge TPU
+  • 2W inference power
+  • Leaves 8W for camera, compute, and actuation
+  • Excellent for solar-powered operation
+
+Shall I deploy these models to Coral format?
+```
+
+---
+
+## Target Platform Guides
+
+### NVIDIA Jetson (Orin, Xavier, Nano)
+
+**Ideal for**: High-performance edge AI with GPU acceleration
+
+```bash
+# Install dependencies
 pip install embodied-ai-architect[jetson]
 
-# 2. Deploy with INT8 for maximum performance
+# Deploy with optimization
 branes deploy run model.pt --target jetson --precision int8 \
   --calibration-data ./images --input-shape 1,3,640,640
 
-# 3. Copy engine to Jetson device
-scp deployments/model_int8.engine jetson:/models/
+# Transfer to device
+scp deployments/model_int8.engine jetson@device:/models/
 ```
 
-**Performance expectations**:
+**Performance guide:**
 | Model | FP32 | FP16 | INT8 |
 |-------|------|------|------|
 | YOLOv8n | 45ms | 22ms | 9ms |
 | YOLOv8s | 85ms | 42ms | 18ms |
 | ResNet50 | 28ms | 14ms | 6ms |
+| MobileNetV3 | 12ms | 6ms | 3ms |
 
-### Ryzen AI NUC
+### AMD Ryzen AI NUC
 
-**Best for**: Desktop/industrial applications with NPU acceleration
+**Ideal for**: Desktop, industrial, and robotics applications
 
-**Workflow**:
 ```bash
-# 1. Install ONNX Runtime with Ryzen AI EP
+# Install dependencies
 pip install embodied-ai-architect[ryzen]
 
-# 2. Export to ONNX with NPU-compatible ops
-branes deploy run model.pt --target ryzen --precision fp16 \
+# Deploy for NPU acceleration
+branes deploy run model.pt --target ryzen --precision int8 \
   --input-shape 1,3,640,640
-
-# 3. Profile NPU vs GPU allocation
-branes benchmark arch drone_perception_v1 --target ryzen-ai-nuc-7
 ```
 
-**Operator allocation strategy**:
+**Compute allocation strategy:**
 ```
-Camera → Preprocess → Detect → Track → Scene Graph → Control
-  30Hz      GPU         NPU     CPU       CPU         CPU
-             ↓           ↓                              ↓
-          Radeon     XDNA NPU                      Real-time
-          780M       10 TOPS                       thread
+Perception (NPU)  →  Tracking (CPU)  →  Planning (CPU)  →  Control (CPU)
+   YOLOv8             ByteTrack          RRT*/MPC           PID
+   12ms               8ms                35ms               1ms
 ```
 
-### Coral Edge TPU
+### Google Coral Edge TPU
 
-**Best for**: Ultra-low-power deployment (<2W)
+**Ideal for**: Ultra-low-power, battery-operated systems
 
-**Constraints**:
-- INT8 only
-- Limited operator support
-- Single-model execution
-
-**Workflow**:
 ```bash
-# 1. Check model compatibility
-branes analyze model.pt --target coral
+# Install dependencies
+pip install embodied-ai-architect[coral]
 
-# 2. Convert with Edge TPU compiler
+# Deploy (INT8 only)
 branes deploy run model.pt --target coral \
   --calibration-data ./images --input-shape 1,224,224,3
 ```
 
-### Stillwater KPU (Custom Accelerator)
+**Power efficiency:**
+| Model | Latency | Power | Efficiency |
+|-------|---------|-------|------------|
+| MobileNetV2 | 3ms | 0.5W | 666 inf/J |
+| EfficientDet-Lite | 12ms | 1.2W | 69 inf/J |
+| YOLOv5n | 15ms | 1.5W | 44 inf/J |
 
-**Best for**: When existing hardware cannot meet requirements
+### Stillwater KPU
 
-**When to consider KPU**:
-- Latency requirements below 1ms for control loops
-- Power budget below 5W with full PGN&C pipeline
-- Need for deterministic worst-case execution time
-- Linear algebra workloads (Kalman, MPC, optimization)
+**Ideal for**: Custom embodied AI applications with specialized requirements
 
-**Workflow**:
+The KPU is designed for applications that need:
+- Deterministic sub-millisecond latency
+- Integrated linear algebra acceleration
+- Hard real-time guarantees
+- Maximum energy efficiency
+
 ```bash
-# 1. Profile your architecture to identify gaps
+# Analyze whether KPU would benefit your application
 branes chat
 
-You: Analyze drone_control_v1 for 1kHz control loop
+You: Would my 1kHz robot control loop benefit from KPU acceleration?
 
-Agent: [analyze_architecture]
+Agent: Let me analyze your control pipeline...
 
-Gap Analysis:
-┏━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━┓
-┃ Requirement           ┃ Target       ┃ Jetson Orin  ┃ Gap      ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━┩
-│ Control loop latency  │ <1ms         │ 3.2ms        │ 2.2ms    │
-│ EKF update            │ <500µs       │ 1.8ms        │ 1.3ms    │
-│ MPC solve (10 steps)  │ <5ms         │ 18ms         │ 13ms     │
-│ Total power           │ <8W          │ 15W          │ 7W       │
-└───────────────────────┴──────────────┴──────────────┴──────────┘
+KPU Benefit Analysis:
+┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓
+┃ Operation           ┃ Current    ┃ With KPU   ┃ Improvement     ┃
+┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩
+│ EKF update          │ 1.2ms      │ 0.15ms     │ 8x faster       │
+│ MPC solve           │ 8ms        │ 0.4ms      │ 20x faster      │
+│ Control loop total  │ 9.5ms      │ 0.6ms      │ Enables 1kHz    │
+└─────────────────────┴────────────┴────────────┴─────────────────┘
 
-⚠ No existing hardware can meet these requirements.
-  Recommendation: Custom KPU with:
-    - Dedicated EKF accelerator
-    - MPC constraint solver
-    - 1kHz hard real-time scheduler
-
-# 2. Generate KPU requirements specification
-branes design kpu-spec drone_control_v1 --output kpu_requirements.json
-
-# 3. Contact Stillwater for KPU design engagement
+Recommendation: Your application would significantly benefit from KPU.
+Contact Stillwater for a design consultation.
 ```
 
 ---
 
 ## End-to-End Examples
 
-### Example 1: Drone Perception Pipeline on Jetson Orin
+### Example 1: Drone Perception Pipeline
 
-**Objective**: Deploy a complete perception pipeline for autonomous drone navigation
+**Goal**: Build a perception system for autonomous drone navigation
 
 **Requirements**:
-- 30 FPS perception (33ms latency budget)
-- <15W power consumption
-- >0.5 mAP detection accuracy
-
-**Step-by-step**:
+- 30 FPS real-time perception
+- Object detection and tracking
+- Obstacle distance estimation
+- 15W power budget for 1-hour flight
 
 ```bash
-# 1. Start interactive session
+# Start interactive design session
 branes chat
 
-# 2. Design the architecture
-You: Design a drone perception pipeline for Jetson Orin Nano with:
-     - 30 FPS from 720p camera
-     - Object detection and tracking
-     - Obstacle distance estimation
-     - Power under 15W
+You: Design a drone perception pipeline for autonomous navigation.
+     Requirements: 30 FPS, obstacle detection, depth estimation, 15W power.
 
-Agent: I'll design a pipeline and validate it meets your requirements.
-
-[Creates architecture with operators: Preprocess, YOLOv8n, ByteTrack, DepthEstimator]
-[Analyzes latency: 28.3ms total - within budget]
-[Analyzes power: 11.2W - within budget]
+Agent: I'll design an optimized pipeline for your drone.
 
 Recommended Architecture:
-┌─────────┐   ┌──────────┐   ┌─────────┐   ┌───────────┐
-│ Camera  │──→│ Preproc  │──→│ YOLOv8n │──→│ ByteTrack │
-│ 720p    │   │ 2ms      │   │ 9ms     │   │ 8ms       │
-└─────────┘   └──────────┘   └─────────┘   └───────────┘
-                                                  │
-                             ┌─────────────┐      │
-                             │ MiDaS-small │◀─────┘
-                             │ 9ms         │
-                             └─────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│ Drone Perception Pipeline                                      │
+├────────────────────────────────────────────────────────────────┤
+│                                                                │
+│  ┌─────────┐   ┌──────────┐   ┌─────────┐   ┌───────────────┐  │
+│  │ Camera  │──→│ YOLOv8n  │──→│ByteTrack│──→│ Obstacle Map  │  │
+│  │ 720p    │   │ INT8     │   │         │   │               │  │
+│  │ 30 FPS  │   │ 9ms      │   │ 6ms     │   │ 3ms           │  │
+│  └─────────┘   └──────────┘   └─────────┘   └───────────────┘  │
+│       │                                                        │
+│       │        ┌──────────────┐                                │
+│       └───────→│ MiDaS-small  │ (depth estimation)             │
+│                │ INT8 | 8ms   │                                │
+│                └──────────────┘                                │
+│                                                                │
+│  Pipeline metrics:                                             │
+│    Total latency: 26ms (38 FPS capable)                        │
+│    Power: 11W (4W headroom)                                    │
+│    ✓ Exceeds all requirements                                  │
+│                                                                │
+└────────────────────────────────────────────────────────────────┘
 
-Total: 28ms | Power: 11.2W | ✓ Meets all requirements
+Target hardware: Jetson Orin Nano
 
-# 3. Deploy the detection model
-You: Deploy the YOLOv8n model with INT8 quantization
+Shall I deploy these models?
 
-Agent: [deploy_model] Deploying to Jetson with INT8...
+You: Yes, deploy to Jetson with INT8
 
-Deployment complete:
-  Engine: yolov8n_int8.engine
-  Latency: 8.7ms (down from 18.4ms)
-  Size: 4.8 MB
-  Validation: PASSED (accuracy within 1%)
+Agent: Deploying models...
 
-# 4. Benchmark the full pipeline
-You: Benchmark the full pipeline with power monitoring
+Deployment complete!
+  • yolov8n_int8.engine: 4.8 MB, 9ms latency
+  • midas_small_int8.engine: 12 MB, 8ms latency
 
-Agent: [benchmark_architecture]
-
-Full Pipeline Benchmark (1000 frames):
-  Mean latency: 27.8ms (36 FPS)
-  P99 latency: 31.2ms
-  Power: 10.8W
-
-  ✓ All functional requirements met
+  Combined pipeline: 26ms at 10.8W
+  ✓ Ready for flight testing
 ```
 
-### Example 2: Robot Control on Ryzen AI NUC
+### Example 2: Industrial Robot Control
 
-**Objective**: Deploy a pick-and-place robot controller with perception and planning
+**Goal**: Build a pick-and-place system with visual servoing
 
 **Requirements**:
-- 100Hz control loop (10ms)
-- 30Hz perception (33ms)
-- <35W total power
+- 100Hz control loop for precision manipulation
+- 30Hz visual feedback for object localization
+- Force-feedback safety system
+- 35W power budget
 
 ```bash
-# 1. Analyze the multi-rate architecture
 branes chat
 
-You: Design a pick-and-place robot pipeline for Ryzen 9 AI NUC with:
-     - 100Hz force-feedback control
-     - 30Hz visual perception
-     - 10Hz trajectory planning
-     - Collision avoidance
+You: Design a pick-and-place robot with visual servoing.
+     100Hz control, 30Hz vision, force feedback, 35W budget.
 
-Agent: This requires multi-rate scheduling. Let me design the architecture.
+Agent: This requires a multi-rate architecture. Let me design it.
 
-Multi-Rate Architecture:
-┌─────────────────────────────────────────────────────────────────┐
-│ 100Hz Control Loop (10ms budget)                                │
-│ ┌─────────────┐   ┌──────────────┐   ┌───────────────────────┐  │
-│ │ Force/Torque│──→│ Impedance    │──→│ Joint Controller      │  │
-│ │ Sensors     │   │ Control      │   │ (PID)                 │  │
-│ │ <1ms        │   │ 2ms          │   │ 1ms                   │  │
-│ └─────────────┘   └──────────────┘   └───────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
+Multi-Rate Robot Architecture:
+┌───────────────────────────────────────────────────────────────┐
+│ 100Hz Control Loop (10ms budget)                              │
+│ ┌───────────────┐   ┌─────────────┐   ┌────────────────────┐  │
+│ │ Force Sensors │──→│ Impedance   │──→│ Joint Controllers  │  │
+│ │ 6-axis        │   │ Control     │   │ 6-DOF arm          │  │
+│ │ <1ms read     │   │ 3ms         │   │ 2ms                │  │
+│ └───────────────┘   └─────────────┘   └────────────────────┘  │
+└───────────────────────────────────────────────────────────────┘
                               ▲
-                              │ setpoints @ 30Hz
+                              │ pose setpoints @ 30Hz
 ┌────────────────────────────────────────────────────────────────┐
-│ 30Hz Perception Loop (33ms budget)                             │
-│ ┌─────────┐   ┌──────────┐   ┌─────────┐   ┌────────────────┐  │
-│ │ Stereo  │──→│ Detect   │──→│ 6DOF    │──→│ Collision      │  │
-│ │ Camera  │   │ (NPU)    │   │ Pose    │   │ Check          │  │
-│ │ 3ms     │   │ 12ms     │   │ 8ms     │   │ 5ms            │  │
-│ └─────────┘   └──────────┘   └─────────┘   └────────────────┘  │
-└────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼ obstacles @ 10Hz
-┌────────────────────────────────────────────────────────────────┐
-│ 10Hz Planning Loop (100ms budget)                              │
-│ ┌─────────────────────┐   ┌─────────────────────────────────┐  │
-│ │ Motion Planner      │──→│ Trajectory Optimizer (MPC)      │  │
-│ │ (RRT*)              │   │ 45ms on CPU                     │  │
-│ │ 35ms                │   │                                 │  │
-│ └─────────────────────┘   └─────────────────────────────────┘  │
+│ 30Hz Vision Loop (33ms budget)                                 │
+│ ┌──────────┐   ┌───────────┐   ┌──────────┐   ┌─────────────┐  │
+│ │ Stereo   │──→│ Detection │──→│ 6DOF     │──→│ Grasp       │  │
+│ │ Cameras  │   │ YOLOv8s   │   │ Pose Est │   │ Planning    │  │
+│ │ 3ms      │   │ 12ms NPU  │   │ 8ms      │   │ 6ms         │  │
+│ └──────────┘   └───────────┘   └──────────┘   └─────────────┘  │
 └────────────────────────────────────────────────────────────────┘
 
-Allocation:
-  NPU (XDNA): Detection (YOLOv8s)
-  GPU (780M): Depth estimation, preprocessing
-  CPU: Control, planning, tracking
+Target: Ryzen 9 AI NUC
+  • NPU: Object detection (12ms, 3W)
+  • GPU: Depth processing (5ms, 8W)
+  • CPU: Control, planning (dedicated cores)
+  • Total: 28W (7W headroom)
 
-Power estimate: 28W (within 35W budget)
-
-# 2. Identify NPU deployment path
-You: Deploy the detection model to Ryzen AI NPU
-
-Agent: [deploy_model] Converting for ONNX Runtime with Ryzen AI EP...
-
-Ryzen AI Deployment:
-  Format: ONNX with INT8 quantization
-  Execution Provider: VitisAI EP
-  Latency: 11.8ms on NPU
-  Power: 3.2W (NPU only)
+✓ Architecture validated for your requirements
 ```
 
-### Example 3: When Hardware Falls Short—KPU Design
+### Example 3: Exploring KPU Benefits
 
-**Objective**: Sub-millisecond control for high-speed manipulation
+**Goal**: Understand when specialized hardware enables new capabilities
 
-**Requirements**:
-- 1kHz control loop (<1ms latency)
-- EKF sensor fusion at 500Hz
-- <5W power budget
-
-```bash
-# 1. Analyze feasibility on existing hardware
-branes chat
-
-You: Can I run 1kHz model-predictive control on Jetson Orin?
-
-Agent: [analyze_architecture] Let me check...
-
-Gap Analysis for 1kHz MPC:
-┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━┓
-┃ Operation           ┃ Required  ┃ Jetson Orin  ┃ Feasible? ┃
-┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━┩
-│ Sensor read         │ <100µs    │ 50µs         │ ✓         │
-│ EKF update (12-state)│ <200µs   │ 1.2ms        │ ✗         │
-│ MPC solve (10-step) │ <500µs    │ 8ms          │ ✗         │
-│ Actuator write      │ <50µs     │ 30µs         │ ✓         │
-├─────────────────────┼───────────┼──────────────┼───────────┤
-│ Total               │ <1ms      │ 9.3ms        │ ✗ 9.3x gap│
-└─────────────────────┴───────────┴──────────────┴───────────┘
-
-⚠ CRITICAL GAP: No existing hardware can meet 1kHz MPC requirements.
-
-Root cause: GPU is optimized for throughput (batch processing), not
-latency (single-sample real-time). Linear algebra operations like
-EKF and MPC run on CPU, which cannot achieve sub-millisecond latency.
-
-Recommendation: Custom accelerator (KPU) with:
-  - Dedicated matrix multiply unit for 12×12 state matrices
-  - Hardened QP solver for MPC constraints
-  - Deterministic 200µs EKF, 400µs MPC
-  - Total: 650µs control loop
-
-You: Generate a KPU requirements specification
-
-Agent: [generate_kpu_spec]
-
-KPU Requirements Specification
-==============================
-
-Target Application: High-speed manipulation control
-Control Rate: 1kHz (1ms period)
-
-Compute Requirements:
-┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Operation           ┃ Specification                            ┃
-┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ Matrix multiply     │ 12×12 × 12×1 in <10µs                    │
-│ Cholesky decomp     │ 12×12 in <30µs                           │
-│ QP solve            │ 10 variables, 20 constraints in <300µs   │
-│ Sensor interface    │ 6-axis IMU + encoders @ 1kHz             │
-│ Actuator interface  │ 6 motors @ 1kHz PWM                      │
-└─────────────────────┴──────────────────────────────────────────┘
-
-Power Budget: 5W total
-  - Compute: 3W
-  - I/O: 1W
-  - Memory: 1W
-
-Real-Time Requirements:
-  - WCET guarantee: 800µs (200µs margin)
-  - Jitter: <10µs
-  - No dynamic memory allocation
-
-Output: kpu_requirements.json
-
-Next step: Contact Stillwater for KPU architecture design.
-```
-
----
-
-## Troubleshooting
-
-### "Target not available"
-
-```bash
-branes deploy list
-# Shows: jetson - No
-
-# Solution: Install target-specific dependencies
-pip install embodied-ai-architect[jetson]
-```
-
-### "INT8 calibration failed"
-
-Common causes:
-1. **Insufficient calibration data**: Need 100+ representative images
-2. **Data format mismatch**: Images must match training preprocessing
-3. **Out of memory**: Reduce batch size with `--calibration-batch-size 1`
-
-### "Latency exceeds target"
-
-Use bottleneck analysis:
 ```bash
 branes chat
-You: Why is my pipeline slower than expected?
 
-Agent: [identify_bottleneck]
-  Bottleneck: ByteTrack association taking 15ms
-  Cause: O(n²) Hungarian algorithm with 200 detections
-  Solution: Reduce max detections or use spatial hashing
+You: I'm building a high-speed drone for racing. I need 200Hz state
+     estimation and 100Hz trajectory replanning. Is this possible?
+
+Agent: Let me analyze the computational requirements.
+
+High-Speed Drone Analysis:
+┏━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Requirement             ┃ Time Budget   ┃ What It Enables          ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 200Hz State Estimation  │ 5ms           │ Stable flight at 50+ m/s │
+│ 100Hz Trajectory Replan │ 10ms          │ Agile obstacle avoidance │
+│ 500Hz Motor Control     │ 2ms           │ Precise attitude control │
+└─────────────────────────┴───────────────┴──────────────────────────┘
+
+Platform Comparison:
+┏━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓
+┃ Platform        ┃ State Est (EKF) ┃ Trajectory (MPC)┃ Achievable? ┃
+┡━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩
+│ Jetson Orin     │ 1.8ms           │ 18ms            │ Partial     │
+│ Ryzen AI NUC    │ 1.2ms           │ 12ms            │ Partial     │
+│ Stillwater KPU  │ 0.15ms          │ 0.8ms           │ ✓ Full      │
+└─────────────────┴─────────────────┴─────────────────┴─────────────┘
+
+Analysis:
+  • Existing platforms can achieve 200Hz state estimation
+  • 100Hz MPC replanning requires specialized acceleration
+  • KPU enables the full capability set for racing performance
+
+The KPU's dedicated linear algebra and constraint solver hardware
+enables real-time MPC that would otherwise require a much larger,
+power-hungry system.
+
+Would you like me to generate a KPU requirements specification?
 ```
 
-### "Power exceeds budget"
+---
 
+## Best Practices
+
+### Choosing the Right Model
+
+| Application | Recommended Models | Why |
+|-------------|-------------------|-----|
+| Drone perception | YOLOv8n, MobileNet | Small, fast, power-efficient |
+| Industrial inspection | YOLOv8s, EfficientDet | Balance of accuracy and speed |
+| Autonomous vehicles | YOLOv8m, DETR | Higher accuracy for safety |
+| Mobile robots | MobileNetV3, NanoDet | Optimized for edge CPUs |
+
+### Optimization Strategies
+
+1. **Quantization**: INT8 typically provides 2-3x speedup with <1% accuracy loss
+2. **Model selection**: Smaller models often meet requirements with better efficiency
+3. **Operator fusion**: Combine operations to reduce memory bandwidth
+4. **Hardware matching**: Use NPU for inference, CPU for control, GPU for preprocessing
+
+### Validation Checklist
+
+Before deployment, verify:
+- [ ] Mean latency meets requirements
+- [ ] P99 latency provides safety margin
+- [ ] Power consumption fits within budget
+- [ ] Accuracy meets application needs
+- [ ] System operates correctly under load
+
+---
+
+## Getting Help
+
+### Resources
+
+- **Model Zoo**: `branes zoo search --help`
+- **Interactive Architect**: `branes chat`
+- **Documentation**: `branes --help`
+
+### Support
+
+- **GitHub Issues**: Report bugs and request features
+- **KPU Inquiries**: Contact Stillwater for custom acceleration needs
+
+---
+
+## Summary
+
+The Branes Embodied AI Platform helps you build autonomous systems that work—systems that perceive, reason, and act in the real world within the constraints that matter: latency for responsiveness, power for mission duration, and accuracy for safety.
+
+Whether you're deploying to existing hardware like Jetson or Coral, or exploring custom acceleration with the KPU, Branes provides the tools to design with confidence and deploy with certainty.
+
+**Start building:**
 ```bash
-branes benchmark arch my_pipeline --power-profile
-
-# Identify high-power operators and consider:
-# 1. INT8 quantization (2-3x power reduction)
-# 2. Smaller model variants
-# 3. Reduce frame rate
-# 4. Offload to lower-power compute unit
+pip install embodied-ai-architect
+branes chat
 ```
 
----
-
-## Summary: Why Branes Matters
-
-The Branes Embodied AI Platform exists because **building autonomous systems is harder than it appears**.
-
-Most teams discover—too late—that their hardware cannot meet latency requirements, their power budget is blown, or their control loops are unstable. These are not software bugs. They are architectural failures that require hardware changes to fix.
-
-Branes helps you:
-1. **Understand requirements** before committing to hardware
-2. **Identify bottlenecks** before they become blockers
-3. **Validate solutions** with real measurements
-4. **Design custom accelerators** when no existing hardware suffices
-
-The Knowledge Processing Unit represents the endgame: purpose-built silicon for embodied AI, designed from first principles for the computational patterns of perception, guidance, navigation, and control.
-
-**Latency and energy are functional requirements.** Branes ensures you can meet them.
-
----
-
-## Next Steps
-
-- **Explore the Model Zoo**: `branes zoo search --task detection`
-- **Analyze your model**: `branes analyze your_model.pt`
-- **Start an interactive session**: `branes chat`
-- **Contact Stillwater**: For KPU design engagements, reach out at [stillwater-sc.com](https://stillwater-sc.com)
+The future of embodied AI is being built today. We're here to help you build it.
