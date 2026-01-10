@@ -65,6 +65,15 @@ class DeploymentAgent(BaseAgent):
         except ImportError:
             pass
 
+        try:
+            from .targets.coral import CoralTarget
+
+            target = CoralTarget()
+            if target.is_available():
+                self._register_target(target)
+        except ImportError:
+            pass
+
     def _register_target(self, target: DeploymentTarget) -> None:
         """Register a deployment target."""
         if target.is_available():

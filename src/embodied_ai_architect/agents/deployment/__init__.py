@@ -37,4 +37,11 @@ try:
 except ImportError:
     pass
 
+try:
+    from .targets.coral import CoralTarget
+
+    _exports.append("CoralTarget")
+except ImportError:
+    pass
+
 __all__ = _exports

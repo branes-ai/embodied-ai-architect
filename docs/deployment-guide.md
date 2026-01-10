@@ -196,9 +196,11 @@ The commodity platform support is best for experimentation and competitive analy
 | **Intel/AMD (OpenVINO)** | Desktop, industrial, x86 embedded | FP32, FP16, INT8 | `[openvino]` |
 | **Jetson Orin** | High-performance edge AI | FP32, FP16, INT8 | `[jetson]` |
 | **Jetson Nano** | Cost-effective edge deployment | FP16, INT8 | `[jetson]` |
-| **Coral Edge TPU** | Ultra-low-power inference | INT8 | `[coral]` |
+| **Coral Edge TPU** | Ultra-low-power, battery systems | INT8 only | `[coral]` |
 
 *OpenVINO supports Intel CPUs, Intel GPUs, Intel NPUs (Meteor Lake, Lunar Lake), and AMD Ryzen AI NPUs.*
+
+*Coral Edge TPU requires INT8 quantization - the hardware only executes fully quantized models.*
 
 
 ---
@@ -476,15 +478,46 @@ Perception (NPU)  →  Tracking (CPU)  →  Planning (CPU)  →  Control (CPU)
 
 ### Google Coral Edge TPU
 
-**Ideal for**: Ultra-low-power, battery-operated systems
+**Ideal for**: Ultra-low-power, battery-operated, and always-on systems
+
+The Edge TPU provides exceptional power efficiency (~0.5W per TOPS) but **only supports INT8 quantized models**. This makes calibration data essential.
 
 ```bash
-# Install dependencies
+# Install dependencies (on development machine)
 pip install embodied-ai-architect[coral]
 
-# Deploy (INT8 only)
-branes deploy run model.pt --target coral \
-  --calibration-data ./images --input-shape 1,224,224,3
+# On Coral device, also install:
+# - edgetpu_compiler (for hardware acceleration)
+# - pycoral (for runtime)
+
+# Deploy to TFLite with INT8 quantization
+branes deploy run model.onnx --target coral --precision int8 \
+  --calibration-data ./images --input-shape 1,3,224,224
+
+# Note: Edge TPU compiler runs automatically if available
+# Output: model.tflite (CPU) and model_edgetpu.tflite (accelerated)
+```
+
+**Python API:**
+```python
+from embodied_ai_architect.agents.deployment import DeploymentAgent
+
+agent = DeploymentAgent()
+
+# Deploy to Coral (INT8 required)
+result = agent.execute({
+    "model": "mobilenet_v2.onnx",
+    "target": "coral",
+    "precision": "int8",  # Only INT8 supported
+    "input_shape": [1, 3, 224, 224],
+    "calibration_data": "./calib_images",
+    "calibration_samples": 100,
+    "output_dir": "./deployments",
+})
+
+# Result includes both TFLite and Edge TPU compiled versions
+print(f"TFLite model: {result.data['artifact']['metadata']['tflite_path']}")
+print(f"Edge TPU model: {result.data['artifact']['metadata']['edgetpu_path']}")
 ```
 
 **Power efficiency:**
@@ -493,6 +526,11 @@ branes deploy run model.pt --target coral \
 | MobileNetV2 | 3ms | 0.5W | 666 inf/J |
 | EfficientDet-Lite | 12ms | 1.2W | 69 inf/J |
 | YOLOv5n | 15ms | 1.5W | 44 inf/J |
+
+**Best practices for Coral:**
+- Use models designed for Edge TPU (MobileNet, EfficientNet-Lite)
+- Ensure all ops are Edge TPU compatible (check compiler output)
+- Provide diverse calibration images for accurate quantization
 
 ### Stillwater KPU
 
