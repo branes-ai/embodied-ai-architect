@@ -10,14 +10,18 @@ The deployment system expects the KPU simulator to provide three main components
 ┌─────────────────────────────────────────────────────────────────┐
 │                     Deployment System                            │
 │                                                                  │
-│   ONNX Model ──► KPUCompiler ──► KPUProgram ──► KPURuntime      │
-│                      │               │              │            │
-│                      ▼               ▼              ▼            │
-│                  Graph Opts      Serialized     Execution        │
-│                  Tiling          Program        Results          │
-│                  Scheduling      + Weights      + Metrics        │
+│   PyTorch Model ──► torch.compile ──► KPUCompiler ──► KPUProgram│
+│         │                │                │              │       │
+│         ▼                ▼                ▼              ▼       │
+│     torch.nn          FX Graph        Graph Opts     Serialized  │
+│     Module            Capture         Tiling         Program     │
+│                                       Scheduling     + Weights   │
+│                                                                  │
+│   KPUProgram ──► KPURuntime ──► Execution Results + Metrics      │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+**Requirements:** PyTorch 2.0+ with torch.compile support
 
 ## Required Interfaces
 
@@ -25,24 +29,25 @@ The deployment system expects the KPU simulator to provide three main components
 
 **Location:** `agents/deployment/targets/kpu/spec.py`
 
-The compiler transforms ONNX models into executable KPU programs.
+The compiler integrates with torch.compile to transform PyTorch models into executable KPU programs.
 
 ```python
 class KPUCompilerInterface(ABC):
     @abstractmethod
     def compile(
         self,
-        onnx_path: Path,
+        model_path: Path,
         config: KPUConfig,
         precision: KPUPrecision,
         calibration_data: Iterator[np.ndarray] | None = None,
     ) -> KPUProgram:
         """
-        Compile ONNX model to KPU program.
+        Compile PyTorch model to KPU program via torch.compile.
 
         MUST:
-        - Parse and validate ONNX model
-        - Check operator support against config.native_ops
+        - Register as a torch.compile backend
+        - Receive FX graph from torch.compile
+        - Lower FX operations to KPU operations
         - Apply graph optimizations (fusion, constant folding)
         - Determine tiling strategy for each operation
         - Allocate memory for tensors (respecting SRAM limits)
@@ -56,7 +61,7 @@ class KPUCompilerInterface(ABC):
         pass
 
     @abstractmethod
-    def validate_model(self, onnx_path: Path, config: KPUConfig) -> list[str]:
+    def validate_model(self, model_path: Path, config: KPUConfig) -> list[str]:
         """
         Quick validation without full compilation.
         Returns list of issues (empty if compatible).
@@ -64,7 +69,7 @@ class KPUCompilerInterface(ABC):
         pass
 
     @abstractmethod
-    def estimate_memory(self, onnx_path: Path, config: KPUConfig, precision: KPUPrecision) -> dict[str, int]:
+    def estimate_memory(self, model_path: Path, config: KPUConfig, precision: KPUPrecision) -> dict[str, int]:
         """
         Estimate memory requirements.
         Returns: {"weights": N, "activations": N, "peak_sram": N, "peak_dram": N}
@@ -76,7 +81,8 @@ class KPUCompilerInterface(ABC):
 
 | Requirement | Description | Priority |
 |-------------|-------------|----------|
-| ONNX Parsing | Parse ONNX opset 13+ models | P0 |
+| torch.compile Backend | Register as custom backend for torch.compile | P0 |
+| FX Graph Lowering | Lower FX graph nodes to KPU operations | P0 |
 | Operator Support | Support ops listed in `KPUConfig.native_ops` | P0 |
 | Graph Fusion | Fuse Conv+BN+ReLU, MatMul+Add, etc. | P1 |
 | Constant Folding | Fold constant expressions at compile time | P1 |
@@ -192,7 +198,7 @@ Hardware configuration that the simulator must respect:
 ```python
 @dataclass
 class KPUConfig:
-    name: str = "stillwater-kpu-v1"
+    name: str = "swkpu-v1"
     version: str = "1.0.0"
 
     memory: MemoryConfig  # SRAM/DRAM sizes and bandwidth
@@ -359,7 +365,7 @@ from my_kpu_simulator import MyKPUCompiler, MyKPURuntime
 # Create target with custom implementations
 target = StillwaterKPUTarget(
     config=KPUConfig(
-        name="stillwater-kpu-v2",
+        name="swkpu-v2",
         version="2.0.0",
         # Custom config...
     ),
@@ -376,12 +382,12 @@ from embodied_ai_architect.agents.deployment.targets.kpu import StillwaterKPUTar
 
 # Register custom target
 agent = DeploymentAgent()
-agent.register_target("stillwater-kpu", StillwaterKPUTarget())
+agent.register_target("swkpu", StillwaterKPUTarget())
 
-# Deploy model
+# Deploy PyTorch model
 result = agent.execute({
-    "model": "yolov8n.onnx",
-    "target": "stillwater-kpu",
+    "model": "yolov8n.pt",  # PyTorch model (requires torch.compile)
+    "target": "swkpu",
     "precision": "int8",
     "input_shape": [1, 3, 640, 640],
     "calibration_data": "./calibration_images",
@@ -504,7 +510,7 @@ The deployment system validates by comparing outputs:
 
 ```python
 # For each test sample:
-baseline_output = onnx_runtime.run(input)
+baseline_output = pytorch_model(input)  # Reference PyTorch execution
 kpu_output = kpu_runtime.execute(input)
 
 # Compare
@@ -573,9 +579,9 @@ class MemoryError(KPUError):
    - Test memory bounds
 
 3. **Integration Tests**
-   - End-to-end: ONNX → compile → execute → validate
+   - End-to-end: PyTorch → torch.compile → execute → validate
    - Test common models (ResNet, YOLOv8, MobileNet)
-   - Compare against ONNX Runtime outputs
+   - Compare against PyTorch reference outputs
 
 ### Accuracy Benchmarks
 

@@ -2,10 +2,15 @@
 
 This module integrates the KPU simulator with the deployment system.
 It provides a DeploymentTarget implementation that:
-1. Compiles ONNX models to KPU programs
+1. Compiles PyTorch models to KPU programs via torch.compile backend
 2. Executes via simulation (or hardware when available)
 3. Validates against baseline
 4. Reports performance/power metrics
+
+Requirements:
+- PyTorch 2.0+ with torch.compile support
+- The production compiler uses a custom torch.compile backend for KPU
+- The stub implementation uses ONNX Runtime for development/testing
 """
 
 import time
@@ -38,8 +43,12 @@ from .spec import (
 class StillwaterKPUTarget(DeploymentTarget):
     """Deployment target for Stillwater KPU.
 
-    This target compiles models to the KPU format and executes them
-    via software simulation or hardware (when available).
+    This target compiles PyTorch models to the KPU format using torch.compile
+    with a custom KPU backend, and executes them via software simulation or
+    hardware (when available).
+
+    Requirements:
+        PyTorch 2.0+ with torch.compile support
 
     Usage:
         target = StillwaterKPUTarget()
@@ -47,7 +56,7 @@ class StillwaterKPUTarget(DeploymentTarget):
         # Check availability
         if target.is_available():
             artifact = target.deploy(
-                model=onnx_path,
+                model=model_path,  # .pt or .onnx (stub mode)
                 precision=DeploymentPrecision.INT8,
                 output_path=output_dir / "model.kpu",
                 input_shape=(1, 3, 224, 224),
@@ -71,7 +80,7 @@ class StillwaterKPUTarget(DeploymentTarget):
             compiler: Custom compiler implementation (uses stub if None)
             runtime: Custom runtime implementation (uses stub if None)
         """
-        super().__init__(name="stillwater-kpu")
+        super().__init__(name="swkpu")
         self.config = config or KPUConfig()
 
         # Use provided implementations or fall back to stubs
@@ -106,13 +115,14 @@ class StillwaterKPUTarget(DeploymentTarget):
         """Check if KPU target is available.
 
         Returns True if:
-        1. ONNX is available for model parsing
+        1. PyTorch is available with torch.compile support
         2. Either custom or stub compiler/runtime is available
         """
         try:
-            import onnx  # noqa: F401
+            import torch  # noqa: F401
 
-            return True
+            # Check torch.compile availability (PyTorch 2.0+)
+            return hasattr(torch, "compile")
         except ImportError:
             return False
 
@@ -163,13 +173,18 @@ class StillwaterKPUTarget(DeploymentTarget):
 
         Workflow:
         1. Validate precision support
-        2. Load and validate ONNX model
-        3. Compile to KPU program
+        2. Load PyTorch model (or ONNX for stub mode)
+        3. Compile to KPU program via torch.compile backend
         4. Serialize program to output path
+
+        Note: The stub implementation uses ONNX Runtime internally for
+        development/testing. The production compiler uses torch.compile
+        with a custom KPU backend.
         """
         if not self.is_available():
             raise RuntimeError(
-                "KPU target not available. Install ONNX: pip install onnx"
+                "KPU target not available. Requires PyTorch 2.0+ with torch.compile: "
+                "pip install torch>=2.0"
             )
 
         # Map precision

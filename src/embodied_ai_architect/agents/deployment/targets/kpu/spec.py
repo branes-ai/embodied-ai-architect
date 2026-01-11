@@ -6,7 +6,7 @@ must implement for integration with the deployment system.
 The specification is organized into:
 1. Configuration models - Hardware configuration and constraints
 2. Program representation - Compiled model format
-3. Compiler interface - ONNX to KPU program compilation
+3. Compiler interface - PyTorch/torch.compile to KPU program compilation
 4. Runtime interface - Program execution
 5. Simulator interface - Cycle-accurate or functional simulation
 6. Performance models - Latency, power, memory estimation
@@ -15,9 +15,14 @@ IMPLEMENTATION REQUIREMENTS:
 ---------------------------
 To integrate a KPU simulator, implement these interfaces:
 
-1. KPUCompilerInterface - Compile ONNX models to KPUProgram
+1. KPUCompilerInterface - Compile PyTorch models to KPUProgram via torch.compile
 2. KPURuntimeInterface - Execute KPUProgram and return results
 3. KPUSimulatorInterface - (Optional) Cycle-accurate simulation
+
+The compiler integrates with PyTorch 2.0+ torch.compile:
+- Register a custom backend for KPU code generation
+- Lower FX graphs to KPU operations
+- Handle quantization and tiling
 
 The simulator can operate in multiple modes:
 - FUNCTIONAL: Fast execution, approximate performance estimates
@@ -119,7 +124,7 @@ class KPUConfig:
     3. Guide tiling decisions
     """
 
-    name: str = "stillwater-kpu-v1"
+    name: str = "swkpu-v1"
     version: str = "1.0.0"
 
     memory: MemoryConfig = field(default_factory=MemoryConfig)
@@ -454,16 +459,23 @@ class KPUExecutionResult:
 
 
 class KPUCompilerInterface(ABC):
-    """Interface for ONNX to KPU program compilation.
+    """Interface for PyTorch to KPU program compilation.
 
     IMPLEMENTATION REQUIREMENTS:
     ----------------------------
-    1. Parse ONNX model and validate operator support
-    2. Apply graph optimizations (fusion, constant folding)
-    3. Determine tiling strategy for each operation
-    4. Allocate memory for tensors
-    5. Schedule operations for execution
-    6. Quantize weights if target precision requires it
+    The production compiler integrates with torch.compile:
+    1. Register as a torch.compile backend
+    2. Receive FX graph from torch.compile
+    3. Lower FX operations to KPU operations
+    4. Apply graph optimizations (fusion, constant folding)
+    5. Determine tiling strategy for each operation
+    6. Allocate memory for tensors
+    7. Schedule operations for execution
+    8. Quantize weights if target precision requires it
+
+    The interface accepts model paths for flexibility:
+    - .pt files: Load and trace via torch.compile
+    - .onnx files: Legacy support / stub mode
 
     The compiler should be configurable via KPUConfig and should
     provide meaningful error messages for unsupported operators
@@ -473,15 +485,15 @@ class KPUCompilerInterface(ABC):
     @abstractmethod
     def compile(
         self,
-        onnx_path: Path,
+        model_path: Path,
         config: KPUConfig,
         precision: KPUPrecision,
         calibration_data: Iterator[np.ndarray] | None = None,
     ) -> KPUProgram:
-        """Compile ONNX model to KPU program.
+        """Compile model to KPU program.
 
         Args:
-            onnx_path: Path to ONNX model file
+            model_path: Path to model file (.pt for PyTorch, .onnx for legacy)
             config: Target KPU configuration
             precision: Target precision (may trigger quantization)
             calibration_data: Iterator yielding calibration inputs (for INT8)
@@ -497,13 +509,13 @@ class KPUCompilerInterface(ABC):
 
     @abstractmethod
     def get_supported_ops(self) -> list[str]:
-        """Return list of ONNX operators supported by this compiler."""
+        """Return list of operators supported by this compiler."""
         pass
 
     @abstractmethod
     def estimate_memory(
         self,
-        onnx_path: Path,
+        model_path: Path,
         config: KPUConfig,
         precision: KPUPrecision,
     ) -> dict[str, int]:
@@ -517,7 +529,7 @@ class KPUCompilerInterface(ABC):
     @abstractmethod
     def validate_model(
         self,
-        onnx_path: Path,
+        model_path: Path,
         config: KPUConfig,
     ) -> list[str]:
         """Validate model compatibility without compilation.
