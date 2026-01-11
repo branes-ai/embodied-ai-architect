@@ -1539,7 +1539,7 @@ class TestKPUSpec:
 
         config = KPUConfig()
 
-        assert config.name == "stillwater-kpu-v1"
+        assert config.name == "swkpu-v1"
         assert config.memory.sram_l1_bytes == 256 * 1024
         assert config.compute.clock_mhz == 500.0
         assert len(config.native_ops) > 0
@@ -1595,7 +1595,7 @@ class TestKPUTargetBasic:
         from embodied_ai_architect.agents.deployment.targets.kpu import StillwaterKPUTarget
 
         target = StillwaterKPUTarget()
-        assert target.name == "stillwater-kpu"
+        assert target.name == "swkpu"
 
     def test_kpu_is_available(self):
         """Test KPU availability check."""
@@ -1603,10 +1603,13 @@ class TestKPUTargetBasic:
 
         target = StillwaterKPUTarget()
 
-        # Available if onnx is installed
+        # Available if PyTorch 2.0+ with torch.compile is installed
         try:
-            import onnx  # noqa: F401
-            assert target.is_available() is True
+            import torch  # noqa: F401
+            if hasattr(torch, "compile"):
+                assert target.is_available() is True
+            else:
+                assert target.is_available() is False
         except ImportError:
             assert target.is_available() is False
 
@@ -1617,7 +1620,7 @@ class TestKPUTargetBasic:
         target = StillwaterKPUTarget()
         caps = target.get_capabilities()
 
-        assert caps["name"] == "stillwater-kpu"
+        assert caps["name"] == "swkpu"
         assert "int8" in caps["supported_precisions"]
         assert "fp16" in caps["supported_precisions"]
         assert caps["output_format"] == ".kpu"
@@ -1671,7 +1674,7 @@ class TestKPUTargetDeploy:
 
         assert artifact.engine_path.exists()
         assert artifact.precision == DeploymentPrecision.FP16
-        assert artifact.target == "stillwater-kpu"
+        assert artifact.target == "swkpu"
         assert artifact.size_bytes > 0
         assert "kpu_version" in artifact.metadata
 
@@ -1775,9 +1778,9 @@ class TestKPUPowerProfile:
             HARDWARE_POWER_SPECS,
         )
 
-        assert PowerProfile.STILLWATER_KPU in HARDWARE_POWER_SPECS
+        assert PowerProfile.SWKPU in HARDWARE_POWER_SPECS
 
-        kpu_spec = HARDWARE_POWER_SPECS[PowerProfile.STILLWATER_KPU]
+        kpu_spec = HARDWARE_POWER_SPECS[PowerProfile.SWKPU]
         assert kpu_spec.tdp_watts == 5.0
         assert kpu_spec.tops_per_watt_peak > 0
 
@@ -1793,7 +1796,7 @@ class TestKPUPowerProfile:
         prediction = predictor.predict_from_model_info(
             total_params=1_000_000,
             total_macs=100_000_000,
-            hardware=PowerProfile.STILLWATER_KPU,
+            hardware=PowerProfile.SWKPU,
             precision="int8",
         )
 

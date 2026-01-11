@@ -15,17 +15,29 @@ def deploy():
     """Deploy models to edge/embedded targets.
 
     \b
+    Supported targets: jetson, openvino, coral, kpu, nvdla
+
+    \b
     Examples:
       # Deploy to Jetson with INT8 quantization
       branes deploy run model.pt --target jetson --precision int8 \\
         --calibration-data ./calib_images --input-shape 1,3,224,224
 
-      # Deploy with validation
+      # Deploy with validation and power budget
       branes deploy run model.pt --target jetson --precision int8 \\
-        --calibration-data ./calib --test-data ./test --validate
+        --calibration-data ./calib --test-data ./test --validate \\
+        --power-budget 5.0 --measure-power
+
+      # Deploy to Stillwater KPU (FP16)
+      branes deploy run model.onnx --target swkpu --precision fp16 \\
+        --input-shape 1,3,224,224
+
+      # Deploy to NVDLA Virtual Platform
+      branes deploy run model.onnx --target nvdla --precision int8 \\
+        --calibration-data ./calib --input-shape 1,3,224,224
 
       # Deploy with FP16 (no calibration needed)
-      branes deploy run model.onnx --target jetson --precision fp16 \\
+      branes deploy run model.onnx --target openvino --precision fp16 \\
         --input-shape 1,3,640,640
 
       # List available targets
@@ -40,7 +52,7 @@ def deploy():
     "--target",
     "-t",
     default="jetson",
-    help="Deployment target (jetson, coral, openvino)",
+    help="Deployment target (jetson, openvino, coral, swkpu, nvdla)",
 )
 @click.option(
     "--precision",
@@ -93,6 +105,17 @@ def deploy():
     default=1.0,
     help="Max accuracy drop tolerance in percent (default: 1.0)",
 )
+@click.option(
+    "--power-budget",
+    type=float,
+    default=None,
+    help="Power budget in watts for validation (e.g., 5.0)",
+)
+@click.option(
+    "--measure-power/--no-measure-power",
+    default=False,
+    help="Measure actual power during inference (requires platform support)",
+)
 @click.pass_context
 def run(
     ctx,
@@ -107,6 +130,8 @@ def run(
     validate,
     output_dir,
     tolerance,
+    power_budget,
+    measure_power,
 ):
     """Deploy a model to target hardware.
 
@@ -117,8 +142,13 @@ def run(
         --calibration-data ./images --input-shape 1,3,640,640
 
       # FP16 deployment (no calibration)
-      branes deploy run resnet18.onnx --target jetson --precision fp16 \\
+      branes deploy run resnet18.onnx --target openvino --precision fp16 \\
         --input-shape 1,3,224,224
+
+      # Deploy with power budget validation
+      branes deploy run model.onnx --target swkpu --precision int8 \\
+        --calibration-data ./calib --input-shape 1,3,224,224 \\
+        --power-budget 5.0 --measure-power
     """
     json_output = ctx.obj.get("json", False)
     quiet = ctx.obj.get("quiet", False)
@@ -179,6 +209,12 @@ def run(
             input_data["test_data"] = test_data
             input_data["accuracy_tolerance"] = tolerance
 
+        # Power validation options
+        if power_budget is not None:
+            input_data["power_budget_watts"] = power_budget
+        if measure_power:
+            input_data["measure_power"] = True
+
         # Run with progress
         if not quiet and not json_output:
             with Progress(
@@ -229,6 +265,18 @@ def run(
                 if val.get("samples_compared"):
                     console.print(f"  Samples compared: {val['samples_compared']}")
 
+                # Power metrics
+                if val.get("power_watts") is not None:
+                    console.print(f"\n[bold]Power:[/bold]")
+                    console.print(f"  Average power: {val['power_watts']:.2f} W")
+                    if val.get("power_budget_watts"):
+                        budget = val["power_budget_watts"]
+                        within = val.get("power_within_budget", True)
+                        status = "[green]OK[/green]" if within else "[red]EXCEEDED[/red]"
+                        console.print(f"  Power budget: {budget:.2f} W {status}")
+                    if val.get("energy_per_inference_mj"):
+                        console.print(f"  Energy/inference: {val['energy_per_inference_mj']:.3f} mJ")
+
     except ImportError:
         console.print(
             "[red]Deployment dependencies not installed.[/red]\n"
@@ -276,6 +324,8 @@ def list_targets(ctx):
         {"name": "jetson", "requires": "tensorrt, pycuda (pip install embodied-ai-architect[jetson])"},
         {"name": "openvino", "requires": "openvino, nncf (pip install embodied-ai-architect[openvino])"},
         {"name": "coral", "requires": "tensorflow, onnx2tf (pip install embodied-ai-architect[coral])"},
+        {"name": "swkpu", "requires": "torch>=2.0 (pip install embodied-ai-architect[kpu])"},
+        {"name": "nvdla", "requires": "onnx (pip install embodied-ai-architect[nvdla])"},
     ]
 
     for possible in all_possible:

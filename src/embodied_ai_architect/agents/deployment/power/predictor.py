@@ -17,7 +17,7 @@ class PowerProfile(str, Enum):
 
     # Ultra-low power edge devices
     CORAL_TPU = "coral_tpu"  # ~2W TDP
-    STILLWATER_KPU = "stillwater_kpu"  # ~5W TDP
+    SWKPU = "swkpu"  # ~5W TDP
     NVDLA_SMALL = "nvdla_small"  # ~1W (nv_small config)
     NVDLA_LARGE = "nvdla_large"  # ~3W (nv_large config)
     NVDLA_FULL = "nvdla_full"  # ~5W (nv_full config)
@@ -70,7 +70,7 @@ HARDWARE_POWER_SPECS: dict[PowerProfile, HardwarePowerSpec] = {
         tops_per_watt_peak=2.0,  # 4 TOPS @ 2W
         tops_per_watt_typical=1.5,
     ),
-    PowerProfile.STILLWATER_KPU: HardwarePowerSpec(
+    PowerProfile.SWKPU: HardwarePowerSpec(
         name="Stillwater KPU",
         tdp_watts=5.0,
         idle_watts=0.5,

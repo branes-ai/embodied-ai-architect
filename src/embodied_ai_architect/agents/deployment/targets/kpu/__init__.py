@@ -9,10 +9,15 @@ The KPU is designed for efficient inference of neural networks with:
 - Fused operator support
 - Deterministic latency for real-time applications
 
+Requirements:
+    PyTorch 2.0+ with torch.compile support
+
 Architecture:
-    ONNX Model
+    PyTorch Model
         ↓
-    KPUCompiler (graph optimization, tiling, scheduling)
+    torch.compile with KPU backend
+        ↓
+    KPUCompiler (FX graph → KPU ops, tiling, scheduling)
         ↓
     KPUProgram (executable representation)
         ↓
