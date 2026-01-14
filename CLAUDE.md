@@ -4,9 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Embodied AI Architect is a design environment for creating and evaluating autonomous agents. It provides:
+Embodied AI Architect is a design environment for creating, evaluating, optimizing and deploying autonomous agents. It provides:
 - Model analysis and benchmarking across different hardware targets
 - Hardware profiling with recommendations for edge/cloud deployment
+- Pre-silicon Hardware targets to leapfrog COTS designs and enable new use-cases
 - Multi-hardware benchmark execution (local CPU, remote SSH, Kubernetes)
 - Report generation for model-to-hardware fit analysis
 
