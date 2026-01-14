@@ -1,5 +1,7 @@
 # Branes Agentic AI HW/SW Co-Design Roadmap
 
+The Branes Embodied AI Platform supports the customer to design, create, analyze, test, optimize, deploy, and validate state of the art Embodied AIs.
+
 The key differentiator in the Branes Embodied AI Architect product is moving from "optimization algorithms" (like Genetic Algorithms or Bayesian Optimization) to **"Agentic AI"**. Our system doesn't just tuning parameters; it *reasons* about architecture, selects components, interprets simulation logs, and "debugs" its own design choices—effectively replacing a human systems architect.
 
 The following roadmap structures the development of an **Agentic HW/SW Co-Design Platform** for drones, focusing on energy efficiency (Flight Time/Watt).
