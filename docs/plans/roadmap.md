@@ -99,3 +99,18 @@ To reach the Phase 3 MVP, you will need a specialized team.
 * **Q3:** Agent learns to optimize Hardware (Cache/Accelerator sizing). *Metric: Flight time improvement vs. baseline.*
 * **Q4:** Functional validation of SoC. *Metric: SoC functional correctness*
 
+---
+
+### **Supporting Infrastructure Roadmaps**
+
+The following parallel roadmaps support the core product development:
+
+| Roadmap | Focus | Document |
+|---------|-------|----------|
+| **Documentation & Developer Experience** | User-facing docs, tutorials, API reference using Astro Starlight | [roadmap-documentation.md](roadmap-documentation.md) |
+| **Knowledge Base** | LLM-native content architecture for agent context | [../knowledge-base-architecture.md](../knowledge-base-architecture.md) |
+| **Team & Hiring** | Personnel plan and AI-leverage strategy | [roadmap-devteam.md](roadmap-devteam.md) |
+| **System Architecture** | Technical architecture details | [roadmap-system-architecture.md](roadmap-system-architecture.md) |
+
+These roadmaps run in parallel with the core phases and enable both human users and AI agents to effectively use the platform.
+
