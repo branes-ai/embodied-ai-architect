@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <!-- Background circuit pattern -->
+  <rect width="400" height="300" fill="#0f172a"/>
+
+  <!-- Circuit lines -->
+  <g stroke="#1e3a5f" stroke-width="1">
+    <line x1="50" y1="50" x2="350" y2="50"/>
+    <line x1="50" y1="100" x2="200" y2="100"/>
+    <line x1="250" y1="100" x2="350" y2="100"/>
+    <line x1="50" y1="150" x2="150" y2="150"/>
+    <line x1="200" y1="150" x2="350" y2="150"/>
+    <line x1="50" y1="200" x2="350" y2="200"/>
+    <line x1="50" y1="250" x2="350" y2="250"/>
+    <!-- Vertical lines -->
+    <line x1="100" y1="50" x2="100" y2="250"/>
+    <line x1="200" y1="50" x2="200" y2="250"/>
+    <line x1="300" y1="50" x2="300" y2="250"/>
+  </g>
+
+  <!-- Central chip/processor -->
+  <rect x="150" y="100" width="100" height="100" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="2"/>
+
+  <!-- Chip pins -->
+  <g fill="#3b82f6">
+    <rect x="160" y="95" width="8" height="10"/>
+    <rect x="180" y="95" width="8" height="10"/>
+    <rect x="200" y="95" width="8" height="10"/>
+    <rect x="220" y="95" width="8" height="10"/>
+    <rect x="160" y="195" width="8" height="10"/>
+    <rect x="180" y="195" width="8" height="10"/>
+    <rect x="200" y="195" width="8" height="10"/>
+    <rect x="220" y="195" width="8" height="10"/>
+  </g>
+
+  <!-- AI symbol in chip -->
+  <text x="200" y="160" font-family="monospace" font-size="24" fill="#3b82f6" text-anchor="middle">AI</text>
+
+  <!-- Connection nodes -->
+  <g fill="#3b82f6">
+    <circle cx="100" cy="100" r="6"/>
+    <circle cx="100" cy="150" r="6"/>
+    <circle cx="100" cy="200" r="6"/>
+    <circle cx="300" cy="100" r="6"/>
+    <circle cx="300" cy="150" r="6"/>
+    <circle cx="300" cy="200" r="6"/>
+  </g>
+
+  <!-- Drone icon (top left) -->
+  <g transform="translate(60, 60)">
+    <circle cx="20" cy="20" r="15" fill="none" stroke="#60a5fa" stroke-width="2"/>
+    <line x1="5" y1="20" x2="35" y2="20" stroke="#60a5fa" stroke-width="2"/>
+    <line x1="20" y1="5" x2="20" y2="35" stroke="#60a5fa" stroke-width="2"/>
+  </g>
+
+  <!-- Robot icon (bottom right) -->
+  <g transform="translate(300, 210)">
+    <rect x="5" y="10" width="30" height="25" rx="4" fill="none" stroke="#60a5fa" stroke-width="2"/>
+    <circle cx="13" cy="20" r="3" fill="#60a5fa"/>
+    <circle cx="27" cy="20" r="3" fill="#60a5fa"/>
+    <rect x="10" y="35" width="8" height="10" fill="#60a5fa"/>
+    <rect x="22" y="35" width="8" height="10" fill="#60a5fa"/>
+  </g>
+
+  <!-- GPU icon (top right) -->
+  <g transform="translate(300, 40)">
+    <rect x="0" y="5" width="40" height="30" rx="2" fill="none" stroke="#60a5fa" stroke-width="2"/>
+    <line x1="5" y1="15" x2="35" y2="15" stroke="#60a5fa" stroke-width="1"/>
+    <line x1="5" y1="25" x2="35" y2="25" stroke="#60a5fa" stroke-width="1"/>
+  </g>
+</svg>
