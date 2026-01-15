@@ -1,78 +1,64 @@
 # Embodied AI Architect
 
-> Design, analyze, optimize, and deploy embodied AI solutions for edge devices, drones, robots, and autonomous systems.
+> Your AI architect for designing embodied AI solutions with unique competitive advantages
 
-## Overview
+## Identity
 
-Embodied AI Architect is a design environment for creating AI systems that operate in the physical world. It provides model-hardware fit analysis, constraint checking, and deployment guidance for edge AI applications.
+The Embodied AI Architect is an **agentic AI** that partners with product architects and engineers to design, analyze, optimize, deploy, and validate embodied AI applications on both COTS (commercial off-the-shelf) and custom AI hardware.
 
-## Capabilities
+Like Tesla's FSD computer—a custom hw/sw solution that gives Tesla unique capabilities—we help customers create differentiated products that commodity solutions cannot match.
 
-- **Model Analysis**: Analyze neural network structure, compute requirements, and memory footprint
-- **Roofline Modeling**: Determine if models are compute-bound or memory-bound on specific hardware
-- **Constraint Checking**: Verify latency (<10ms for 100Hz control), power (<15W for drones), and memory limits
-- **Hardware Selection**: Compare 50+ hardware targets (Jetson, Coral, Hailo, cloud GPUs)
-- **Deployment Guides**: Generate optimized deployment configurations with quantization recommendations
+## Core Capabilities
+
+- **Agentic Design Partner**: Reasons about requirements, explores design space, recommends solutions in natural language
+- **COTS + Custom Hardware**: Analyze 50+ commercial platforms AND model custom accelerators pre-silicon
+- **Competitive Intelligence**: Predict performance, cost, and energy of competitor systems through characterization methodology
+- **Full Lifecycle**: Design exploration → constraint verification → optimization → deployment → validation
+
+## Key Differentiators
+
+1. **Pre-silicon hardware modeling** - Validate custom accelerator architectures before tape-out
+2. **Competitive analysis** - Quantitative comparison against competitor systems you don't have access to
+3. **Build-vs-buy guidance** - Data-driven recommendations for COTS vs custom silicon decisions
+4. **Constraint-driven optimization** - Clear PASS/FAIL verdicts with actionable optimization paths
+
+## Target Users
+
+- Product Architects exploring hardware options for new embodied AI products
+- Systems Engineers optimizing perception pipelines for edge deployment
+- Hardware Teams validating custom accelerator designs against application requirements
+- Technical Leadership making build-vs-buy decisions with quantitative analysis
 
 ## Quick Links
 
 - Documentation: /docs/
 - Getting Started: /docs/getting-started/introduction/
 - Hardware Catalog: /docs/catalog/hardware/
-- Model Catalog: /docs/catalog/models/
 - CLI Reference: /docs/reference/cli/
 - MCP Tools: /docs/reference/mcp-tools/
 
-## Installation
+## Example Interaction
 
-```bash
-pip install embodied-ai-architect
+```
+User: I need 30fps object detection + tracking + depth estimation
+      for a warehouse robot, under 15W, with 5-year volume of 100K units.
+      Should I use COTS or consider custom silicon?
+
+Architect: [Analyzes requirements across design space]
+           [Evaluates COTS options: Jetson Orin Nano, Hailo-8, Coral]
+           [Identifies gaps in COTS solutions]
+           [Projects custom accelerator performance]
+           [Calculates 5-year TCO for each option]
+           [Recommends path with quantitative justification]
 ```
 
-## CLI Usage
+## The Branes Platform
 
-```bash
-# Analyze a model
-embodied-ai analyze yolov8n.pt --hardware jetson-orin-nano
-
-# Check latency constraint
-embodied-ai check-latency yolov8n --hardware jetson-orin-nano --target 33ms
-
-# Interactive chat
-embodied-ai chat
-```
-
-## MCP Integration
-
-Add to Claude Desktop config:
-
-```json
-{
-  "mcpServers": {
-    "embodied-ai": {
-      "command": "embodied-ai",
-      "args": ["mcp", "serve"]
-    }
-  }
-}
-```
-
-## Key Tools
-
-- `analyze_model_detailed`: Full roofline analysis
-- `check_latency`: Verify latency constraint (returns PASS/FAIL)
-- `check_power`: Verify power budget
-- `check_memory`: Verify memory limit
-- `compare_hardware_targets`: Compare model across hardware
-- `list_available_hardware`: List supported hardware
-
-## Supported Hardware
-
-- NVIDIA Jetson: Orin AGX, Orin NX, Orin Nano, Xavier
-- Google Coral: Edge TPU, Dev Board
-- Intel: OpenVINO targets
-- Cloud: H100, A100, V100, T4, L4
-- Custom: KPU accelerators (simulation)
+The Embodied AI Architect is the design interface to the Branes Embodied AI Platform:
+- Design & Analysis: Roofline modeling, constraint checking, architecture exploration
+- Hardware Catalog: 50+ COTS platforms with calibrated data + custom accelerator modeling
+- Pre-Silicon Targets: Model custom accelerators before tape-out
+- Deployment & Validation: Automated optimization and production validation
 
 ## Repository
 
