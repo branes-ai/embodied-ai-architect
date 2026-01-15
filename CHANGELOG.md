@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Documentation Site Implementation (2026-01-15):
+  - **Astro Starlight Docs Site** (`docs-site/`):
+    - Complete Phase 1 implementation of documentation roadmap
+    - 20 pages: landing, getting started, features, catalog, reference, tutorials, troubleshooting
+    - GitHub Pages deployment with automatic base path handling via rehype-rewrite plugin
+    - `llms.txt` for AI agent discovery
+    - Custom branding with logo SVGs and hero image
+  - **GitHub Actions Workflow** (`.github/workflows/deploy-docs.yml`):
+    - Automatic deployment to GitHub Pages on push to main
+    - Build artifact upload for Vercel/Netlify alternatives
+  - **Value Proposition Messaging**:
+    - Refined landing page to convey agentic AI identity
+    - Emphasis on custom + COTS hardware differentiation
+    - Tesla FSD example for competitive advantage illustration
+    - Competitive intelligence and build-vs-buy guidance positioning
+  - Documentation: `docs/sessions/2026-01-15-docs-site-implementation.md`
+
+### Fixed
+- Duplicate Tool Name Bug (2026-01-15):
+  - Renamed `identify_bottleneck` in `architecture_tools.py` to `identify_architecture_bottleneck`
+  - Both `graphs_tools.py` and `architecture_tools.py` had tools with same name
+  - Fixed 17 of 18 test failures in `test_verdict_tools_cli.py`
+
 - Knowledge Base Architecture and Documentation Roadmap (2026-01-14):
   - **LLM-Native Knowledge Base Architecture** (`docs/knowledge-base-architecture.md`):
     - Text-first design: LLMs reason over markdown/YAML, not SQL queries
