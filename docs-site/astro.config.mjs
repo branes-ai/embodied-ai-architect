@@ -1,16 +1,41 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import rehypeRewrite from 'rehype-rewrite';
 
-// GitHub Pages configuration
-// For project sites: https://<org>.github.io/<repo>/
-const site = process.env.SITE_URL || 'https://branes-ai.github.io';
-const base = process.env.BASE_PATH || '/embodied-ai-architect';
+// Deployment configuration
+// For GitHub Pages: DEPLOY_TARGET=github-pages
+// For Vercel/Netlify: no env vars needed
+const isGitHubPages = process.env.DEPLOY_TARGET === 'github-pages';
+const site = isGitHubPages
+  ? 'https://branes-ai.github.io'
+  : (process.env.SITE_URL || 'http://localhost:4321');
+const base = isGitHubPages ? '/embodied-ai-architect/' : '/';
+
+// Rehype plugin to rewrite internal links with base path
+const rehypeBaseLinks = isGitHubPages ? [
+  rehypeRewrite,
+  {
+    rewrite: (node) => {
+      if (node.type === 'element' && node.tagName === 'a' && node.properties?.href) {
+        const href = node.properties.href;
+        // Rewrite absolute internal links (starting with /) to include base
+        if (typeof href === 'string' && href.startsWith('/') && !href.startsWith('/embodied-ai-architect')) {
+          node.properties.href = '/embodied-ai-architect' + href;
+        }
+      }
+    }
+  }
+] : [];
 
 // https://astro.build/config
 export default defineConfig({
 	site: site,
 	base: base,
+	trailingSlash: 'always',
+	markdown: {
+		rehypePlugins: rehypeBaseLinks.length ? [rehypeBaseLinks] : [],
+	},
 	integrations: [
 		starlight({
 			title: 'Embodied AI Architect',
