@@ -1,0 +1,91 @@
+---
+title: Embodied AI Architect
+description: Design, analyze, optimize, and deploy embodied AI solutions for edge devices, drones, robots, and autonomous systems.
+template: splash
+hero:
+  tagline: Design, analyze, and deploy AI for the physical world
+  image:
+    file: ../../assets/hero-image.svg
+  actions:
+    - text: Get Started
+      link: /getting-started/introduction/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/branes-ai/embodied-ai-architect
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## What is Embodied AI Architect?
+
+Embodied AI Architect is a comprehensive platform for designing AI systems that operate in the physical world. Whether you're building perception pipelines for drones, deploying detection models on edge devices, or optimizing neural networks for battery-powered robots, this tool helps you make informed decisions.
+
+<CardGrid stagger>
+	<Card title="Model-Hardware Fit Analysis" icon="magnifier">
+		Analyze how your neural network will perform on specific hardware using roofline modeling. Get accurate latency, power, and memory predictions before deployment.
+	</Card>
+	<Card title="Constraint Checking" icon="approve-check">
+		Verify that your models meet real-time requirements. Check latency targets (10ms for 100Hz control loops), power budgets (5W for drones), and memory limits.
+	</Card>
+	<Card title="Hardware Selection" icon="laptop">
+		Compare 50+ hardware targets from NVIDIA Jetson to Coral Edge TPU to custom accelerators. Find the optimal platform for your use case.
+	</Card>
+	<Card title="Edge Deployment" icon="rocket">
+		Generate deployment guides with quantization recommendations, TensorRT/OpenVINO optimization, and production-ready configurations.
+	</Card>
+</CardGrid>
+
+## Key Features
+
+### Roofline Analysis
+
+Understand whether your model is compute-bound or memory-bound on specific hardware. Get actionable recommendations for optimization.
+
+```bash
+embodied-ai analyze yolov8n.pt --hardware jetson-orin-nano
+```
+
+### Constraint Verification
+
+Check if your model meets deployment requirements with clear PASS/FAIL verdicts:
+
+```bash
+embodied-ai check-latency resnet18 --hardware h100 --target 10ms
+# Result: PASS - 0.8ms latency with 92% headroom
+```
+
+### Interactive Chat
+
+Use natural language to explore model-hardware fit:
+
+```bash
+embodied-ai chat
+> Can YOLOv8s run at 30fps on a Jetson Orin Nano?
+```
+
+## Supported Hardware
+
+<CardGrid>
+	<Card title="NVIDIA Jetson" icon="seti:nunjucks">
+		Orin AGX, Orin NX, Orin Nano, Xavier, Nano
+	</Card>
+	<Card title="Google Coral" icon="seti:todo">
+		Edge TPU, Dev Board, USB Accelerator
+	</Card>
+	<Card title="Intel" icon="seti:bicep">
+		OpenVINO, Neural Compute Stick
+	</Card>
+	<Card title="Cloud GPUs" icon="seti:salesforce">
+		H100, A100, V100, T4, L4
+	</Card>
+</CardGrid>
+
+## Get Started
+
+Ready to optimize your embodied AI system?
+
+1. [Install the package](/getting-started/installation/)
+2. [Run through the quickstart](/getting-started/quickstart/)
+3. [Explore tutorials](/tutorials/)

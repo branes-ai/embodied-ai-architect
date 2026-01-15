@@ -1,0 +1,79 @@
+# Embodied AI Architect
+
+> Design, analyze, optimize, and deploy embodied AI solutions for edge devices, drones, robots, and autonomous systems.
+
+## Overview
+
+Embodied AI Architect is a design environment for creating AI systems that operate in the physical world. It provides model-hardware fit analysis, constraint checking, and deployment guidance for edge AI applications.
+
+## Capabilities
+
+- **Model Analysis**: Analyze neural network structure, compute requirements, and memory footprint
+- **Roofline Modeling**: Determine if models are compute-bound or memory-bound on specific hardware
+- **Constraint Checking**: Verify latency (<10ms for 100Hz control), power (<15W for drones), and memory limits
+- **Hardware Selection**: Compare 50+ hardware targets (Jetson, Coral, Hailo, cloud GPUs)
+- **Deployment Guides**: Generate optimized deployment configurations with quantization recommendations
+
+## Quick Links
+
+- Documentation: /docs/
+- Getting Started: /docs/getting-started/introduction/
+- Hardware Catalog: /docs/catalog/hardware/
+- Model Catalog: /docs/catalog/models/
+- CLI Reference: /docs/reference/cli/
+- MCP Tools: /docs/reference/mcp-tools/
+
+## Installation
+
+```bash
+pip install embodied-ai-architect
+```
+
+## CLI Usage
+
+```bash
+# Analyze a model
+embodied-ai analyze yolov8n.pt --hardware jetson-orin-nano
+
+# Check latency constraint
+embodied-ai check-latency yolov8n --hardware jetson-orin-nano --target 33ms
+
+# Interactive chat
+embodied-ai chat
+```
+
+## MCP Integration
+
+Add to Claude Desktop config:
+
+```json
+{
+  "mcpServers": {
+    "embodied-ai": {
+      "command": "embodied-ai",
+      "args": ["mcp", "serve"]
+    }
+  }
+}
+```
+
+## Key Tools
+
+- `analyze_model_detailed`: Full roofline analysis
+- `check_latency`: Verify latency constraint (returns PASS/FAIL)
+- `check_power`: Verify power budget
+- `check_memory`: Verify memory limit
+- `compare_hardware_targets`: Compare model across hardware
+- `list_available_hardware`: List supported hardware
+
+## Supported Hardware
+
+- NVIDIA Jetson: Orin AGX, Orin NX, Orin Nano, Xavier
+- Google Coral: Edge TPU, Dev Board
+- Intel: OpenVINO targets
+- Cloud: H100, A100, V100, T4, L4
+- Custom: KPU accelerators (simulation)
+
+## Repository
+
+https://github.com/branes-ai/embodied-ai-architect

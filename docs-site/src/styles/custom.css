@@ -1,0 +1,77 @@
+/* Custom styles for Embodied AI Architect docs */
+
+:root {
+  /* Primary brand colors */
+  --sl-color-accent-low: #1e3a5f;
+  --sl-color-accent: #3b82f6;
+  --sl-color-accent-high: #93c5fd;
+
+  /* Background colors */
+  --sl-color-bg: #0f172a;
+  --sl-color-bg-nav: #1e293b;
+  --sl-color-bg-sidebar: #1e293b;
+}
+
+/* Hero section styling */
+.hero {
+  padding-block: 3rem;
+}
+
+/* Code block styling */
+.expressive-code {
+  margin-block: 1.5rem;
+}
+
+/* Card styling */
+.card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Table styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  background-color: var(--sl-color-bg-nav);
+  font-weight: 600;
+}
+
+/* Verdict styling */
+.verdict-pass {
+  color: #22c55e;
+  font-weight: bold;
+}
+
+.verdict-fail {
+  color: #ef4444;
+  font-weight: bold;
+}
+
+.verdict-marginal {
+  color: #eab308;
+  font-weight: bold;
+}
+
+/* CLI output styling */
+pre code {
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .hero {
+    padding-block: 2rem;
+  }
+
+  table {
+    font-size: 0.85em;
+  }
+}
