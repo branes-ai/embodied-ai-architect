@@ -221,7 +221,7 @@ def get_architecture_tool_definitions() -> list[dict[str, Any]]:
             },
         },
         {
-            "name": "identify_bottleneck",
+            "name": "identify_architecture_bottleneck",
             "description": (
                 "Identify the bottleneck operator in an architecture that limits overall "
                 "throughput. Returns the bottleneck operator, its latency contribution, "
@@ -1778,7 +1778,7 @@ def create_architecture_tool_executors() -> dict[str, callable]:
         "show_architecture": show_architecture,
         "analyze_architecture": analyze_architecture,
         "check_scheduling": check_scheduling,
-        "identify_bottleneck": identify_bottleneck,
+        "identify_architecture_bottleneck": identify_bottleneck,
         "suggest_optimizations": suggest_optimizations,
         "compare_variants": compare_variants,
         "benchmark_architecture": benchmark_architecture,
