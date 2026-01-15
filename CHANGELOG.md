@@ -8,6 +8,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Knowledge Base Architecture and Documentation Roadmap (2026-01-14):
+  - **LLM-Native Knowledge Base Architecture** (`docs/knowledge-base-architecture.md`):
+    - Text-first design: LLMs reason over markdown/YAML, not SQL queries
+    - Three-tier content model: Structured Catalog, Analytical Data, Experiential Knowledge
+    - Vector retrieval with semantic search for context injection
+    - Tools only for computation (roofline analysis); everything else is text
+    - Token budget management (~8K tokens default for retrieved context)
+    - Content chunking strategy: one file = one chunk (~500-2000 tokens)
+  - **Documentation Site Roadmap** (`docs/plans/roadmap-documentation.md`):
+    - Astro Starlight for modern, LLM-friendly static documentation
+    - 12-week implementation plan across 5 phases
+    - Phase 1: Foundation (landing page, getting started)
+    - Phase 2: Catalog (auto-generated from embodied-schemas)
+    - Phase 3: Tutorials (7 deployment/optimization guides)
+    - Phase 4: Reference (CLI, MCP tools, API docs)
+    - Phase 5: Interactive (hardware finder, compatibility matrix)
+    - `llms.txt` and `llms-full.txt` generation for AI agent discovery
+    - Single source of truth: YAML → website + knowledge base + LLM metadata
+  - **Phase 1 Roadmap** (`docs/plans/roadmap-phase-1.md`):
+    - Complete user stories and acceptance criteria for Digital Twin Foundation
+    - Milestone 1.1: Coupled Simulation Pipeline (AirSim ↔ CSim integration)
+    - Milestone 1.2: Baseline Profiling (10,000+ flight minutes dataset)
+    - Monthly breakdown and success criteria
+  - **Roadmap Summary** (`docs/plans/roadmap-summary.md`):
+    - Complete 12-month product roadmap overview
+    - All 3 phases with milestones and acceptance criteria
+    - Team structure (6 people, AI-leveraged)
+    - Supporting infrastructure roadmaps
+    - Risk matrix and end state definition
+  - Updated main roadmap with Supporting Infrastructure Roadmaps section
+  - Documentation: `docs/sessions/2026-01-14-knowledge-base-and-documentation-roadmap.md`
 - Architecture Benchmark Harness and Runnable Operators (2026-01-03):
   - **Benchmark Harness** (`src/embodied_ai_architect/benchmark/`):
     - `ArchitectureRunner`: Executes complete architecture pipelines with per-operator timing
