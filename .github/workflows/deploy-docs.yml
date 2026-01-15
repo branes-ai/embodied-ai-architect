@@ -41,11 +41,9 @@ jobs:
 
       - name: Build with Astro
         working-directory: docs-site
-        run: |
-          npm run build
+        run: npm run build
         env:
-          SITE_URL: ${{ steps.pages.outputs.origin }}
-          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          DEPLOY_TARGET: github-pages
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
