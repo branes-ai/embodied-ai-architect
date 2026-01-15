@@ -1,68 +1,101 @@
 ---
 title: Introduction
-description: Learn what Embodied AI Architect is and how it helps you design AI systems for the physical world.
+description: Meet the Embodied AI Architect—your AI partner for designing differentiated embodied AI solutions.
 ---
 
-Embodied AI Architect is a design environment for creating, evaluating, optimizing, and deploying autonomous agents. It bridges the gap between AI model development and real-world deployment on edge hardware.
+The **Embodied AI Architect** is an agentic AI that partners with product architects and engineers to design embodied AI solutions that deliver capabilities commodity hardware cannot match.
 
-## The Problem
+## The Problem We Solve
 
-Deploying AI models on edge devices is challenging:
+Building breakthrough embodied AI products requires answering hard questions:
 
-- **Model-Hardware Mismatch**: A model that runs great in the cloud may be unusable on a Jetson Nano
-- **Hidden Bottlenecks**: Is your model compute-bound or memory-bound? The answer determines your optimization strategy
-- **Constraint Verification**: Does your model meet the 10ms latency requirement for a 100Hz control loop?
-- **Hardware Selection**: Which of 50+ edge platforms is right for your use case?
+- **Build vs. Buy**: Should you use commercial hardware or invest in custom silicon?
+- **Competitive Position**: How will your solution compare to competitors on performance, cost, and power?
+- **Design Tradeoffs**: Which model architecture, quantization, and hardware combination meets your constraints?
+- **Pre-Silicon Validation**: Can you validate custom hardware designs before committing to tape-out?
 
-## The Solution
+These questions require expertise across ML, hardware architecture, and systems engineering—plus access to data about hardware you may not have.
 
-Embodied AI Architect provides:
+## What Makes Us Different
 
-### 1. Roofline Analysis
+### 1. Agentic Design Partner
 
-Understand exactly how your model utilizes hardware resources using roofline modeling. Know whether you're compute-bound or memory-bound before you deploy.
-
-### 2. Constraint Checking
-
-Get clear PASS/FAIL verdicts for your deployment requirements:
-- Latency targets (e.g., 10ms for real-time control)
-- Power budgets (e.g., 5W for battery-powered drones)
-- Memory limits (e.g., 2GB for edge devices)
-
-### 3. Hardware Catalog
-
-Compare 50+ hardware targets including:
-- NVIDIA Jetson (Orin AGX, Orin NX, Orin Nano)
-- Google Coral (Edge TPU)
-- Intel OpenVINO targets
-- Cloud GPUs (H100, A100, V100)
-- Custom accelerators (KPU, Hailo)
-
-### 4. Deployment Guidance
-
-Generate deployment guides with:
-- Quantization recommendations (FP16, INT8)
-- Framework-specific optimizations (TensorRT, OpenVINO)
-- Production configurations
-
-## Architecture
-
-The system consists of three main repositories:
+The Architect isn't just a tool—it's an AI that reasons about your requirements, explores the design space, and recommends solutions. Ask questions in natural language:
 
 ```
-embodied-schemas (shared data models)
-       ↑              ↑
-       │              │
-   graphs      embodied-ai-architect
-   (analysis)     (orchestration)
+> I need to run a perception pipeline at 60Hz under 10W for a surgical robot.
+> What are my options, and when does custom silicon make sense?
 ```
 
-- **embodied-schemas**: Shared Pydantic schemas and hardware/model catalogs
-- **graphs**: Roofline analysis, hardware simulation, performance modeling
-- **embodied-ai-architect**: CLI, LLM integration, deployment tools
+### 2. COTS + Custom Hardware
+
+We analyze solutions across **commercial off-the-shelf** platforms (NVIDIA Jetson, Google Coral, Hailo, Intel) **and** custom AI accelerators:
+
+- **50+ COTS platforms** with calibrated performance data
+- **Pre-silicon modeling** for custom accelerators before tape-out
+- **Comparative analysis** across your options and competitor systems
+
+### 3. Competitive Intelligence
+
+Our characterization methodology lets you predict performance, cost, and energy for systems you don't have access to:
+
+- Estimate competitor hardware capabilities
+- Generate quantitative competitive analysis
+- Validate your differentiation before you build
+
+### 4. Full Lifecycle Support
+
+From concept through production:
+
+| Phase | What the Architect Does |
+|-------|------------------------|
+| **Design** | Explore hardware options, model architectures, quantization strategies |
+| **Analysis** | Roofline modeling, bottleneck identification, constraint checking |
+| **Optimization** | Recommend optimizations with predicted impact |
+| **Deployment** | Generate deployment configurations, quantization, runtime setup |
+| **Validation** | Verify deployed performance matches predictions |
+
+## Why Custom Matters
+
+Tesla's FSD computer demonstrates the power of purpose-built solutions. Instead of using commodity hardware, Tesla designed a custom accelerator optimized for their neural networks—achieving capabilities no off-the-shelf hardware could deliver at their cost and power targets.
+
+The Embodied AI Architect helps you determine when custom hardware delivers competitive advantage:
+
+| Factor | COTS | Custom |
+|--------|------|--------|
+| Time to market | Fast | 18-24 months |
+| NRE cost | Low | High |
+| Unit cost at volume | Higher | Lower |
+| Performance/watt | Good | Optimized |
+| Differentiation | Limited | Unique |
+
+## The Branes Platform
+
+The Embodied AI Architect is the design interface to the **Branes Embodied AI Platform**:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│              Embodied AI Architect                       │
+│         (Agentic Design Interface)                       │
+├─────────────────────────────────────────────────────────┤
+│  Hardware      │  Analysis      │  Deployment           │
+│  Catalog       │  Engine        │  Automation           │
+│  ─────────     │  ─────────     │  ─────────            │
+│  COTS specs    │  Roofline      │  Quantization         │
+│  Custom models │  Constraints   │  Runtime config       │
+│  Calibrations  │  Predictions   │  Validation           │
+└─────────────────────────────────────────────────────────┘
+```
+
+## Who Should Use This
+
+- **Product Architects** exploring hardware options for new embodied AI products
+- **Systems Engineers** optimizing perception pipelines for edge deployment
+- **Hardware Teams** validating custom accelerator designs against application requirements
+- **Technical Leadership** making build-vs-buy decisions with quantitative analysis
 
 ## Next Steps
 
-- [Install the package](/getting-started/installation/)
-- [Run through the quickstart](/getting-started/quickstart/)
+- [Install the platform](/getting-started/installation/)
+- [Run your first analysis](/getting-started/quickstart/)
 - [Explore the hardware catalog](/catalog/hardware/)

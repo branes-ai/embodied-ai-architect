@@ -1,9 +1,9 @@
 ---
 title: Embodied AI Architect
-description: Design, analyze, optimize, and deploy embodied AI solutions for edge devices, drones, robots, and autonomous systems.
+description: Your AI partner for designing custom embodied AI solutions that deliver capabilities commodity hardware cannot match.
 template: splash
 hero:
-  tagline: Design, analyze, and deploy AI for the physical world
+  tagline: Your AI architect for designing embodied AI solutions with unique competitive advantages
   image:
     file: ../../assets/hero-image.svg
   actions:
@@ -18,74 +18,107 @@ hero:
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-## What is Embodied AI Architect?
+## Design Embodied AI Solutions That Competitors Can't Match
 
-Embodied AI Architect is a comprehensive platform for designing AI systems that operate in the physical world. Whether you're building perception pipelines for drones, deploying detection models on edge devices, or optimizing neural networks for battery-powered robots, this tool helps you make informed decisions.
+The **Embodied AI Architect** is an agentic AI that partners with product architects and engineers to design, analyze, optimize, and deploy embodied AI applications. Like Tesla's FSD computer—a custom solution that gives Tesla capabilities no commodity hardware can deliver—we help you create differentiated products that define new categories.
 
 <CardGrid stagger>
-	<Card title="Model-Hardware Fit Analysis" icon="magnifier">
-		Analyze how your neural network will perform on specific hardware using roofline modeling. Get accurate latency, power, and memory predictions before deployment.
+	<Card title="Agentic Design Partner" icon="rocket">
+		Not just a tool—an AI architect that reasons about your requirements, explores the design space, and recommends solutions. Ask questions in natural language, get actionable engineering guidance.
 	</Card>
-	<Card title="Constraint Checking" icon="approve-check">
-		Verify that your models meet real-time requirements. Check latency targets (10ms for 100Hz control loops), power budgets (5W for drones), and memory limits.
+	<Card title="Custom & COTS Hardware" icon="laptop">
+		Analyze solutions across commercial off-the-shelf platforms (Jetson, Coral, Hailo) **and** custom AI accelerators. Design pre-silicon targets to leapfrog what's available today.
 	</Card>
-	<Card title="Hardware Selection" icon="laptop">
-		Compare 50+ hardware targets from NVIDIA Jetson to Coral Edge TPU to custom accelerators. Find the optimal platform for your use case.
+	<Card title="Competitive Intelligence" icon="magnifier">
+		Predict performance, cost, and energy of competitor systems through our characterization methodology. Generate comparative analysis to validate your differentiation.
 	</Card>
-	<Card title="Edge Deployment" icon="rocket">
-		Generate deployment guides with quantization recommendations, TensorRT/OpenVINO optimization, and production-ready configurations.
+	<Card title="Full Lifecycle Support" icon="approve-check">
+		From concept through production: design exploration, constraint verification, optimization guidance, deployment automation, and validation testing.
 	</Card>
 </CardGrid>
 
-## Key Features
+## Why Custom Matters
 
-### Roofline Analysis
+Commodity AI hardware serves commodity use cases. But breakthrough products—autonomous vehicles, surgical robots, industrial drones—require **purpose-built solutions** that optimize the entire stack:
 
-Understand whether your model is compute-bound or memory-bound on specific hardware. Get actionable recommendations for optimization.
+| Approach | Capabilities | Examples |
+|----------|--------------|----------|
+| **Commodity** | General-purpose, cost-optimized | Jetson Nano, Coral TPU |
+| **Custom** | Application-specific, performance-optimized | Tesla FSD, Apple Neural Engine |
 
-```bash
-embodied-ai analyze yolov8n.pt --hardware jetson-orin-nano
-```
+The Embodied AI Architect helps you determine when custom hardware delivers competitive advantage and guides the design process from requirements through silicon.
 
-### Constraint Verification
+## What the Architect Does
 
-Check if your model meets deployment requirements with clear PASS/FAIL verdicts:
-
-```bash
-embodied-ai check-latency resnet18 --hardware h100 --target 10ms
-# Result: PASS - 0.8ms latency with 92% headroom
-```
-
-### Interactive Chat
-
-Use natural language to explore model-hardware fit:
+### Intelligent Design Exploration
 
 ```bash
 embodied-ai chat
-> Can YOLOv8s run at 30fps on a Jetson Orin Nano?
+> I need 30fps object detection + tracking + depth estimation
+> for a warehouse robot, under 15W, with 5-year production volume of 100K units.
+> Should I use COTS or consider custom silicon?
 ```
 
-## Supported Hardware
+The Architect analyzes your requirements across the design space—evaluating COTS options, identifying gaps, and recommending whether custom hardware justifies the investment.
+
+### Predictive Competitive Analysis
+
+Understand how your solution compares before you build:
+
+```bash
+embodied-ai analyze my-pipeline.yaml \
+  --compare jetson-orin-agx,hailo-8,competitor-estimate \
+  --metrics latency,power,unit-cost,5yr-tco
+```
+
+Our characterization methodology predicts competitor performance, enabling informed build-vs-buy decisions and competitive positioning.
+
+### Constraint-Driven Optimization
+
+Get clear verdicts on whether designs meet requirements:
+
+```
+> Can my perception pipeline hit 100Hz for real-time control on a 10W budget?
+
+FAIL - Current design achieves 45Hz at 10W.
+
+Optimization paths:
+1. Reduce model: YOLOv8n → MobileNet (achieves 95Hz, -8% accuracy)
+2. Custom accelerator: KPU-T64 projection (achieves 120Hz at 8W)
+3. Algorithm change: Replace dense depth with sparse features (achieves 110Hz)
+
+Recommendation: Option 3 maintains accuracy while meeting constraints.
+```
+
+## The Branes Platform
+
+The Embodied AI Architect is the design interface to the **Branes Embodied AI Platform**:
 
 <CardGrid>
-	<Card title="NVIDIA Jetson" icon="seti:nunjucks">
-		Orin AGX, Orin NX, Orin Nano, Xavier, Nano
+	<Card title="Design & Analysis" icon="pencil">
+		Roofline modeling, constraint checking, architecture exploration, competitive benchmarking
 	</Card>
-	<Card title="Google Coral" icon="seti:todo">
-		Edge TPU, Dev Board, USB Accelerator
+	<Card title="Hardware Catalog" icon="seti:folder">
+		50+ COTS platforms with calibrated performance data, plus custom accelerator modeling
 	</Card>
-	<Card title="Intel" icon="seti:bicep">
-		OpenVINO, Neural Compute Stick
+	<Card title="Pre-Silicon Targets" icon="seti:config">
+		Model custom accelerators before tape-out. Validate architectures against requirements early.
 	</Card>
-	<Card title="Cloud GPUs" icon="seti:salesforce">
-		H100, A100, V100, T4, L4
+	<Card title="Deployment & Validation" icon="rocket">
+		Automated optimization, quantization, deployment scripts, and production validation
 	</Card>
 </CardGrid>
 
+## Who It's For
+
+- **Product Architects** exploring hardware options for new embodied AI products
+- **Systems Engineers** optimizing perception pipelines for edge deployment
+- **Hardware Teams** validating custom accelerator designs against application requirements
+- **Technical Leadership** making build-vs-buy decisions with quantitative analysis
+
 ## Get Started
 
-Ready to optimize your embodied AI system?
-
-1. [Install the package](./getting-started/installation/)
-2. [Run through the quickstart](./getting-started/quickstart/)
-3. [Explore tutorials](./tutorials/)
+1. [Understand the platform](./getting-started/introduction/)
+2. [Install and run your first analysis](./getting-started/installation/)
+3. [Explore the hardware catalog](./catalog/hardware/)
+4. [See what custom silicon enables](./tutorials/)
