@@ -1,13 +1,16 @@
 /**
- * RISC-V ALU - Area-Optimized Design
+ * RISC-V ALU - A simple ALU for testing optimization loops.
  *
- * Key optimizations for area reduction:
- * 1. Fixed syntax errors with proper signal declarations
- * 2. Removed multiplication operation (high area cost)
- * 3. Simplified control logic and reduced intermediate signals
- * 4. Optimized flag generation with shared logic
- * 5. Reduced operation set to essential RISC-V operations
- * 6. Streamlined result mux for area efficiency
+ * This design has intentional optimization opportunities:
+ * 1. Deep combinational logic in multiplier path
+ * 2. Unshared add/subtract operations
+ * 3. Non-pipelined shifter
+ *
+ * Based on RISC-V RV32I instruction set ALU operations.
+ *
+ * Integration Note:
+ * This design is compatible with systars PE components.
+ * The MAC operation (a * b + c) can be mapped to systars PE dataflow.
  */
 
 module riscv_alu #(
@@ -25,7 +28,7 @@ module riscv_alu #(
     output logic                zero
 );
 
-    // ALU Operation Codes (essential set for area optimization)
+    // ALU Operation Codes (RISC-V inspired)
     localparam OP_ADD  = 4'b0000;  // Addition
     localparam OP_SUB  = 4'b0001;  // Subtraction
     localparam OP_AND  = 4'b0010;  // Bitwise AND
@@ -36,80 +39,130 @@ module riscv_alu #(
     localparam OP_SRA  = 4'b0111;  // Shift Right Arithmetic
     localparam OP_SLT  = 4'b1000;  // Set Less Than (signed)
     localparam OP_SLTU = 4'b1001;  // Set Less Than (unsigned)
+    localparam OP_MUL  = 4'b1010;  // Multiplication (lower 32 bits)
+    localparam OP_MAC  = 4'b1011;  // Multiply-Accumulate (for systars compatibility)
 
-    // Minimal internal signals for area optimization
-    logic [WIDTH:0]     adder_result;
-    logic [WIDTH-1:0]   logic_result;
-    logic [WIDTH-1:0]   shift_result;
-    logic [WIDTH-1:0]   compare_result;
-    logic               is_subtract;
+    // Internal signals
+    logic [WIDTH-1:0]   add_result;
+    logic [WIDTH-1:0]   sub_result;
+    logic [WIDTH-1:0]   and_result;
+    logic [WIDTH-1:0]   or_result;
+    logic [WIDTH-1:0]   xor_result;
+    logic [WIDTH-1:0]   sll_result;
+    logic [WIDTH-1:0]   srl_result;
+    logic [WIDTH-1:0]   sra_result;
+    logic [WIDTH-1:0]   slt_result;
+    logic [WIDTH-1:0]   sltu_result;
+    logic [2*WIDTH-1:0] mul_result;
+    logic [WIDTH-1:0]   mac_result;
 
-    // =========================================================================
-    // Shared Arithmetic Unit (ADD/SUB)
-    // =========================================================================
-    
-    assign is_subtract = (alu_op == OP_SUB);
-    assign adder_result = operand_a + (is_subtract ? (~operand_b + 1'b1) : operand_b);
+    // Overflow detection signals
+    logic add_overflow;
+    logic sub_overflow;
 
-    // =========================================================================
-    // Logic Operations (shared structure)
-    // =========================================================================
-    always_comb begin
-        case (alu_op[1:0])
-            2'b10: logic_result = operand_a & operand_b;  // AND
-            2'b11: logic_result = operand_a | operand_b;  // OR
-            2'b00: logic_result = operand_a ^ operand_b;  // XOR
-            default: logic_result = '0;
-        endcase
-    end
+    // Accumulator for MAC operations (systars-style)
+    logic [WIDTH-1:0] accumulator;
 
     // =========================================================================
-    // Shift Operations (area-optimized)
+    // Arithmetic Operations
     // =========================================================================
-    always_comb begin
-        case (alu_op[1:0])
-            2'b01: shift_result = operand_a << operand_b[4:0];  // SLL
-            2'b10: shift_result = operand_a >> operand_b[4:0];  // SRL
-            2'b11: shift_result = $signed(operand_a) >>> operand_b[4:0];  // SRA
-            default: shift_result = '0;
-        endcase
-    end
+
+    // Addition with overflow detection
+    assign {add_overflow, add_result} = {1'b0, operand_a} + {1'b0, operand_b};
+
+    // Subtraction with overflow detection
+    assign {sub_overflow, sub_result} = {1'b0, operand_a} - {1'b0, operand_b};
 
     // =========================================================================
-    // Comparison Operations (simplified)
+    // Logical Operations
     // =========================================================================
-    always_comb begin
-        if (alu_op == OP_SLT) begin
-            compare_result = {31'b0, $signed(operand_a) < $signed(operand_b)};
-        end else begin // OP_SLTU
-            compare_result = {31'b0, operand_a < operand_b};
+
+    assign and_result = operand_a & operand_b;
+    assign or_result  = operand_a | operand_b;
+    assign xor_result = operand_a ^ operand_b;
+
+    // =========================================================================
+    // Shift Operations
+    // Note: These are combinational barrel shifters - optimization opportunity!
+    // =========================================================================
+
+    assign sll_result = operand_a << operand_b[4:0];
+    assign srl_result = operand_a >> operand_b[4:0];
+    assign sra_result = $signed(operand_a) >>> operand_b[4:0];
+
+    // =========================================================================
+    // Comparison Operations
+    // =========================================================================
+
+    assign slt_result  = {{(WIDTH-1){1'b0}}, $signed(operand_a) < $signed(operand_b)};
+    assign sltu_result = {{(WIDTH-1){1'b0}}, operand_a < operand_b};
+
+    // =========================================================================
+    // Multiplication (Optimization target - deep combinational logic)
+    // =========================================================================
+
+    // Full multiplication - this creates a deep combinational path
+    // Optimization: pipeline into stages or use systars PE
+    assign mul_result = operand_a * operand_b;
+
+    // =========================================================================
+    // Multiply-Accumulate (systars PE compatible)
+    // D = A * B + C (where C comes from accumulator)
+    // =========================================================================
+
+    assign mac_result = mul_result[WIDTH-1:0] + accumulator;
+
+    // Accumulator register (for MAC chains)
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            accumulator <= '0;
+        end else if (valid_in && alu_op == OP_MAC) begin
+            accumulator <= mac_result;
+        end else if (valid_in && alu_op == OP_ADD) begin
+            // Reset accumulator on regular ADD
+            accumulator <= '0;
         end
     end
 
     // =========================================================================
-    // Result Multiplexer (optimized for area)
+    // Result Multiplexer
     // =========================================================================
+
     always_comb begin
-        case (alu_op[3:2])
-            2'b00: result = (alu_op[1] == 1'b0) ? adder_result[WIDTH-1:0] : logic_result;
-            2'b01: result = shift_result;
-            2'b10: result = compare_result;
+        case (alu_op)
+            OP_ADD:  result = add_result;
+            OP_SUB:  result = sub_result;
+            OP_AND:  result = and_result;
+            OP_OR:   result = or_result;
+            OP_XOR:  result = xor_result;
+            OP_SLL:  result = sll_result;
+            OP_SRL:  result = srl_result;
+            OP_SRA:  result = sra_result;
+            OP_SLT:  result = slt_result;
+            OP_SLTU: result = sltu_result;
+            OP_MUL:  result = mul_result[WIDTH-1:0];
+            OP_MAC:  result = mac_result;
             default: result = '0;
         endcase
     end
 
     // =========================================================================
-    // Flag Generation (simplified for area)
+    // Output Flags
     // =========================================================================
 
-    // Overflow: only for ADD/SUB operations
-    assign overflow = ((alu_op == OP_ADD) || (alu_op == OP_SUB)) && 
-                     (adder_result[WIDTH] != adder_result[WIDTH-1]);
+    // Overflow: only meaningful for add/sub
+    always_comb begin
+        case (alu_op)
+            OP_ADD:  overflow = add_overflow;
+            OP_SUB:  overflow = sub_overflow;
+            default: overflow = 1'b0;
+        endcase
+    end
 
     // Zero flag
     assign zero = (result == '0);
 
-    // Valid output pipeline
+    // Valid output (registered for timing)
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             valid_out <= 1'b0;
