@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Agentic System Implementation Plan (2026-02-10):
+  - **Current State Assessment**: Honest analysis of the two existing execution modes
+    (hardcoded Orchestrator pipeline and LLM tool-use chat loop) and why neither
+    qualifies as a true agentic system
+  - **Gap Analysis**: 12-dimension gap matrix covering goal decomposition, task graph,
+    orchestration, memory, design space exploration, optimization loops, governance,
+    constraint propagation, domain knowledge, validation, feedback learning, and RTL generation
+  - **CrewAI vs. LangGraph Analysis**: Evaluation of CrewAI's specialist agent model
+    (RTL Designer, PPA Assessor, etc.) vs. LangGraph state graph approach. Recommendation:
+    adopt the specialist role *concept*, implement on LangGraph with typed state and checkpointing
+  - **4-Phase Implementation Plan** (~24 weeks):
+    - Phase 0: Foundation (state schema, task graph engine, planner, dispatcher)
+    - Phase 1: Specialist agents (workload analyzer, HW explorer, PPA assessor, critic, etc.)
+    - Phase 2: Memory + governance (working memory, experience cache, audit trail, HITL)
+    - Phase 3: EDA integration (containerized Yosys/Verilator/OpenROAD, RTL generation loop)
+  - **7 Demo Prompts** for validation: delivery drone SoC, 3-way hardware Pareto comparison,
+    iterative power optimization, RTL MAC unit generation, safety-critical surgical robot,
+    experience cache reuse, full end-to-end quadruped robot design campaign
+  - **9-Dimension Evaluation Framework**: task decomposition quality, PPA accuracy,
+    exploration efficiency, reasoning quality, convergence behavior, governance compliance,
+    tool use accuracy, adaptability, session efficiency -- with composite scorecard
+  - Documentation: `docs/sessions/2026-02-10-agentic-system-plan.md`
+
 - Documentation Site Implementation (2026-01-15):
   - **Astro Starlight Docs Site** (`docs-site/`):
     - Complete Phase 1 implementation of documentation roadmap
