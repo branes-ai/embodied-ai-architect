@@ -25,15 +25,57 @@ from embodied_ai_architect.graphs.state import (
     get_total_latency_ms,
     is_over_budget,
 )
+from embodied_ai_architect.graphs.task_graph import (
+    CycleError,
+    TaskGraph,
+    TaskNode,
+    TaskStatus,
+)
+from embodied_ai_architect.graphs.soc_state import (
+    DesignConstraints,
+    DesignDecision,
+    DesignStatus,
+    PPAMetrics,
+    SoCDesignState,
+    create_initial_soc_state,
+    get_constraints,
+    get_iteration_summary,
+    get_ppa_metrics,
+    get_task_graph,
+    is_design_complete,
+    is_over_iteration_limit,
+    record_decision,
+    set_task_graph,
+)
 
 __all__ = [
-    # State
+    # Perception pipeline state
     "EmbodiedPipelineState",
     "PipelineStage",
     "create_initial_state",
     "format_timing_summary",
     "get_total_latency_ms",
     "is_over_budget",
+    # Task graph engine
+    "CycleError",
+    "TaskGraph",
+    "TaskNode",
+    "TaskStatus",
+    # SoC design state
+    "DesignConstraints",
+    "DesignDecision",
+    "DesignStatus",
+    "PPAMetrics",
+    "SoCDesignState",
+    "create_initial_soc_state",
+    "get_constraints",
+    "get_iteration_summary",
+    "get_ppa_metrics",
+    "get_task_graph",
+    "is_design_complete",
+    "is_over_iteration_limit",
+    "record_decision",
+    "set_task_graph",
 ]
 
 # Lazy imports for langgraph-dependent modules
