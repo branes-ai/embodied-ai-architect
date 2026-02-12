@@ -47,6 +47,16 @@ from embodied_ai_architect.graphs.soc_state import (
     record_decision,
     set_task_graph,
 )
+from embodied_ai_architect.graphs.planner import (
+    PlannerNode,
+    create_planner_node,
+    parse_plan_json,
+    tasks_to_graph,
+)
+from embodied_ai_architect.graphs.dispatcher import (
+    Dispatcher,
+    DispatchError,
+)
 
 __all__ = [
     # Perception pipeline state
@@ -76,6 +86,14 @@ __all__ = [
     "is_over_iteration_limit",
     "record_decision",
     "set_task_graph",
+    # Planner
+    "PlannerNode",
+    "create_planner_node",
+    "parse_plan_json",
+    "tasks_to_graph",
+    # Dispatcher
+    "Dispatcher",
+    "DispatchError",
 ]
 
 # Lazy imports for langgraph-dependent modules
