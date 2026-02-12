@@ -8,6 +8,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Agentic SoC Designer Foundation — Phase 0 + Phase 1 Implementation (2026-02-11):
+  - **Phase 0.1 — State Schema & Task Graph Engine** (`src/embodied_ai_architect/graphs/`):
+    - `task_graph.py`: DAG engine with `TaskNode`, `TaskGraph`, `TaskStatus`, `CycleError`
+    - Dependency tracking, lifecycle management (PENDING→READY→RUNNING→COMPLETED/FAILED)
+    - Cycle detection, batch add with topological sort, serialization round-trip
+    - `soc_state.py`: `SoCDesignState` TypedDict — the single state object flowing through the design pipeline
+    - `DesignConstraints` model (power, latency, area, cost, process node, safety)
+    - `PPAMetrics` model with per-constraint verdicts (PASS/FAIL)
+    - `DesignDecision` model for audit trail
+    - Helper functions: `get_task_graph()`, `set_task_graph()`, `record_decision()`, `get_iteration_summary()`
+  - **Phase 0.2 — Planner & Dispatcher** (`src/embodied_ai_architect/graphs/`):
+    - `planner.py`: `PlannerNode` — LLM-powered goal decomposition into TaskGraph DAGs
+    - System prompt encoding SoC design decomposition expertise with 7 specialist agents
+    - Structured JSON output parsing with markdown fence stripping
+    - Supports static plans for deterministic testing
+    - `dispatcher.py`: `Dispatcher` — DAG-walking task scheduler replacing hardcoded Orchestrator
+    - Finds ready tasks, dispatches to registered agent executors, records decisions
+    - Failure handling, blocked-task detection, max-steps safety bound
+    - `_state_updates` merging: task results can write to top-level state fields
+  - **Phase 1 — Specialist Agents** (`src/embodied_ai_architect/graphs/specialists.py`):
+    - `workload_analyzer`: Keyword-based workload estimation from goal description
+      (detection, tracking, SLAM, voice, LiDAR → operator profiles with GFLOPS/memory estimates)
+    - `hw_explorer`: Static hardware catalog (KPU, Jetson Orin Nano, Coral Edge TPU, AMD Ryzen AI,
+      Raspberry Pi 5, Hailo-8) with constraint-aware scoring and verdict annotations
+    - `architecture_composer`: Operator-to-hardware mapping, IP block generation (CPU, accelerator,
+      memory controller, I/O, ISP), memory map layout, interconnect topology (AXI4/NoC)
+    - `ppa_assessor`: Power/latency/area/cost estimation with per-constraint PASS/FAIL verdicts,
+      bottleneck identification, and improvement suggestions
+    - `critic`: Design review identifying single-compute risk, power margin analysis,
+      memory pressure, safety-critical compliance checks
+    - `report_generator`: Structured design report with executive summary, all artifacts, decision trail
+    - `create_default_dispatcher()`: Factory wiring all 6 specialists into a ready-to-run Dispatcher
+  - **End-to-End Pipeline Validated**:
+    - Drone SoC design: goal → planner → workload → hw explore → compose → PPA → critic → report
+    - KPU selected as top candidate for <5W/<$30 drone constraint profile
+    - AMR SoC design: multi-workload detection (SLAM + detection + voice + LiDAR)
+    - Full decision audit trail (7+ decisions per design session)
+  - **108 Tests** across 3 test files:
+    - `tests/test_soc_state.py` (52): TaskGraph DAG ops, lifecycle, serialization, state helpers
+    - `tests/test_planner_dispatcher.py` (28): Plan parsing, LLM integration (mocked), dispatch loop
+    - `tests/test_specialists.py` (28): Each specialist, factory, full pipeline integration
+  - Documentation: `docs/sessions/2026-02-11-agentic-phase0-phase1.md`
+
 - Agentic System Implementation Plan (2026-02-10):
   - **Current State Assessment**: Honest analysis of the two existing execution modes
     (hardcoded Orchestrator pipeline and LLM tool-use chat loop) and why neither
