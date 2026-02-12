@@ -18,6 +18,7 @@ from embodied_ai_architect.graphs.planner import (
     parse_plan_json,
     tasks_to_graph,
 )
+from embodied_ai_architect.graphs.memory import WorkingMemoryStore
 from embodied_ai_architect.graphs.soc_state import (
     DesignConstraints,
     DesignStatus,
@@ -540,3 +541,70 @@ class TestIntegration:
         history = result.get("history", [])
         fail_entries = [h for h in history if "Failed" in h.get("action", "")]
         assert len(fail_entries) == 1
+
+
+# ============================================================================
+# Dispatcher working memory integration
+# ============================================================================
+
+
+class TestDispatcherWorkingMemory:
+    def test_records_in_working_memory(self):
+        """Dispatcher should record each task execution in working memory."""
+        state = create_initial_soc_state(goal="Test working memory")
+        plan = [
+            {"id": "t1", "name": "Analyze", "agent": "analyzer", "dependencies": []},
+        ]
+        planner = PlannerNode(static_plan=plan)
+        updates = planner(state)
+        state = {**state, **updates}
+
+        dispatcher = Dispatcher()
+        dispatcher.register("analyzer", make_mock_executor({"summary": "Analyzed OK"}))
+
+        result = dispatcher.run(state)
+
+        # Working memory should have a record for the analyzer agent
+        wm = WorkingMemoryStore(**result.get("working_memory", {}))
+        tried = wm.get_tried_descriptions("analyzer")
+        assert len(tried) == 1
+        assert "t1" in tried[0]
+
+    def test_records_failure_in_working_memory(self):
+        """Failed tasks should also be recorded in working memory."""
+        state = create_initial_soc_state(goal="Test failure memory")
+        plan = [
+            {"id": "t1", "name": "Fail task", "agent": "failer", "dependencies": []},
+        ]
+        planner = PlannerNode(static_plan=plan)
+        updates = planner(state)
+        state = {**state, **updates}
+
+        dispatcher = Dispatcher()
+        dispatcher.register("failer", make_mock_executor(fail=True))
+
+        result = dispatcher.run(state)
+
+        wm = WorkingMemoryStore(**result.get("working_memory", {}))
+        tried = wm.get_tried_descriptions("failer")
+        assert len(tried) == 1
+        assert "FAILED" in wm.get_agent_memory("failer").things_tried[0]["outcome"]
+
+    def test_backward_compatible_no_working_memory(self):
+        """States without working_memory key should still work."""
+        state = create_initial_soc_state(goal="Test")
+        # Remove working_memory key to simulate old state
+        del state["working_memory"]
+
+        plan = [
+            {"id": "t1", "name": "Analyze", "agent": "analyzer", "dependencies": []},
+        ]
+        planner = PlannerNode(static_plan=plan)
+        updates = planner(state)
+        state = {**state, **updates}
+
+        dispatcher = Dispatcher()
+        dispatcher.register("analyzer", make_mock_executor())
+
+        result = dispatcher.run(state)
+        assert result["status"] == DesignStatus.COMPLETE.value

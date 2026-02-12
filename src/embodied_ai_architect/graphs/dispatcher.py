@@ -26,6 +26,7 @@ import logging
 from datetime import datetime
 from typing import Any, Callable, Optional
 
+from embodied_ai_architect.graphs.memory import WorkingMemoryStore
 from embodied_ai_architect.graphs.soc_state import (
     DesignStatus,
     SoCDesignState,
@@ -191,6 +192,19 @@ class Dispatcher:
                     list(state_updates.keys()),
                 )
 
+            # Record attempt in working memory (backward compatible: only if
+            # working_memory key exists in state)
+            if "working_memory" in state:
+                wm_data = state.get("working_memory", {})
+                store = WorkingMemoryStore(**wm_data) if wm_data else WorkingMemoryStore()
+                store.record_attempt(
+                    agent_name=task.agent,
+                    description=f"task:{task.id}:{task.name}",
+                    outcome=result.get("summary", "completed"),
+                    iteration=state.get("iteration", 0),
+                )
+                state = {**state, "working_memory": store.model_dump()}  # type: ignore[assignment]
+
             state = record_decision(
                 state,
                 agent=task.agent,
@@ -203,6 +217,18 @@ class Dispatcher:
             error_msg = f"{type(e).__name__}: {e}"
             graph.mark_failed(task.id, error=error_msg)
             logger.error("Task '%s' failed: %s", task.id, error_msg)
+
+            # Record failure in working memory
+            if "working_memory" in state:
+                wm_data = state.get("working_memory", {})
+                store = WorkingMemoryStore(**wm_data) if wm_data else WorkingMemoryStore()
+                store.record_attempt(
+                    agent_name=task.agent,
+                    description=f"task:{task.id}:{task.name}",
+                    outcome=f"FAILED: {error_msg}",
+                    iteration=state.get("iteration", 0),
+                )
+                state = {**state, "working_memory": store.model_dump()}  # type: ignore[assignment]
 
             state = record_decision(
                 state,

@@ -706,7 +706,7 @@ def ppa_assessor(task: TaskNode, state: SoCDesignState) -> dict[str, Any]:
         selected_hw = candidates[0]
 
     # Estimate PPA
-    power_w = _estimate_power(ip_blocks, selected_hw)
+    power_w = _estimate_power(ip_blocks, selected_hw, workload)
     latency_ms = _estimate_latency(workload, selected_hw)
     area_mm2 = _estimate_area(ip_blocks, constraints)
     cost_usd = selected_hw.get("cost_usd", 0) if selected_hw else 0
@@ -776,18 +776,77 @@ def ppa_assessor(task: TaskNode, state: SoCDesignState) -> dict[str, Any]:
 
 
 def _estimate_power(
-    ip_blocks: list[dict[str, Any]], hw: dict[str, Any] | None
+    ip_blocks: list[dict[str, Any]],
+    hw: dict[str, Any] | None,
+    workload: dict[str, Any] | None = None,
 ) -> float:
-    """Estimate total SoC power consumption."""
+    """Estimate total SoC power consumption.
+
+    Baseline power is TDP * utilization + fixed overhead.
+    When the optimizer applies strategies (tracked in workload["optimizations_applied"]),
+    compute power is reduced proportionally to the cumulative GFLOPS reduction.
+    Clock scaling in IP blocks also reduces compute power.
+    """
     if hw is None:
         return 10.0  # default estimate
 
-    compute_w = hw.get("tdp_watts", 10.0) * 0.8  # compute at 80% TDP
+    tdp = hw.get("tdp_watts", 10.0)
+    base_utilization = 0.8  # baseline: 80% of TDP under full workload
+
+    # When optimizations have been applied, the workload's GFLOPS have been reduced
+    # by the optimizer. Compute the ratio vs. the original GFLOPS to scale power.
+    optimization_scale = 1.0
+    if workload and workload.get("optimizations_applied"):
+        # The optimizer reduces total_estimated_gflops each time it applies a strategy.
+        # We infer the original by working backwards, but the simpler approach:
+        # count the number of workloads and check if gflops is much lower than expected.
+        # For robustness, use the ratio of current gflops to a reference value.
+        current_gflops = workload.get(
+            "total_estimated_gflops", workload.get("estimated_gflops", 0)
+        )
+        # Reference: typical perception workload is ~15 GFLOPS unoptimized
+        # We use per-use-case reference to stay general
+        reference_gflops = _reference_gflops(workload)
+        if reference_gflops > 0 and current_gflops > 0:
+            optimization_scale = min(current_gflops / reference_gflops, 1.0)
+            optimization_scale = max(optimization_scale, 0.20)  # floor: 20% of base
+
+    # Check for clock scaling in IP blocks
+    clock_scale = 1.0
+    for block in ip_blocks:
+        if block.get("type") in ("kpu", "gpu", "npu", "tpu", "accelerator"):
+            config = block.get("config", {})
+            freq = config.get("frequency_mhz", 1000)
+            if freq < 1000:
+                clock_scale = freq / 1000.0
+
+    compute_w = tdp * base_utilization * optimization_scale * clock_scale
     cpu_w = 1.0  # control CPU
     io_w = 0.5  # I/O subsystem
     memory_w = 0.8  # memory controller
 
     return round(compute_w + cpu_w + io_w + memory_w, 1)
+
+
+def _reference_gflops(workload: dict[str, Any]) -> float:
+    """Get reference GFLOPS for a workload type (used for power scaling)."""
+    # Sum up the workloads' GFLOPS from the model-class heuristics
+    workloads = workload.get("workloads", [])
+    if workloads:
+        # Reference = sum of standard model GFLOPS for each workload type
+        ref_map = {
+            "object_detection": 8.7,
+            "object_tracking": 0.5,
+            "visual_perception": 6.0,
+            "visual_slam": 3.0,
+            "voice_recognition": 1.5,
+            "lidar_processing": 4.0,
+            "general_inference": 5.0,
+        }
+        total = sum(ref_map.get(w.get("name", ""), 5.0) for w in workloads)
+        return total
+    # Single-workload fallback
+    return workload.get("total_estimated_gflops", workload.get("estimated_gflops", 5.0))
 
 
 def _estimate_latency(
@@ -1015,7 +1074,10 @@ def create_default_dispatcher() -> Dispatcher:
     - ppa_assessor
     - critic
     - report_generator
+    - design_optimizer
     """
+    from embodied_ai_architect.graphs.optimizer import design_optimizer
+
     dispatcher = Dispatcher()
     dispatcher.register_many({
         "workload_analyzer": workload_analyzer,
@@ -1024,5 +1086,6 @@ def create_default_dispatcher() -> Dispatcher:
         "ppa_assessor": ppa_assessor,
         "critic": critic,
         "report_generator": report_generator,
+        "design_optimizer": design_optimizer,
     })
     return dispatcher

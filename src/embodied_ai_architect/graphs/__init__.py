@@ -40,12 +40,16 @@ from embodied_ai_architect.graphs.soc_state import (
     create_initial_soc_state,
     get_constraints,
     get_iteration_summary,
+    get_optimization_history,
     get_ppa_metrics,
     get_task_graph,
+    get_working_memory,
     is_design_complete,
     is_over_iteration_limit,
+    record_audit,
     record_decision,
     set_task_graph,
+    update_working_memory,
 )
 from embodied_ai_architect.graphs.planner import (
     PlannerNode,
@@ -70,6 +74,23 @@ from embodied_ai_architect.graphs.soc_state import (
     get_dependency_results,
     get_task_result,
 )
+from embodied_ai_architect.graphs.memory import (
+    AgentWorkingMemory,
+    WorkingMemoryStore,
+)
+from embodied_ai_architect.graphs.optimizer import (
+    OPTIMIZATION_STRATEGIES,
+    design_optimizer,
+)
+from embodied_ai_architect.graphs.governance import (
+    AuditEntry,
+    GovernanceGuard,
+    GovernancePolicy,
+)
+from embodied_ai_architect.graphs.experience import (
+    DesignEpisode,
+    ExperienceCache,
+)
 
 __all__ = [
     # Perception pipeline state
@@ -93,12 +114,16 @@ __all__ = [
     "create_initial_soc_state",
     "get_constraints",
     "get_iteration_summary",
+    "get_optimization_history",
     "get_ppa_metrics",
     "get_task_graph",
+    "get_working_memory",
     "is_design_complete",
     "is_over_iteration_limit",
+    "record_audit",
     "record_decision",
     "set_task_graph",
+    "update_working_memory",
     # Planner
     "PlannerNode",
     "create_planner_node",
@@ -118,6 +143,19 @@ __all__ = [
     # State helpers
     "get_dependency_results",
     "get_task_result",
+    # Working memory
+    "AgentWorkingMemory",
+    "WorkingMemoryStore",
+    # Optimizer
+    "OPTIMIZATION_STRATEGIES",
+    "design_optimizer",
+    # Governance
+    "AuditEntry",
+    "GovernanceGuard",
+    "GovernancePolicy",
+    # Experience
+    "DesignEpisode",
+    "ExperienceCache",
 ]
 
 # Lazy imports for langgraph-dependent modules
@@ -132,4 +170,10 @@ def __getattr__(name):
     elif name == "build_autonomy_graph":
         from embodied_ai_architect.graphs.pipelines.autonomy import build_autonomy_graph
         return build_autonomy_graph
+    elif name == "build_soc_design_graph":
+        from embodied_ai_architect.graphs.soc_graph import build_soc_design_graph
+        return build_soc_design_graph
+    elif name == "SoCDesignRunner":
+        from embodied_ai_architect.graphs.soc_runner import SoCDesignRunner
+        return SoCDesignRunner
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
