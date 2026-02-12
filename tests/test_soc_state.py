@@ -21,12 +21,16 @@ from embodied_ai_architect.graphs.soc_state import (
     create_initial_soc_state,
     get_constraints,
     get_iteration_summary,
+    get_optimization_history,
     get_ppa_metrics,
     get_task_graph,
+    get_working_memory,
     is_design_complete,
     is_over_iteration_limit,
+    record_audit,
     record_decision,
     set_task_graph,
+    update_working_memory,
 )
 
 
@@ -672,3 +676,68 @@ class TestIntegration:
         # Verify decision was recorded
         assert len(state["history"]) == 1
         assert len(state["design_rationale"]) == 1
+
+
+# ============================================================================
+# Phase 2 fields: working_memory, optimization_history, governance, audit_log
+# ============================================================================
+
+
+class TestPhase2StateFields:
+    def test_new_fields_initialized_empty(self):
+        state = create_initial_soc_state(goal="Test")
+        assert state["working_memory"] == {}
+        assert state["optimization_history"] == []
+        assert state["governance"] == {}
+        assert state["audit_log"] == []
+
+    def test_governance_param(self):
+        gov = {"iteration_limit": 5, "cost_budget_tokens": 10000}
+        state = create_initial_soc_state(goal="Test", governance=gov)
+        assert state["governance"]["iteration_limit"] == 5
+
+    def test_get_working_memory(self):
+        state = create_initial_soc_state(goal="Test")
+        mem = get_working_memory(state)
+        assert mem == {}
+
+    def test_update_working_memory(self):
+        state = create_initial_soc_state(goal="Test")
+        mem = {"agents": {"optimizer": {"decisions_made": ["chose INT8"]}}}
+        updated = update_working_memory(state, mem)
+        assert updated["working_memory"]["agents"]["optimizer"]["decisions_made"] == ["chose INT8"]
+
+    def test_record_audit(self):
+        state = create_initial_soc_state(goal="Test")
+        updated = record_audit(
+            state,
+            agent="ppa_assessor",
+            action="Assessed PPA metrics",
+            input_summary="architecture with KPU",
+            output_summary="power=6.3W FAIL",
+        )
+        assert len(updated["audit_log"]) == 1
+        entry = updated["audit_log"][0]
+        assert entry["agent"] == "ppa_assessor"
+        assert entry["action"] == "Assessed PPA metrics"
+        assert entry["iteration"] == 0
+        assert entry["cost_tokens"] == 0
+        assert entry["human_approved"] is False
+
+    def test_record_audit_multiple(self):
+        state = create_initial_soc_state(goal="Test")
+        state = record_audit(state, agent="a", action="first")
+        state = record_audit(state, agent="b", action="second")
+        assert len(state["audit_log"]) == 2
+
+    def test_get_optimization_history(self):
+        state = create_initial_soc_state(goal="Test")
+        assert get_optimization_history(state) == []
+
+    def test_optimization_history_append(self):
+        state = create_initial_soc_state(goal="Test")
+        snap = {"iteration": 0, "power_watts": 6.3, "verdict": "FAIL"}
+        state["optimization_history"] = [snap]
+        history = get_optimization_history(state)
+        assert len(history) == 1
+        assert history[0]["power_watts"] == 6.3

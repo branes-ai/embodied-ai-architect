@@ -219,6 +219,10 @@ class SoCDesignState(TypedDict, total=False):
     max_iterations: int  # Safety bound to prevent infinite loops
     history: list[dict]  # All DesignDecision entries serialized
     design_rationale: list[str]  # Human-readable rationale chain
+    working_memory: dict  # WorkingMemoryStore serialized
+    optimization_history: list[dict]  # PPA snapshot per iteration
+    governance: dict  # GovernancePolicy serialized
+    audit_log: list[dict]  # AuditEntry list
 
     # === Control ===
     next_action: str  # Graph routing signal (node name to execute next)
@@ -239,6 +243,7 @@ def create_initial_soc_state(
     platform: str = "",
     max_iterations: int = 20,
     session_id: Optional[str] = None,
+    governance: Optional[dict] = None,
 ) -> SoCDesignState:
     """Create initial state for a new SoC design session.
 
@@ -249,6 +254,7 @@ def create_initial_soc_state(
         platform: Platform type for constraint implications (e.g. "drone").
         max_iterations: Safety bound for optimization loops.
         session_id: Unique identifier (auto-generated if None).
+        governance: GovernancePolicy serialized dict. None = permissive defaults.
 
     Returns:
         Initial SoCDesignState ready for the Planner agent.
@@ -281,6 +287,10 @@ def create_initial_soc_state(
         max_iterations=max_iterations,
         history=[],
         design_rationale=[],
+        working_memory={},
+        optimization_history=[],
+        governance=governance or {},
+        audit_log=[],
         # Control
         next_action="planner",
         status=DesignStatus.PLANNING.value,
@@ -392,6 +402,57 @@ def is_design_complete(state: SoCDesignState) -> bool:
 def is_over_iteration_limit(state: SoCDesignState) -> bool:
     """Check if the optimization loop has exceeded its safety bound."""
     return state.get("iteration", 0) >= state.get("max_iterations", 20)
+
+
+def get_working_memory(state: SoCDesignState) -> dict:
+    """Get the working memory dict from state."""
+    return state.get("working_memory", {})
+
+
+def update_working_memory(state: SoCDesignState, memory: dict) -> SoCDesignState:
+    """Return state update with new working memory.
+
+    Args:
+        state: Current SoC design state.
+        memory: WorkingMemoryStore serialized via model_dump().
+
+    Returns:
+        New dict with updated working_memory (LangGraph state merge).
+    """
+    return {**state, "working_memory": memory}  # type: ignore[return-value]
+
+
+def record_audit(
+    state: SoCDesignState,
+    agent: str,
+    action: str,
+    input_summary: str = "",
+    output_summary: str = "",
+    cost_tokens: int = 0,
+    human_approved: bool = False,
+) -> SoCDesignState:
+    """Append an audit entry to the state audit log.
+
+    Returns a new dict with the appended entry (LangGraph state merge).
+    """
+    entry = {
+        "timestamp": datetime.now().isoformat(),
+        "agent": agent,
+        "action": action,
+        "input_summary": input_summary,
+        "output_summary": output_summary,
+        "cost_tokens": cost_tokens,
+        "human_approved": human_approved,
+        "iteration": state.get("iteration", 0),
+    }
+    log = list(state.get("audit_log", []))
+    log.append(entry)
+    return {**state, "audit_log": log}  # type: ignore[return-value]
+
+
+def get_optimization_history(state: SoCDesignState) -> list[dict]:
+    """Get the optimization history list from state."""
+    return list(state.get("optimization_history", []))
 
 
 def get_iteration_summary(state: SoCDesignState) -> str:

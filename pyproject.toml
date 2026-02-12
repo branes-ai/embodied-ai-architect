@@ -39,8 +39,9 @@ chat = [
     "anthropic>=0.39.0",  # Claude API for interactive chat
 ]
 langgraph = [
-    "langgraph>=0.2.0",             # State machine framework
-    "langchain-anthropic>=0.3.0",   # Claude integration for LangGraph
+    "langgraph>=0.2.0",                      # State machine framework
+    "langchain-anthropic>=0.3.0",            # Claude integration for LangGraph
+    "langgraph-checkpoint-sqlite>=2.0.0",    # SQLite checkpointing for save/resume
 ]
 jetson = [
     "tensorrt>=8.6.0",              # TensorRT for Jetson deployment
