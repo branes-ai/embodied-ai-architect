@@ -342,6 +342,48 @@ def record_decision(
     }
 
 
+def get_task_result(state: SoCDesignState, task_id: str) -> dict[str, Any]:
+    """Get the result of a completed task from state.
+
+    Convenience function for specialist agents that need outputs from
+    upstream tasks (their dependencies).
+
+    Args:
+        state: Current SoC design state.
+        task_id: ID of the completed task.
+
+    Returns:
+        The task's result dict.
+
+    Raises:
+        ValueError: If task doesn't exist or has no result.
+    """
+    graph = get_task_graph(state)
+    return graph.get_result(task_id)
+
+
+def get_dependency_results(
+    state: SoCDesignState, task: Any
+) -> dict[str, dict[str, Any]]:
+    """Get results from all dependencies of a task.
+
+    Args:
+        state: Current SoC design state.
+        task: TaskNode with dependencies list.
+
+    Returns:
+        Dict mapping dependency task_id -> result dict.
+    """
+    graph = get_task_graph(state)
+    results = {}
+    for dep_id in task.dependencies:
+        try:
+            results[dep_id] = graph.get_result(dep_id)
+        except (KeyError, ValueError):
+            pass  # Dependency may be skipped or not have a result
+    return results
+
+
 def is_design_complete(state: SoCDesignState) -> bool:
     """Check if the design session has reached a terminal state."""
     return state.get("status", "") in (DesignStatus.COMPLETE.value, DesignStatus.FAILED.value)

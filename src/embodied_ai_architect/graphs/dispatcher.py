@@ -181,6 +181,16 @@ class Dispatcher:
             graph.mark_completed(task.id, result=result)
             logger.info("Task '%s' completed successfully", task.id)
 
+            # Merge state updates from task result if present
+            state_updates = result.pop("_state_updates", None)
+            if state_updates and isinstance(state_updates, dict):
+                state = {**state, **state_updates}  # type: ignore[assignment]
+                logger.debug(
+                    "Merged state updates from task '%s': %s",
+                    task.id,
+                    list(state_updates.keys()),
+                )
+
             state = record_decision(
                 state,
                 agent=task.agent,
