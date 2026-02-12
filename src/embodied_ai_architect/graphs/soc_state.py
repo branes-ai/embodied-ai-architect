@@ -1,0 +1,388 @@
+"""State schema for the agentic SoC designer.
+
+Defines SoCDesignState — the single TypedDict that flows through the LangGraph
+design pipeline. Every specialist agent reads from and writes to this state.
+
+This is the "single most important design decision" (per the implementation plan):
+everything flows from the shape of this state.
+
+Usage:
+    state = create_initial_soc_state(
+        goal="Design an SoC for a delivery drone",
+        constraints=DesignConstraints(
+            max_power_watts=5.0,
+            max_latency_ms=33.3,
+            max_cost_usd=30.0,
+        ),
+        use_case="delivery_drone",
+    )
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from enum import Enum
+from typing import Any, Optional
+from typing_extensions import TypedDict
+import uuid
+
+from pydantic import BaseModel, Field
+
+from embodied_ai_architect.graphs.task_graph import TaskGraph
+
+
+# ---------------------------------------------------------------------------
+# Supporting types
+# ---------------------------------------------------------------------------
+
+
+class DesignStatus(str, Enum):
+    """High-level status of the design session."""
+
+    PLANNING = "planning"  # Planner is decomposing the goal
+    EXPLORING = "exploring"  # Agents are exploring the design space
+    OPTIMIZING = "optimizing"  # Iterative PPA optimization loop
+    REVIEWING = "reviewing"  # Critic / human review
+    COMPLETE = "complete"  # Design finished
+    FAILED = "failed"  # Unrecoverable failure
+
+
+class DesignConstraints(BaseModel):
+    """Quantified design targets for SoC architecture.
+
+    All fields are optional — the planner infers missing constraints
+    from the use case and platform implications (embodied-schemas).
+    """
+
+    # Power
+    max_power_watts: Optional[float] = Field(
+        default=None, description="Total compute power budget in watts"
+    )
+    power_class: Optional[str] = Field(
+        default=None,
+        description="Power class name from embodied-schemas (e.g. 'low_power')",
+    )
+
+    # Latency
+    max_latency_ms: Optional[float] = Field(
+        default=None, description="End-to-end perception latency target in ms"
+    )
+    min_fps: Optional[float] = Field(
+        default=None, description="Minimum frames per second"
+    )
+    latency_tier: Optional[str] = Field(
+        default=None,
+        description="Latency tier from embodied-schemas (e.g. 'real_time')",
+    )
+
+    # Area / cost
+    max_area_mm2: Optional[float] = Field(
+        default=None, description="Maximum die area in mm^2"
+    )
+    max_cost_usd: Optional[float] = Field(
+        default=None, description="Maximum BOM cost at target volume"
+    )
+    target_volume: Optional[int] = Field(
+        default=None, description="Production volume for cost estimation"
+    )
+
+    # Memory
+    max_memory_mb: Optional[float] = Field(
+        default=None, description="Maximum on-chip + off-chip memory in MB"
+    )
+    memory_class: Optional[str] = Field(
+        default=None,
+        description="Memory class from embodied-schemas (e.g. 'small')",
+    )
+
+    # Process technology
+    target_process_nm: Optional[int] = Field(
+        default=None, description="Target process node in nm (e.g. 28, 16, 7)"
+    )
+
+    # Environmental
+    operating_temp_min_c: Optional[float] = Field(
+        default=None, description="Minimum operating temperature in Celsius"
+    )
+    operating_temp_max_c: Optional[float] = Field(
+        default=None, description="Maximum operating temperature in Celsius"
+    )
+    ip_rating: Optional[str] = Field(
+        default=None, description="Ingress protection rating (e.g. 'IP67')"
+    )
+
+    # Safety
+    safety_critical: bool = Field(
+        default=False, description="Whether the application is safety-critical"
+    )
+    safety_standard: Optional[str] = Field(
+        default=None, description="Safety standard (e.g. 'IEC 62304 Class C')"
+    )
+
+    # Custom
+    custom: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Domain-specific constraints not covered above",
+    )
+
+
+class PPAMetrics(BaseModel):
+    """Power, Performance, Area measurements for a design point."""
+
+    power_watts: Optional[float] = None
+    latency_ms: Optional[float] = None
+    throughput_fps: Optional[float] = None
+    area_mm2: Optional[float] = None
+    cost_usd: Optional[float] = None
+    memory_mb: Optional[float] = None
+    energy_per_inference_mj: Optional[float] = None
+
+    # Per-constraint verdicts (PASS/FAIL/PARTIAL)
+    verdicts: dict[str, str] = Field(
+        default_factory=dict,
+        description="Constraint name -> verdict (PASS/FAIL/PARTIAL)",
+    )
+    bottlenecks: list[str] = Field(
+        default_factory=list,
+        description="Identified performance bottlenecks",
+    )
+    suggestions: list[str] = Field(
+        default_factory=list,
+        description="Improvement suggestions from PPA assessor",
+    )
+
+
+class DesignDecision(BaseModel):
+    """A recorded design decision with rationale."""
+
+    timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())
+    agent: str = Field(..., description="Agent that made the decision")
+    action: str = Field(..., description="What was decided")
+    rationale: str = Field(..., description="Why this decision was made")
+    alternatives_considered: list[str] = Field(
+        default_factory=list,
+        description="Other options that were evaluated",
+    )
+    data: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Supporting data for the decision",
+    )
+
+
+# ---------------------------------------------------------------------------
+# Main state TypedDict
+# ---------------------------------------------------------------------------
+
+
+class SoCDesignState(TypedDict, total=False):
+    """State flowing through the LangGraph SoC design pipeline.
+
+    This TypedDict defines all fields that specialist agents read/write.
+    Using total=False allows optional fields while maintaining type safety
+    with LangGraph's state merging.
+
+    Organized into sections:
+    - Goal: what the user asked for
+    - Task Graph: the execution plan (DAG)
+    - Design Artifacts: intermediate and final design outputs
+    - Evaluation: PPA metrics and Pareto analysis
+    - History & Memory: decisions, rationale, iteration tracking
+    - Control: routing signals and session metadata
+    """
+
+    # === Goal ===
+    goal: str  # Natural language design objective
+    constraints: dict  # DesignConstraints serialized (TypedDict requires plain types)
+    use_case: str  # "delivery_drone", "warehouse_amr", "surgical_robot", etc.
+    platform: str  # "drone", "quadruped", "biped", "amr", "edge"
+
+    # === Task Graph ===
+    task_graph: dict  # TaskGraph serialized via to_dict()
+    current_task_id: str  # Task being executed now
+
+    # === Design Artifacts ===
+    workload_profile: dict  # Operator graph, compute/memory requirements
+    hardware_candidates: list[dict]  # Scored hardware options
+    selected_architecture: dict  # Chosen SoC composition
+    ip_blocks: list[dict]  # CPU, NPU, ISP, memory controller configs
+    memory_map: dict  # Address space layout
+    interconnect: dict  # Bus/NoC topology
+    rtl_modules: dict[str, str]  # Module name -> Verilog source
+
+    # === Evaluation ===
+    ppa_metrics: dict  # Current PPAMetrics serialized
+    baseline_metrics: dict  # Reference point for optimization
+    pareto_points: list[dict]  # Explored design space points
+
+    # === History & Memory ===
+    iteration: int  # Optimization loop counter
+    max_iterations: int  # Safety bound to prevent infinite loops
+    history: list[dict]  # All DesignDecision entries serialized
+    design_rationale: list[str]  # Human-readable rationale chain
+
+    # === Control ===
+    next_action: str  # Graph routing signal (node name to execute next)
+    status: str  # DesignStatus value
+    session_id: str  # Unique session identifier
+    created_at: str  # ISO timestamp
+
+
+# ---------------------------------------------------------------------------
+# Helper functions
+# ---------------------------------------------------------------------------
+
+
+def create_initial_soc_state(
+    goal: str,
+    constraints: Optional[DesignConstraints] = None,
+    use_case: str = "",
+    platform: str = "",
+    max_iterations: int = 20,
+    session_id: Optional[str] = None,
+) -> SoCDesignState:
+    """Create initial state for a new SoC design session.
+
+    Args:
+        goal: Natural language design objective.
+        constraints: Quantified design constraints. None = planner infers them.
+        use_case: Application type (e.g. "delivery_drone").
+        platform: Platform type for constraint implications (e.g. "drone").
+        max_iterations: Safety bound for optimization loops.
+        session_id: Unique identifier (auto-generated if None).
+
+    Returns:
+        Initial SoCDesignState ready for the Planner agent.
+    """
+    task_graph = TaskGraph()
+
+    return SoCDesignState(
+        # Goal
+        goal=goal,
+        constraints=constraints.model_dump() if constraints else {},
+        use_case=use_case,
+        platform=platform,
+        # Task Graph
+        task_graph=task_graph.to_dict(),
+        current_task_id="",
+        # Design Artifacts (empty initially)
+        workload_profile={},
+        hardware_candidates=[],
+        selected_architecture={},
+        ip_blocks=[],
+        memory_map={},
+        interconnect={},
+        rtl_modules={},
+        # Evaluation
+        ppa_metrics={},
+        baseline_metrics={},
+        pareto_points=[],
+        # History
+        iteration=0,
+        max_iterations=max_iterations,
+        history=[],
+        design_rationale=[],
+        # Control
+        next_action="planner",
+        status=DesignStatus.PLANNING.value,
+        session_id=session_id or f"soc_{uuid.uuid4().hex[:8]}",
+        created_at=datetime.now().isoformat(),
+    )
+
+
+def get_task_graph(state: SoCDesignState) -> TaskGraph:
+    """Deserialize the TaskGraph from state."""
+    return TaskGraph.from_dict(state.get("task_graph", {"nodes": {}}))
+
+
+def set_task_graph(state: SoCDesignState, graph: TaskGraph) -> SoCDesignState:
+    """Serialize the TaskGraph back into state.
+
+    Returns a new dict with the updated task_graph (LangGraph state merge).
+    """
+    return {**state, "task_graph": graph.to_dict()}  # type: ignore[return-value]
+
+
+def get_constraints(state: SoCDesignState) -> DesignConstraints:
+    """Deserialize DesignConstraints from state."""
+    return DesignConstraints(**state.get("constraints", {}))
+
+
+def get_ppa_metrics(state: SoCDesignState) -> PPAMetrics:
+    """Deserialize PPAMetrics from state."""
+    return PPAMetrics(**state.get("ppa_metrics", {}))
+
+
+def record_decision(
+    state: SoCDesignState,
+    agent: str,
+    action: str,
+    rationale: str,
+    alternatives: Optional[list[str]] = None,
+    data: Optional[dict[str, Any]] = None,
+) -> SoCDesignState:
+    """Record a design decision in the state history.
+
+    Returns a new dict with the appended decision (LangGraph state merge).
+    """
+    decision = DesignDecision(
+        agent=agent,
+        action=action,
+        rationale=rationale,
+        alternatives_considered=alternatives or [],
+        data=data or {},
+    )
+    history = list(state.get("history", []))
+    history.append(decision.model_dump())
+    rationale_chain = list(state.get("design_rationale", []))
+    rationale_chain.append(f"[{agent}] {action}: {rationale}")
+    return {  # type: ignore[return-value]
+        **state,
+        "history": history,
+        "design_rationale": rationale_chain,
+    }
+
+
+def is_design_complete(state: SoCDesignState) -> bool:
+    """Check if the design session has reached a terminal state."""
+    return state.get("status", "") in (DesignStatus.COMPLETE.value, DesignStatus.FAILED.value)
+
+
+def is_over_iteration_limit(state: SoCDesignState) -> bool:
+    """Check if the optimization loop has exceeded its safety bound."""
+    return state.get("iteration", 0) >= state.get("max_iterations", 20)
+
+
+def get_iteration_summary(state: SoCDesignState) -> str:
+    """Format a human-readable summary of the current design iteration."""
+    lines = []
+    lines.append(f"Session: {state.get('session_id', 'unknown')}")
+    lines.append(f"Status:  {state.get('status', 'unknown')}")
+    lines.append(f"Goal:    {state.get('goal', 'none')}")
+    lines.append(f"Iteration: {state.get('iteration', 0)}/{state.get('max_iterations', 20)}")
+
+    # Task graph summary
+    graph = get_task_graph(state)
+    if graph.nodes:
+        summary = graph.summary()
+        task_str = ", ".join(f"{k}: {v}" for k, v in sorted(summary.items()))
+        lines.append(f"Tasks:   {task_str}")
+
+    # PPA snapshot
+    ppa = state.get("ppa_metrics", {})
+    if ppa:
+        ppa_parts = []
+        if ppa.get("power_watts") is not None:
+            ppa_parts.append(f"Power: {ppa['power_watts']:.1f}W")
+        if ppa.get("latency_ms") is not None:
+            ppa_parts.append(f"Latency: {ppa['latency_ms']:.1f}ms")
+        if ppa.get("area_mm2") is not None:
+            ppa_parts.append(f"Area: {ppa['area_mm2']:.1f}mm²")
+        if ppa_parts:
+            lines.append(f"PPA:     {', '.join(ppa_parts)}")
+
+    # Latest rationale
+    rationale = state.get("design_rationale", [])
+    if rationale:
+        lines.append(f"Latest:  {rationale[-1]}")
+
+    return "\n".join(lines)
