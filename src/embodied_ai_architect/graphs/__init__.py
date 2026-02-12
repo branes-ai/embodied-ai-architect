@@ -57,6 +57,19 @@ from embodied_ai_architect.graphs.dispatcher import (
     Dispatcher,
     DispatchError,
 )
+from embodied_ai_architect.graphs.specialists import (
+    architecture_composer,
+    create_default_dispatcher,
+    critic,
+    hw_explorer,
+    ppa_assessor,
+    report_generator,
+    workload_analyzer,
+)
+from embodied_ai_architect.graphs.soc_state import (
+    get_dependency_results,
+    get_task_result,
+)
 
 __all__ = [
     # Perception pipeline state
@@ -94,6 +107,17 @@ __all__ = [
     # Dispatcher
     "Dispatcher",
     "DispatchError",
+    # Specialists
+    "architecture_composer",
+    "create_default_dispatcher",
+    "critic",
+    "hw_explorer",
+    "ppa_assessor",
+    "report_generator",
+    "workload_analyzer",
+    # State helpers
+    "get_dependency_results",
+    "get_task_result",
 ]
 
 # Lazy imports for langgraph-dependent modules
