@@ -216,7 +216,12 @@ def _estimate_workload_from_goal(
             "estimated_params_m": 2.0,
         })
 
-    total_gflops = sum(w["estimated_gflops"] for w in workloads)
+    # Add scheduling field per workload (concurrent/sequential/time_shared)
+    for w in workloads:
+        if "scheduling" not in w:
+            w["scheduling"] = _infer_scheduling(w.get("name", ""))
+
+    total_gflops = aggregate_workload_requirements(workloads)
     total_memory_mb = sum(w["estimated_memory_mb"] for w in workloads)
 
     # Determine dominant operation type
@@ -235,6 +240,98 @@ def _estimate_workload_from_goal(
         "use_case": use_case,
         "source": "goal_estimation",
     }
+
+
+def _infer_scheduling(workload_name: str) -> str:
+    """Infer scheduling mode from workload name."""
+    concurrent = {"object_detection", "visual_perception", "visual_slam"}
+    sequential = {"voice_recognition"}
+    if workload_name in concurrent:
+        return "concurrent"
+    if workload_name in sequential:
+        return "sequential"
+    return "time_shared"
+
+
+def aggregate_workload_requirements(workloads: list[dict]) -> float:
+    """Aggregate GFLOPS across workloads considering scheduling mode.
+
+    Concurrent workloads sum their GFLOPS (peak demand).
+    Sequential workloads take the max (only one active at a time).
+    Time-shared workloads contribute 70% of their GFLOPS (multiplexed).
+
+    Args:
+        workloads: List of workload dicts with estimated_gflops and scheduling.
+
+    Returns:
+        Peak aggregate GFLOPS requirement.
+    """
+    concurrent_gflops = 0.0
+    sequential_gflops: list[float] = []
+    time_shared_gflops = 0.0
+
+    for w in workloads:
+        gflops = w.get("estimated_gflops", 0.0)
+        scheduling = w.get("scheduling", "concurrent")
+        if scheduling == "concurrent":
+            concurrent_gflops += gflops
+        elif scheduling == "sequential":
+            sequential_gflops.append(gflops)
+        else:  # time_shared
+            time_shared_gflops += gflops * 0.7
+
+    return concurrent_gflops + (max(sequential_gflops) if sequential_gflops else 0.0) + time_shared_gflops
+
+
+def map_workloads_to_accelerators(
+    workloads: list[dict], hardware_candidates: list[dict]
+) -> list[dict]:
+    """Map workloads to available accelerators for heterogeneous execution.
+
+    Each workload is assigned to the best-matching accelerator based on
+    operator type compatibility and available compute.
+
+    Args:
+        workloads: List of workload dicts.
+        hardware_candidates: Available hardware platforms.
+
+    Returns:
+        List of mapping dicts with workload, accelerator, and precision.
+    """
+    if not hardware_candidates:
+        return []
+
+    mappings = []
+    for w in workloads:
+        best_hw = hardware_candidates[0]  # default to top-ranked
+        dominant_op = ""
+        if w.get("operators"):
+            dominant_op = max(w["operators"], key=lambda o: o.get("count", 0)).get("type", "")
+
+        # Find best match for this workload's dominant operator
+        for hw in hardware_candidates:
+            strengths = hw.get("strengths", [])
+            if dominant_op == "convolution" and any(
+                s in strengths for s in ("dataflow", "int8", "gpu_acceleration")
+            ):
+                best_hw = hw
+                break
+            if dominant_op == "attention" and any(
+                s in strengths for s in ("gpu_acceleration", "flexible")
+            ):
+                best_hw = hw
+                break
+
+        precision = "int8" if best_hw.get("peak_tops_int8", 0) > 0 else "fp16"
+        mappings.append({
+            "workload": w.get("name", "unknown"),
+            "model_class": w.get("model_class", "unknown"),
+            "accelerator": best_hw.get("name", "unknown"),
+            "precision": precision,
+            "scheduling": w.get("scheduling", "concurrent"),
+        })
+
+    return mappings
 
 
 # ---------------------------------------------------------------------------
@@ -453,6 +550,10 @@ def _score_hardware(
     if dominant_op == "attention" and any(s in strengths for s in ("gpu_acceleration", "flexible")):
         score += 10
     if dominant_op == "general_purpose" and "general_purpose" in strengths:
+        score += 5
+
+    # Multi-workload bonus: heterogeneous platforms handle diverse workloads better
+    if "heterogeneous" in strengths or "flexible" in strengths:
         score += 5
 
     return round(max(0, min(100, score)), 1)
@@ -1075,6 +1176,9 @@ def create_default_dispatcher() -> Dispatcher:
     - critic
     - report_generator
     - design_optimizer
+    - design_explorer (Pareto front)
+    - safety_detector
+    - experience_retriever
     """
     from embodied_ai_architect.graphs.optimizer import design_optimizer
     from embodied_ai_architect.graphs.kpu_specialists import (
@@ -1087,6 +1191,9 @@ def create_default_dispatcher() -> Dispatcher:
         rtl_generator,
         rtl_ppa_assessor,
     )
+    from embodied_ai_architect.graphs.pareto import design_explorer
+    from embodied_ai_architect.graphs.safety import safety_detector
+    from embodied_ai_architect.graphs.experience_specialist import experience_retriever
 
     dispatcher = Dispatcher()
     dispatcher.register_many({
@@ -1105,5 +1212,9 @@ def create_default_dispatcher() -> Dispatcher:
         # RTL specialists
         "rtl_generator": rtl_generator,
         "rtl_ppa_assessor": rtl_ppa_assessor,
+        # Phase 4 specialists
+        "design_explorer": design_explorer,
+        "safety_detector": safety_detector,
+        "experience_retriever": experience_retriever,
     })
     return dispatcher

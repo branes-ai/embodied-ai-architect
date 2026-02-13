@@ -145,6 +145,61 @@ from embodied_ai_architect.graphs.soc_state import (
     get_kpu_config,
     get_rtl_summary,
 )
+from embodied_ai_architect.graphs.evaluation import (
+    DimensionScore,
+    GoldStandard,
+    RunTrace,
+    Scorecard,
+)
+from embodied_ai_architect.graphs.scoring import (
+    score_adaptability,
+    score_convergence,
+    score_decomposition,
+    score_efficiency,
+    score_exploration_efficiency,
+    score_governance,
+    score_ppa_accuracy,
+    score_reasoning,
+    score_tool_use,
+)
+from embodied_ai_architect.graphs.evaluator import (
+    AgenticEvaluator,
+    DEFAULT_WEIGHTS,
+)
+from embodied_ai_architect.graphs.gold_standards import (
+    ALL_GOLD_STANDARDS,
+)
+from embodied_ai_architect.graphs.pareto import (
+    ParetoPoint,
+    compute_pareto_front,
+    design_explorer,
+    identify_knee_point,
+)
+from embodied_ai_architect.graphs.safety import (
+    safety_detector,
+    detect_safety_critical,
+)
+from embodied_ai_architect.graphs.experience_specialist import (
+    compute_similarity,
+    experience_retriever,
+)
+from embodied_ai_architect.graphs.trace import (
+    TracingDispatcher,
+    extract_trace_from_state,
+)
+from embodied_ai_architect.graphs.golden_traces import (
+    TraceComparison,
+    compare_traces,
+    load_golden_trace,
+    save_golden_trace,
+)
+from embodied_ai_architect.graphs.governance import (
+    CostTracker,
+)
+from embodied_ai_architect.graphs.specialists import (
+    aggregate_workload_requirements,
+    map_workloads_to_accelerators,
+)
 
 __all__ = [
     # Perception pipeline state
@@ -255,6 +310,47 @@ __all__ = [
     "get_floorplan",
     "get_kpu_config",
     "get_rtl_summary",
+    # Evaluation framework (Phase 4)
+    "DimensionScore",
+    "GoldStandard",
+    "RunTrace",
+    "Scorecard",
+    "score_adaptability",
+    "score_convergence",
+    "score_decomposition",
+    "score_efficiency",
+    "score_exploration_efficiency",
+    "score_governance",
+    "score_ppa_accuracy",
+    "score_reasoning",
+    "score_tool_use",
+    "AgenticEvaluator",
+    "DEFAULT_WEIGHTS",
+    "ALL_GOLD_STANDARDS",
+    # Pareto
+    "ParetoPoint",
+    "compute_pareto_front",
+    "design_explorer",
+    "identify_knee_point",
+    # Safety
+    "safety_detector",
+    "detect_safety_critical",
+    # Experience specialist
+    "compute_similarity",
+    "experience_retriever",
+    # Trace capture
+    "TracingDispatcher",
+    "extract_trace_from_state",
+    # Golden traces
+    "TraceComparison",
+    "compare_traces",
+    "load_golden_trace",
+    "save_golden_trace",
+    # Cost tracking
+    "CostTracker",
+    # Multi-workload
+    "aggregate_workload_requirements",
+    "map_workloads_to_accelerators",
 ]
 
 # Lazy imports for langgraph-dependent modules

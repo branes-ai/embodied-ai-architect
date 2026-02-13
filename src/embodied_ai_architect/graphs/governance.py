@@ -63,6 +63,10 @@ class GovernancePolicy(BaseModel):
         default=3,
         description="After this many failing iterations, escalate to human",
     )
+    safety_critical_actions: list[str] = Field(
+        default_factory=list,
+        description="Actions flagged as safety-critical (require extra approval)",
+    )
 
 
 class GovernanceGuard:
@@ -170,3 +174,85 @@ class GovernanceGuard:
     def audit_entries(self) -> list[AuditEntry]:
         """All audit entries recorded."""
         return list(self._audit_entries)
+
+    def auto_detect_safety_critical(self, action: str) -> bool:
+        """Check if an action is in the safety_critical_actions list.
+
+        Args:
+            action: The action to check.
+
+        Returns:
+            True if the action is safety-critical.
+        """
+        return action in self.policy.safety_critical_actions
+
+    def flag_safety_decision(self, agent: str, action: str, iteration: int = 0) -> AuditEntry:
+        """Record and flag a safety-critical decision.
+
+        Creates an audit entry with human_approved=True placeholder
+        (in production, this would block until human approval).
+        """
+        return self.record(
+            agent=agent,
+            action=f"SAFETY: {action}",
+            iteration=iteration,
+            output_summary="safety-critical decision flagged",
+            human_approved=True,  # auto-approve in deterministic mode
+        )
+
+
+class CostTracker:
+    """Tracks token costs across agents for cost reporting.
+
+    Can be used standalone or integrated with GovernanceGuard for
+    automatic cost accumulation during design sessions.
+    """
+
+    def __init__(self) -> None:
+        self._total_tokens: int = 0
+        self._cost_by_agent: dict[str, int] = {}
+
+    def add_cost(self, agent: str, tokens: int) -> None:
+        """Record token cost for an agent.
+
+        Args:
+            agent: Name of the agent that consumed tokens.
+            tokens: Number of tokens consumed.
+        """
+        self._total_tokens += tokens
+        self._cost_by_agent[agent] = self._cost_by_agent.get(agent, 0) + tokens
+
+    @property
+    def total_tokens(self) -> int:
+        """Total tokens consumed across all agents."""
+        return self._total_tokens
+
+    @property
+    def cost_by_agent(self) -> dict[str, int]:
+        """Token cost breakdown by agent."""
+        return dict(self._cost_by_agent)
+
+    def estimated_cost_usd(self, rate_per_1k: float = 0.003) -> float:
+        """Estimate USD cost from token count.
+
+        Args:
+            rate_per_1k: Cost per 1000 tokens (default: $0.003 for typical models).
+
+        Returns:
+            Estimated cost in USD.
+        """
+        return round(self._total_tokens * rate_per_1k / 1000, 4)
+
+    def format_cost_report(self) -> str:
+        """Format a human-readable cost report.
+
+        Returns:
+            Multi-line string summarizing costs.
+        """
+        lines = [f"Cost Report — Total: {self._total_tokens:,} tokens (${self.estimated_cost_usd():.4f})"]
+        if self._cost_by_agent:
+            lines.append("  By agent:")
+            for agent, tokens in sorted(self._cost_by_agent.items(), key=lambda x: -x[1]):
+                pct = (tokens / self._total_tokens * 100) if self._total_tokens > 0 else 0
+                lines.append(f"    {agent:30s} {tokens:>8,} tokens ({pct:.0f}%)")
+        return "\n".join(lines)

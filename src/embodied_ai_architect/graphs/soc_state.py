@@ -228,6 +228,11 @@ class SoCDesignState(TypedDict, total=False):
     ppa_metrics: dict  # Current PPAMetrics serialized
     baseline_metrics: dict  # Reference point for optimization
     pareto_points: list[dict]  # Explored design space points
+    pareto_results: dict  # Pareto front analysis results
+    safety_analysis: dict  # Safety-critical detection results
+    prior_experience: dict  # Experience retrieval results
+    cost_tracking: dict  # CostTracker serialized state
+    evaluation_scorecard: dict  # Scorecard from evaluation framework
 
     # === History & Memory ===
     iteration: int  # Optimization loop counter
@@ -312,6 +317,11 @@ def create_initial_soc_state(
         ppa_metrics={},
         baseline_metrics={},
         pareto_points=[],
+        pareto_results={},
+        safety_analysis={},
+        prior_experience={},
+        cost_tracking={},
+        evaluation_scorecard={},
         # History
         iteration=0,
         max_iterations=max_iterations,
