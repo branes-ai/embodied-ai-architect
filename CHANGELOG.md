@@ -8,6 +8,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Phase 3: KPU Micro-Architecture, Floorplan Validation & RTL Generation (2026-02-12):
+  - **KPU Micro-Architecture Configuration** (`src/embodied_ai_architect/graphs/`):
+    - `kpu_config.py`: `KPUMicroArchConfig` Pydantic model with compute tile, memory tile, DRAM, NoC sub-models
+    - 3 presets (`drone_minimal`, `edge_balanced`, `server_class`) with `create_kpu_config()` factory
+    - `technology.py`: Process node scaling (7nm–65nm), cell area estimation, power density models
+    - `floorplan.py`: Checkerboard tile layout with pitch matching validation (±15% tolerance)
+    - `bandwidth.py`: 4-link bandwidth matching through DRAM→L3→L2→L1→compute hierarchy
+  - **KPU Optimization Loop** (`kpu_loop.py`):
+    - `run_kpu_loop()`: Iterative config→floorplan→bandwidth convergence
+    - Auto-adjusts tile counts and DRAM controllers when constraints are violated
+    - `KPULoopResult` with config, floorplan, bandwidth, iteration history
+  - **KPU Specialist Agents** (`kpu_specialists.py`):
+    - `kpu_configurator`: Sizes KPU micro-architecture from use-case and workload
+    - `floorplan_validator`: Validates checkerboard pitch matching
+    - `bandwidth_validator`: Validates memory hierarchy bandwidth balance
+    - `kpu_optimizer`: Adjusts config when floorplan or bandwidth fails
+  - **EDA Toolchain** (`eda_tools/`):
+    - `lint.py`: Verilator lint with mock fallback
+    - `synthesis.py`: Yosys synthesis with cell count extraction and mock fallback
+    - `simulation.py`: Icarus Verilog simulation with mock fallback
+    - `toolchain.py`: Unified `run_eda_pipeline()` orchestrating lint→synthesis→simulation
+  - **RTL Template Engine** (`rtl_templates/`):
+    - Jinja2 templates for 12 KPU sub-components (MAC unit, systolic array, compute tile, memory tile, L1/L2/L3 SRAM, skew buffer, block mover, DMA, router, top-level)
+    - `RTLTemplateEngine` with `get_kpu_components()` deriving template params from KPU config
+  - **RTL Inner Loop** (`rtl_loop.py`):
+    - `run_rtl_loop()`: lint→synthesize→validate per module
+    - `RTLLoopResult` with success, metrics (area_cells, area_um2), iteration history
+  - **RTL Specialist Agents** (`rtl_specialists.py`):
+    - `rtl_generator`: Renders templates for all KPU sub-components, runs EDA pipeline
+    - `rtl_ppa_assessor`: Aggregates synthesis cell counts→area via technology scaling
+  - **State Schema Extensions** (`soc_state.py`):
+    - New fields: `rtl_enabled`, `kpu_config`, `floorplan_estimate`, `bandwidth_match`, `kpu_optimization_history`, `rtl_modules`, `rtl_testbenches`, `rtl_synthesis_results`
+    - Backward compatible: all new fields default to empty/False
+  - **Experience Episode Extensions** (`experience.py`):
+    - New fields: `kpu_config_name`, `kpu_process_nm`, `floorplan_area_mm2`, `bandwidth_balanced`, `rtl_modules_generated`, `rtl_total_cells`
+  - **Demo 4** (`examples/demo_kpu_rtl.py`):
+    - Full 4-level flow: Outer Loop→KPU Config→Floorplan+Bandwidth→RTL Generation
+    - 10-task static plan with parallel floorplan/bandwidth validation
+    - Prints KPU config, floorplan pitch matching, bandwidth links, RTL synthesis cell counts, PPA summary
+  - **Demo Guide** (`docs/demo-guide.md`):
+    - Comprehensive guide covering all 3 demos and 3 utility examples
+    - Usage, CLI options, output sections, prerequisites, architecture progression
+  - **88 Phase 3 Tests** across 10 test files:
+    - `test_technology.py` (6): Process node scaling, area estimation
+    - `test_kpu_config.py` (7): Presets, factory, model validation
+    - `test_floorplan.py` (7): Tile sizing, pitch matching, area budgets
+    - `test_bandwidth.py` (6): Link bandwidth, bottleneck detection
+    - `test_eda_tools.py` (7): Lint, synthesis, simulation with mocks
+    - `test_rtl_templates.py` (5): Template rendering, component coverage
+    - `test_kpu_specialists.py` (8): All 4 KPU specialists
+    - `test_kpu_loop.py` (5): Loop convergence, tight constraints
+    - `test_rtl_loop.py` (5): RTL pipeline, metrics extraction
+    - `test_rtl_specialists.py` (6): RTL generator, PPA assessor
+    - `test_kpu_integration.py` (6): End-to-end KPU loop convergence
+    - `test_rtl_integration.py` (5): Template→RTL→synthesis pipeline
+  - **207 Total Tests** all passing (88 Phase 3 + 119 existing)
+  - Documentation: `docs/sessions/2026-02-12-phase3-kpu-rtl.md`, `docs/plans/phase3-kpu-floorplan-rtl-generation.md`
+
 - Agentic SoC Designer Foundation — Phase 0 + Phase 1 Implementation (2026-02-11):
   - **Phase 0.1 — State Schema & Task Graph Engine** (`src/embodied_ai_architect/graphs/`):
     - `task_graph.py`: DAG engine with `TaskNode`, `TaskGraph`, `TaskStatus`, `CycleError`
