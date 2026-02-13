@@ -242,6 +242,21 @@ def _make_report_node(
             "design_rationale": state.get("design_rationale", []),
         }
 
+        # Include KPU and RTL data when rtl_enabled
+        if state.get("rtl_enabled", False):
+            report["kpu_config"] = state.get("kpu_config", {})
+            report["floorplan_estimate"] = state.get("floorplan_estimate", {})
+            report["bandwidth_match"] = state.get("bandwidth_match", {})
+            rtl_synth = state.get("rtl_synthesis_results", {})
+            report["rtl_summary"] = {
+                "modules_generated": len(state.get("rtl_modules", {})),
+                "total_cells": sum(
+                    r.get("area_cells", 0)
+                    for r in rtl_synth.values()
+                    if r.get("success")
+                ),
+            }
+
         # Save experience episode if cache is available
         if experience_cache is not None:
             try:
@@ -265,6 +280,12 @@ def _save_experience_episode(state: SoCDesignState, report: dict, cache: Any) ->
     verdicts = ppa.get("verdicts", {})
     all_pass = all(v == "PASS" for v in verdicts.values()) if verdicts else False
 
+    # KPU fields
+    kpu_config = state.get("kpu_config", {})
+    fp = state.get("floorplan_estimate", {})
+    bw = state.get("bandwidth_match", {})
+    rtl_synth = state.get("rtl_synthesis_results", {})
+
     episode = DesignEpisode(
         goal=state.get("goal", ""),
         use_case=state.get("use_case", ""),
@@ -279,6 +300,14 @@ def _save_experience_episode(state: SoCDesignState, report: dict, cache: Any) ->
         key_decisions=[d.get("action", "") for d in state.get("history", [])],
         lessons_learned=[],
         optimization_trace=state.get("optimization_history", []),
+        kpu_config_name=kpu_config.get("name"),
+        kpu_process_nm=kpu_config.get("process_nm"),
+        floorplan_area_mm2=fp.get("total_area_mm2"),
+        bandwidth_balanced=bw.get("balanced"),
+        rtl_modules_generated=len(state.get("rtl_modules", {})),
+        rtl_total_cells=sum(
+            r.get("area_cells", 0) for r in rtl_synth.values() if r.get("success")
+        ),
     )
     cache.save(episode)
 

@@ -1077,6 +1077,16 @@ def create_default_dispatcher() -> Dispatcher:
     - design_optimizer
     """
     from embodied_ai_architect.graphs.optimizer import design_optimizer
+    from embodied_ai_architect.graphs.kpu_specialists import (
+        bandwidth_validator,
+        floorplan_validator,
+        kpu_configurator,
+        kpu_optimizer,
+    )
+    from embodied_ai_architect.graphs.rtl_specialists import (
+        rtl_generator,
+        rtl_ppa_assessor,
+    )
 
     dispatcher = Dispatcher()
     dispatcher.register_many({
@@ -1087,5 +1097,13 @@ def create_default_dispatcher() -> Dispatcher:
         "critic": critic,
         "report_generator": report_generator,
         "design_optimizer": design_optimizer,
+        # KPU micro-architecture specialists
+        "kpu_configurator": kpu_configurator,
+        "floorplan_validator": floorplan_validator,
+        "bandwidth_validator": bandwidth_validator,
+        "kpu_optimizer": kpu_optimizer,
+        # RTL specialists
+        "rtl_generator": rtl_generator,
+        "rtl_ppa_assessor": rtl_ppa_assessor,
     })
     return dispatcher

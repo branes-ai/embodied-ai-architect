@@ -209,6 +209,21 @@ class SoCDesignState(TypedDict, total=False):
     interconnect: dict  # Bus/NoC topology
     rtl_modules: dict[str, str]  # Module name -> Verilog source
 
+    # === KPU Micro-architecture ===
+    kpu_config: dict  # KPUMicroArchConfig serialized
+    floorplan_estimate: dict  # FloorplanEstimate serialized
+    bandwidth_match: dict  # BandwidthMatchResult serialized
+    kpu_optimization_history: list[dict]  # Config snapshots per KPU loop iteration
+
+    # === RTL Artifacts ===
+    rtl_testbenches: dict[str, str]  # Module name -> testbench source
+    rtl_synthesis_results: dict[str, dict]  # Module name -> synthesis result
+    rtl_lint_results: dict[str, dict]  # Module name -> lint result
+    rtl_validation_results: dict[str, dict]  # Module name -> validation result
+    rtl_optimization_history: list[dict]  # RTL optimization snapshots
+    rtl_process_nm: int  # Target process node for RTL
+    rtl_enabled: bool  # Enables KPU config + floorplan + bandwidth + RTL
+
     # === Evaluation ===
     ppa_metrics: dict  # Current PPAMetrics serialized
     baseline_metrics: dict  # Reference point for optimization
@@ -244,6 +259,7 @@ def create_initial_soc_state(
     max_iterations: int = 20,
     session_id: Optional[str] = None,
     governance: Optional[dict] = None,
+    rtl_enabled: bool = False,
 ) -> SoCDesignState:
     """Create initial state for a new SoC design session.
 
@@ -255,6 +271,7 @@ def create_initial_soc_state(
         max_iterations: Safety bound for optimization loops.
         session_id: Unique identifier (auto-generated if None).
         governance: GovernancePolicy serialized dict. None = permissive defaults.
+        rtl_enabled: Enable KPU config + floorplan + bandwidth + RTL pipeline.
 
     Returns:
         Initial SoCDesignState ready for the Planner agent.
@@ -278,6 +295,19 @@ def create_initial_soc_state(
         memory_map={},
         interconnect={},
         rtl_modules={},
+        # KPU Micro-architecture
+        kpu_config={},
+        floorplan_estimate={},
+        bandwidth_match={},
+        kpu_optimization_history=[],
+        # RTL Artifacts
+        rtl_testbenches={},
+        rtl_synthesis_results={},
+        rtl_lint_results={},
+        rtl_validation_results={},
+        rtl_optimization_history=[],
+        rtl_process_nm=constraints.target_process_nm or 28 if constraints else 28,
+        rtl_enabled=rtl_enabled,
         # Evaluation
         ppa_metrics={},
         baseline_metrics={},
@@ -453,6 +483,34 @@ def record_audit(
 def get_optimization_history(state: SoCDesignState) -> list[dict]:
     """Get the optimization history list from state."""
     return list(state.get("optimization_history", []))
+
+
+def get_kpu_config(state: SoCDesignState) -> dict:
+    """Get the KPU micro-architecture config from state."""
+    return state.get("kpu_config", {})
+
+
+def get_floorplan(state: SoCDesignState) -> dict:
+    """Get the floorplan estimate from state."""
+    return state.get("floorplan_estimate", {})
+
+
+def get_bandwidth(state: SoCDesignState) -> dict:
+    """Get the bandwidth match result from state."""
+    return state.get("bandwidth_match", {})
+
+
+def get_rtl_summary(state: SoCDesignState) -> dict:
+    """Get a summary of RTL generation results."""
+    synth = state.get("rtl_synthesis_results", {})
+    total_cells = sum(r.get("area_cells", 0) for r in synth.values() if r.get("success"))
+    pass_count = sum(1 for r in synth.values() if r.get("success"))
+    return {
+        "modules_generated": len(state.get("rtl_modules", {})),
+        "modules_passed": pass_count,
+        "total_cells": total_cells,
+        "rtl_enabled": state.get("rtl_enabled", False),
+    }
 
 
 def get_iteration_summary(state: SoCDesignState) -> str:
