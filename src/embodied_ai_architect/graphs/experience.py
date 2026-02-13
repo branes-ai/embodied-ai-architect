@@ -43,6 +43,13 @@ class DesignEpisode(BaseModel):
     key_decisions: list[str] = Field(default_factory=list)
     lessons_learned: list[str] = Field(default_factory=list)
     optimization_trace: list[dict[str, Any]] = Field(default_factory=list)
+    # KPU micro-architecture fields (Phase 3)
+    kpu_config_name: Optional[str] = None
+    kpu_process_nm: Optional[int] = None
+    floorplan_area_mm2: Optional[float] = None
+    bandwidth_balanced: Optional[bool] = None
+    rtl_modules_generated: int = 0
+    rtl_total_cells: int = 0
     problem_fingerprint: str = ""
 
     def compute_fingerprint(self) -> str:

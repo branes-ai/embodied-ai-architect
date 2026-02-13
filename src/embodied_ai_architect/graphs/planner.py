@@ -76,6 +76,12 @@ agent.
 | design_explorer | Explore design variations to find Pareto-optimal points |
 | critic | Review overall design quality, challenge assumptions, suggest improvements |
 | report_generator | Generate design report with trade-off analysis and recommendations |
+| kpu_configurator | Size KPU micro-architecture components for workload |
+| floorplan_validator | Check 2D die area feasibility at target process node |
+| bandwidth_validator | Verify ingress/egress bandwidth matching through memory hierarchy |
+| kpu_optimizer | Adjust KPU config to fix floorplan/bandwidth violations |
+| rtl_generator | Generate RTL for KPU sub-components from templates (requires rtl_enabled) |
+| rtl_ppa_assessor | Aggregate RTL synthesis metrics and refine PPA area estimate |
 
 ## Task Graph Rules
 

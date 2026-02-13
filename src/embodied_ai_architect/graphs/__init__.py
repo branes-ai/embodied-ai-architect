@@ -91,6 +91,60 @@ from embodied_ai_architect.graphs.experience import (
     DesignEpisode,
     ExperienceCache,
 )
+from embodied_ai_architect.graphs.technology import (
+    SRAM_DENSITY,
+    TECHNOLOGY_NODES,
+    TechnologyNode,
+    estimate_area_um2,
+    estimate_sram_area_mm2,
+    estimate_timing_ps,
+    get_technology,
+)
+from embodied_ai_architect.graphs.kpu_config import (
+    ComputeTileConfig,
+    DRAMConfig,
+    KPUMicroArchConfig,
+    KPU_PRESETS,
+    MemoryTileConfig,
+    NoCConfig,
+    create_kpu_config,
+)
+from embodied_ai_architect.graphs.floorplan import (
+    FloorplanEstimate,
+    TileDimensions,
+    estimate_floorplan,
+)
+from embodied_ai_architect.graphs.bandwidth import (
+    BandwidthLink,
+    BandwidthMatchResult,
+    check_bandwidth_match,
+)
+from embodied_ai_architect.graphs.kpu_specialists import (
+    bandwidth_validator,
+    floorplan_validator,
+    kpu_configurator,
+    kpu_optimizer,
+)
+from embodied_ai_architect.graphs.kpu_loop import (
+    KPULoopConfig,
+    KPULoopResult,
+    run_kpu_loop,
+)
+from embodied_ai_architect.graphs.rtl_loop import (
+    RTLLoopConfig,
+    RTLLoopResult,
+    run_rtl_loop,
+)
+from embodied_ai_architect.graphs.rtl_specialists import (
+    rtl_generator,
+    rtl_ppa_assessor,
+)
+from embodied_ai_architect.graphs.soc_state import (
+    get_bandwidth,
+    get_floorplan,
+    get_kpu_config,
+    get_rtl_summary,
+)
 
 __all__ = [
     # Perception pipeline state
@@ -156,6 +210,51 @@ __all__ = [
     # Experience
     "DesignEpisode",
     "ExperienceCache",
+    # Technology
+    "SRAM_DENSITY",
+    "TECHNOLOGY_NODES",
+    "TechnologyNode",
+    "estimate_area_um2",
+    "estimate_sram_area_mm2",
+    "estimate_timing_ps",
+    "get_technology",
+    # KPU config
+    "ComputeTileConfig",
+    "DRAMConfig",
+    "KPUMicroArchConfig",
+    "KPU_PRESETS",
+    "MemoryTileConfig",
+    "NoCConfig",
+    "create_kpu_config",
+    # Floorplan
+    "FloorplanEstimate",
+    "TileDimensions",
+    "estimate_floorplan",
+    # Bandwidth
+    "BandwidthLink",
+    "BandwidthMatchResult",
+    "check_bandwidth_match",
+    # KPU specialists
+    "bandwidth_validator",
+    "floorplan_validator",
+    "kpu_configurator",
+    "kpu_optimizer",
+    # KPU loop
+    "KPULoopConfig",
+    "KPULoopResult",
+    "run_kpu_loop",
+    # RTL loop
+    "RTLLoopConfig",
+    "RTLLoopResult",
+    "run_rtl_loop",
+    # RTL specialists
+    "rtl_generator",
+    "rtl_ppa_assessor",
+    # State helpers (Phase 3)
+    "get_bandwidth",
+    "get_floorplan",
+    "get_kpu_config",
+    "get_rtl_summary",
 ]
 
 # Lazy imports for langgraph-dependent modules

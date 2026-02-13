@@ -1,0 +1,317 @@
+#!/usr/bin/env python3
+"""Demo 4: KPU Micro-architecture Configuration + RTL Generation.
+
+Runs the full four-level flow:
+  Outer Loop → KPU Config → Floorplan Check → Bandwidth Check → RTL Generation
+
+Shows:
+1. KPU micro-architecture sizing for a delivery drone perception workload
+2. Checkerboard floorplan estimation with pitch matching
+3. Bandwidth matching validation through memory hierarchy
+4. Template-based RTL generation with EDA lint + synthesis
+
+Usage:
+    python examples/demo_kpu_rtl.py
+"""
+
+from __future__ import annotations
+
+import sys
+import time
+from pathlib import Path
+
+# Add src to path
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from embodied_ai_architect.graphs.soc_state import (
+    DesignConstraints,
+    create_initial_soc_state,
+    get_task_graph,
+)
+from embodied_ai_architect.graphs.planner import PlannerNode
+from embodied_ai_architect.graphs.specialists import create_default_dispatcher
+
+# ---------------------------------------------------------------------------
+# Demo config
+# ---------------------------------------------------------------------------
+
+DEMO_4_GOAL = (
+    "Design a KPU-based SoC for a delivery drone perception pipeline "
+    "(detection + tracking at 30fps) with full RTL generation. "
+    "Configure the KPU micro-architecture, validate floorplan and bandwidth, "
+    "then generate RTL for all sub-components."
+)
+
+DEMO_4_CONSTRAINTS = DesignConstraints(
+    max_power_watts=5.0,
+    max_latency_ms=33.3,
+    max_cost_usd=30.0,
+    max_area_mm2=100.0,
+    target_volume=100_000,
+)
+
+DEMO_4_PLAN = [
+    {
+        "id": "t1",
+        "name": "Analyze perception workload (detection + tracking at 30fps)",
+        "agent": "workload_analyzer",
+        "dependencies": [],
+    },
+    {
+        "id": "t2",
+        "name": "Enumerate feasible hardware under constraints",
+        "agent": "hw_explorer",
+        "dependencies": ["t1"],
+    },
+    {
+        "id": "t3",
+        "name": "Compose SoC architecture with KPU compute engine",
+        "agent": "architecture_composer",
+        "dependencies": ["t2"],
+    },
+    {
+        "id": "t4",
+        "name": "Configure KPU micro-architecture for drone workload",
+        "agent": "kpu_configurator",
+        "dependencies": ["t3"],
+    },
+    {
+        "id": "t5",
+        "name": "Validate floorplan (checkerboard pitch matching)",
+        "agent": "floorplan_validator",
+        "dependencies": ["t4"],
+    },
+    {
+        "id": "t6",
+        "name": "Validate bandwidth matching through memory hierarchy",
+        "agent": "bandwidth_validator",
+        "dependencies": ["t4"],
+    },
+    {
+        "id": "t7",
+        "name": "Generate RTL for KPU sub-components",
+        "agent": "rtl_generator",
+        "dependencies": ["t5", "t6"],
+    },
+    {
+        "id": "t8",
+        "name": "Assess PPA from RTL synthesis results",
+        "agent": "rtl_ppa_assessor",
+        "dependencies": ["t7"],
+    },
+    {
+        "id": "t9",
+        "name": "Review design for risks and improvements",
+        "agent": "critic",
+        "dependencies": ["t8"],
+    },
+    {
+        "id": "t10",
+        "name": "Generate final design report",
+        "agent": "report_generator",
+        "dependencies": ["t9"],
+    },
+]
+
+# ---------------------------------------------------------------------------
+# Output formatting
+# ---------------------------------------------------------------------------
+
+W = 72
+
+
+def banner(text: str) -> None:
+    print(f"\n{'=' * W}")
+    print(f"  {text}")
+    print(f"{'=' * W}")
+
+
+def section(text: str) -> None:
+    print(f"\n--- {text} {'-' * max(0, W - len(text) - 5)}")
+
+
+def kv(key: str, value: str, indent: int = 2) -> None:
+    pad = " " * indent
+    print(f"{pad}{key:.<35s} {value}")
+
+
+def verdict_str(v: str) -> str:
+    if v == "PASS":
+        return "PASS"
+    elif v == "FAIL":
+        return "** FAIL **"
+    return v
+
+
+# ---------------------------------------------------------------------------
+# Main demo flow
+# ---------------------------------------------------------------------------
+
+
+def run_demo() -> None:
+    banner("Demo 4: KPU Micro-architecture + RTL Generation")
+    print(f"\n  Goal: {DEMO_4_GOAL[:80]}...")
+    print(f"  Mode: Static Plan (deterministic)")
+
+    # ---- Create initial state with RTL enabled ----
+    state = create_initial_soc_state(
+        goal=DEMO_4_GOAL,
+        constraints=DEMO_4_CONSTRAINTS,
+        use_case="delivery_drone",
+        platform="drone",
+        rtl_enabled=True,
+    )
+
+    section("Constraints")
+    cd = DEMO_4_CONSTRAINTS.model_dump(exclude_none=True)
+    for k, v in cd.items():
+        if k == "custom" and not v:
+            continue
+        kv(k.replace("_", " ").title(), str(v))
+
+    # ---- Plan ----
+    section("Planning")
+    t0 = time.perf_counter()
+    planner = PlannerNode(static_plan=DEMO_4_PLAN)
+    plan_updates = planner(state)
+    state = {**state, **plan_updates}
+    plan_time = time.perf_counter() - t0
+
+    graph = get_task_graph(state)
+    print(f"\n  Task graph ({len(graph.nodes)} tasks, planned in {plan_time:.1f}s):\n")
+    for tid in graph.execution_order():
+        task = graph.nodes[tid]
+        deps = ", ".join(task.dependencies) if task.dependencies else "(none)"
+        print(f"    [{tid}] {task.name}")
+        print(f"         agent: {task.agent}  deps: {deps}")
+
+    # ---- Dispatch ----
+    section("Executing Pipeline")
+    dispatcher = create_default_dispatcher()
+    t0 = time.perf_counter()
+
+    step = 0
+    completed_ids: set[str] = set()
+    while True:
+        graph = get_task_graph(state)
+        if graph.is_complete:
+            state = {**state, "status": "complete"}
+            break
+
+        ready = graph.ready_tasks()
+        if not ready:
+            print(f"\n  Pipeline stuck! Status: {state.get('status')}")
+            break
+
+        for task in ready:
+            print(f"\n  [{task.id}] {task.agent}: {task.name}")
+
+        state = dispatcher.step(state)
+        step += 1
+
+        graph = get_task_graph(state)
+        for task in graph.nodes.values():
+            if task.id not in completed_ids and task.status.value == "completed":
+                completed_ids.add(task.id)
+                summary = (task.result or {}).get("summary", "")
+                if summary:
+                    print(f"         -> {summary}")
+
+    exec_time = time.perf_counter() - t0
+    print(f"\n  Pipeline completed in {step} steps, {exec_time:.2f}s")
+
+    # ---- KPU Results ----
+    _print_kpu_results(state)
+
+    # ---- PPA Summary ----
+    _print_ppa_summary(state)
+
+    banner("Demo 4 Complete")
+    total = plan_time + exec_time
+    print(f"\n  Total time: {total:.2f}s  |  Status: {state.get('status')}")
+    print(f"  RTL enabled: {state.get('rtl_enabled', False)}")
+    print()
+
+
+def _print_kpu_results(state: dict) -> None:
+    """Print KPU-specific results."""
+    kpu = state.get("kpu_config", {})
+    if kpu:
+        section("KPU Configuration")
+        ct = kpu.get("compute_tile", {})
+        mt = kpu.get("memory_tile", {})
+        dram = kpu.get("dram", {})
+        noc = kpu.get("noc", {})
+        kv("Process Node", f"{kpu.get('process_nm', '?')}nm")
+        kv("Checkerboard", f"{kpu.get('array_rows', '?')}x{kpu.get('array_cols', '?')}")
+        kv("Systolic Array", f"{ct.get('array_rows', '?')}x{ct.get('array_cols', '?')}")
+        kv("L2/tile", f"{ct.get('l2_size_bytes', 0) // 1024}KB")
+        kv("L1/tile", f"{ct.get('l1_size_bytes', 0) // 1024}KB")
+        kv("Streamers/tile", str(ct.get("num_streamers", "?")))
+        kv("L3/mem tile", f"{mt.get('l3_tile_size_bytes', 0) // 1024}KB")
+        kv("Block Movers/mem tile", str(mt.get("num_block_movers", "?")))
+        kv("DRAM", f"{dram.get('technology', '?')} {dram.get('num_controllers', '?')} ctrl")
+        kv("NoC", f"{noc.get('topology', '?')} {noc.get('link_width_bits', '?')}-bit")
+
+    fp = state.get("floorplan_estimate", {})
+    if fp:
+        section("Floorplan Check")
+        ct = fp.get("compute_tile", {})
+        mt = fp.get("memory_tile", {})
+        kv("Compute Tile", f"{ct.get('width_mm', 0):.2f} x {ct.get('height_mm', 0):.2f}mm "
+           f"= {ct.get('area_mm2', 0):.2f}mm2")
+        kv("Memory Tile", f"{mt.get('width_mm', 0):.2f} x {mt.get('height_mm', 0):.2f}mm "
+           f"= {mt.get('area_mm2', 0):.2f}mm2")
+        kv("Pitch Match W", f"{fp.get('pitch_ratio_width', 0):.2f} "
+           f"({'OK' if abs(fp.get('pitch_ratio_width', 1) - 1) < 0.15 else 'MISMATCH'})")
+        kv("Pitch Match H", f"{fp.get('pitch_ratio_height', 0):.2f} "
+           f"({'OK' if abs(fp.get('pitch_ratio_height', 1) - 1) < 0.15 else 'MISMATCH'})")
+        kv("Total Die Area", f"{fp.get('total_area_mm2', 0):.1f}mm2")
+        kv("Feasible", verdict_str("PASS" if fp.get("feasible") else "FAIL"))
+
+    bw = state.get("bandwidth_match", {})
+    if bw:
+        section("Bandwidth Check")
+        for link in bw.get("links", []):
+            name = link.get("name", "?")
+            avail = link.get("available_gbps", 0)
+            req = link.get("required_gbps", 0)
+            util = link.get("utilization", 0)
+            bottleneck = " ** BOTTLENECK" if link.get("bottleneck") else ""
+            kv(name, f"{avail:.1f} avail, {req:.1f} req ({util:.0%}){bottleneck}")
+        kv("Balanced", verdict_str("PASS" if bw.get("balanced") else "FAIL"))
+
+    rtl_synth = state.get("rtl_synthesis_results", {})
+    if rtl_synth:
+        section("RTL Generation")
+        for name, result in rtl_synth.items():
+            cells = result.get("area_cells", 0)
+            ok = "PASS" if result.get("success") else "FAIL"
+            kv(name, f"{cells:>6} cells ({ok})")
+        total_cells = sum(r.get("area_cells", 0) for r in rtl_synth.values() if r.get("success"))
+        print(f"\n  Total cells: {total_cells}")
+
+
+def _print_ppa_summary(state: dict) -> None:
+    """Print PPA summary."""
+    ppa = state.get("ppa_metrics", {})
+    if ppa:
+        section("PPA Summary")
+        if ppa.get("power_watts") is not None:
+            kv("Power", f"{ppa['power_watts']:.1f}W")
+        if ppa.get("area_mm2") is not None:
+            kv("Area", f"{ppa['area_mm2']:.1f}mm2")
+        if ppa.get("latency_ms") is not None:
+            kv("Latency", f"{ppa['latency_ms']:.1f}ms")
+        if ppa.get("cost_usd") is not None:
+            kv("Cost", f"${ppa['cost_usd']:.0f}")
+
+        verdicts = ppa.get("verdicts", {})
+        if verdicts:
+            print()
+            for k, v in verdicts.items():
+                kv(f"  {k}", verdict_str(v))
+
+
+if __name__ == "__main__":
+    run_demo()
