@@ -8,6 +8,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Phase 4: Evaluation Harness, Missing Demos & Regression Suite (2026-02-13):
+  - **9-Dimension Evaluation Framework** (`src/embodied_ai_architect/graphs/`):
+    - `evaluation.py`: Data models — `RunTrace`, `GoldStandard`, `DimensionScore`, `Scorecard`
+    - `scoring.py`: 9 scoring functions — decomposition, PPA accuracy, exploration efficiency, reasoning quality, convergence, governance compliance, tool use, adaptability, efficiency
+    - `evaluator.py`: `AgenticEvaluator` with weighted composite scoring (DCS=15%, PPA=20%, exploration=10%, reasoning=15%, convergence=10%, governance=10%, tool_use=10%, adaptability=5%, efficiency=5%)
+    - `gold_standards.py`: Hand-crafted `GoldStandard` objects for all 7 demos in `ALL_GOLD_STANDARDS`
+  - **3 New Specialist Agents**:
+    - `pareto.py`: `design_explorer` — Pareto front non-dominated sorting, knee point identification (min normalized Euclidean distance), `ParetoPoint` model
+    - `safety.py`: `safety_detector` — IEC 62304/ISO 26262/DO-178C/IEC 61508 detection, redundancy injection (dual-lockstep CPU, ECC memory, watchdog), governance gate integration
+    - `experience_specialist.py`: `experience_retriever` — similarity-based episode matching (use_case 40%, platform 20%, constraints 40%), warm-start hardware candidates from prior episodes (+15 score boost)
+  - **Multi-Workload Support** (`specialists.py`):
+    - `_infer_scheduling()`: Concurrent/sequential/time-shared scheduling per workload
+    - `aggregate_workload_requirements()`: Peak concurrent GFLOPS computation
+    - `map_workloads_to_accelerators()`: Heterogeneous workload-to-hardware mapping
+    - Multi-workload bonus in `_score_hardware()` for hardware supporting multiple accelerators
+  - **Regression Infrastructure**:
+    - `trace.py`: `TracingDispatcher` wrapping agent calls with timing/call logging, `extract_trace_from_state()` for building RunTrace from state diffs
+    - `golden_traces.py`: `save_golden_trace()`, `load_golden_trace()` (JSON), `compare_traces()` with 10% PPA regression threshold, `TraceComparison` model
+    - `CostTracker` in `governance.py`: Per-agent token accumulation, `estimated_cost_usd()`, `format_cost_report()`
+  - **Governance Extensions** (`governance.py`):
+    - `GovernancePolicy.safety_critical_actions` field
+    - `GovernanceGuard.auto_detect_safety_critical()` and `flag_safety_decision()` methods
+  - **State Schema Extensions** (`soc_state.py`):
+    - New fields: `pareto_results`, `safety_analysis`, `prior_experience`, `cost_tracking`, `evaluation_scorecard`
+  - **4 New Demo Scripts** (`examples/`):
+    - `demo_dse_pareto.py` (Demo 2): Warehouse AMR with MobileNetV2 + SLAM, Pareto front across 6 hardware candidates
+    - `demo_hitl_safety.py` (Demo 5): Surgical robot with IEC 62304, safety detection + governance gates
+    - `demo_experience_cache.py` (Demo 6): Two-run demo — delivery drone then agricultural drone with experience retrieval
+    - `demo_full_campaign.py` (Demo 7): Quadruped robot with 4 concurrent workloads (SLAM, detection, LiDAR, voice)
+  - **144 Phase 4 Tests** across 9 test files:
+    - `test_evaluation.py` (11): Data model validation, RunTrace/GoldStandard/Scorecard round-trips
+    - `test_scoring.py` (28): All 9 scoring functions with known inputs and edge cases
+    - `test_evaluator.py` (20): AgenticEvaluator with synthetic traces, batch evaluation
+    - `test_pareto.py` (15): Pareto front computation, knee point, design_explorer specialist
+    - `test_safety.py` (16): Safety detector, redundancy requirements, governance gates
+    - `test_experience_specialist.py` (10): Experience retriever, similarity scoring, warm-start
+    - `test_golden_traces.py` (13): Trace save/load/compare, regression detection
+    - `test_cost_tracking.py` (14): CostTracker accumulation, cost reports
+    - `test_demo_acceptance.py` (17): All 7 demos run end-to-end, composite score > 0.5
+  - **564 Total Tests** all passing (144 Phase 4 + 420 existing)
+  - **Demo Guide** (`docs/demo-guide.md`): Updated with Demos 2, 5, 6, 7 and architecture progression
+  - Documentation: `docs/sessions/2026-02-13-phase4-evaluation-demos.md`, `docs/plans/phase4-integration-and-evaluation.md`
+
 - Phase 3: KPU Micro-Architecture, Floorplan Validation & RTL Generation (2026-02-12):
   - **KPU Micro-Architecture Configuration** (`src/embodied_ai_architect/graphs/`):
     - `kpu_config.py`: `KPUMicroArchConfig` Pydantic model with compute tile, memory tile, DRAM, NoC sub-models
