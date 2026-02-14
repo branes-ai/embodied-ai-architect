@@ -17,8 +17,12 @@ pip install -e ".[langgraph]"
 | Demo | Script | What It Shows | Dependencies |
 |------|--------|---------------|-------------|
 | Demo 1 | `demo_soc_designer.py` | End-to-end SoC design pipeline | Core only |
+| Demo 2 | `demo_dse_pareto.py` | Design-space exploration with Pareto front | Core only |
 | Demo 3 | `demo_soc_optimizer.py` | Iterative power optimization loop | LangGraph |
 | Demo 4 | `demo_kpu_rtl.py` | KPU micro-architecture + RTL generation | Core only |
+| Demo 5 | `demo_hitl_safety.py` | Safety-critical design with HITL governance | Core only |
+| Demo 6 | `demo_experience_cache.py` | Experience cache reuse across designs | Core only |
+| Demo 7 | `demo_full_campaign.py` | Full multi-workload autonomous campaign | Core only |
 
 There are also three utility examples (not demos):
 
@@ -84,6 +88,41 @@ python examples/demo_soc_designer.py --power 3.0 --latency 20.0 --cost 50.0
 - **PPA Assessment** — Power/latency/area/cost with PASS/FAIL per constraint
 - **Design Review** — Strengths, issues, recommendations from critic
 - **Decision Trail** — Ordered audit log of all design decisions
+
+---
+
+## Demo 2: Design-Space Exploration with Pareto Front
+
+**Multi-hardware comparison with Pareto-optimal trade-off analysis.**
+
+Explores a warehouse AMR design space across 6 hardware candidates, computing a Pareto front over power/latency/cost and identifying the knee point (best balanced design).
+
+### What happens
+
+1. **Workload Analysis** — MobileNetV2 + SLAM for warehouse navigation
+2. **Hardware Exploration** — Scores 6 candidates against 15W/50ms/$100 constraints
+3. **Design-Space Exploration** — Computes non-dominated Pareto front, identifies knee point
+4. **Architecture Composition** — Maps workloads to the knee-point hardware
+5. **PPA Assessment** — Constraint verdicts for the selected design
+6. **Design Review** — Critic evaluation with trade-off analysis
+7. **Report Generation** — Design report including Pareto front summary
+
+### Usage
+
+```bash
+python examples/demo_dse_pareto.py
+```
+
+This demo uses a static plan and runs deterministically with no API key required.
+
+### Output sections
+
+- **Constraints** — Power (15W), latency (50ms), cost ($100)
+- **Task Graph** — 7-task DAG with design_explorer between hw_explorer and architecture_composer
+- **Pareto Front** — Non-dominated designs with power/latency/cost trade-offs
+- **Knee Point** — Best balanced design (minimum normalized distance to origin)
+- **PPA Assessment** — Per-constraint PASS/FAIL verdicts
+- **Design Review** — Trade-off analysis and recommendations
 
 ---
 
@@ -177,6 +216,107 @@ This demo uses a static plan and has no CLI options. It runs deterministically w
 
 ---
 
+## Demo 5: Safety-Critical Design with HITL Governance
+
+**Safety detection, redundancy injection, and human-in-the-loop approval gates.**
+
+Designs a surgical robot SoC under IEC 62304 Class C safety requirements. The safety detector identifies safety-critical constraints and injects redundancy requirements (dual-lockstep CPU, ECC memory, watchdog timer). Governance gates flag safety decisions for human approval.
+
+### What happens
+
+1. **Safety Detection** — Detects `safety_critical=True` and IEC 62304 standard, injects redundancy requirements
+2. **Workload Analysis** — Force-feedback control + haptic sensing at 1ms latency
+3. **Hardware Exploration** — Candidates scored with safety compliance weighting
+4. **Architecture Composition** — Incorporates dual-lockstep CPU, ECC, watchdog IP blocks
+5. **PPA Assessment** — Constraint verdicts including safety overhead
+6. **Design Review** — Critic flags safety gaps and compliance status
+7. **Report Generation** — Design report with safety analysis and audit log
+
+### Usage
+
+```bash
+python examples/demo_hitl_safety.py
+```
+
+This demo auto-approves safety decisions in non-interactive mode. No API key required.
+
+### Output sections
+
+- **Constraints** — Power (25W), latency (1ms), cost ($500), safety (IEC 62304 Class C)
+- **Safety Analysis** — Detected standard, redundancy requirements, safety flags
+- **Governance Audit** — Safety-critical decisions with approval status
+- **PPA Assessment** — Per-constraint verdicts including safety overhead
+- **Design Review** — Safety compliance assessment
+
+---
+
+## Demo 6: Experience Cache Reuse
+
+**Cross-design knowledge transfer using episodic memory.**
+
+Runs two design sessions back-to-back: first a delivery drone (Demo 1 pipeline), then an agricultural drone that retrieves and adapts the prior experience. Demonstrates warm-starting hardware selection from cached episodes.
+
+### What happens
+
+1. **First Run (Delivery Drone)** — Standard pipeline; episode saved to experience cache
+2. **Second Run (Agricultural Drone)**:
+   - **Experience Retrieval** — Searches cache, computes similarity to prior episodes
+   - **Workload Analysis** — Crop detection at 15fps
+   - **Hardware Exploration** — Candidates warm-started from prior episode (+15 score boost)
+   - **Architecture → PPA → Critic → Report** — Standard pipeline
+
+### Usage
+
+```bash
+python examples/demo_experience_cache.py
+```
+
+Uses an in-memory SQLite cache. No API key required.
+
+### Output sections
+
+- **Prior Experience** — Similarity score, matched episode, adapted constraints
+- **Hardware Candidates** — Warm-started rankings showing prior experience influence
+- **PPA Assessment** — Constraint verdicts for the agricultural drone
+- **Comparison** — Side-by-side summary of delivery vs agricultural drone designs
+
+---
+
+## Demo 7: Full Autonomous Campaign
+
+**Multi-workload quadruped robot with DSE, governance, and full evaluation.**
+
+The most comprehensive demo: designs an SoC for a quadruped robot with 4 concurrent workloads (Visual SLAM, object detection, LiDAR processing, voice recognition). Exercises design-space exploration, multi-workload scheduling, governance with iteration limits, and the evaluation framework.
+
+### What happens
+
+1. **Workload Analysis** — Detects 4 workloads with concurrent scheduling, computes aggregate GFLOPS
+2. **Hardware Exploration** — Scores candidates for multi-workload support
+3. **Design-Space Exploration** — Pareto front with heterogeneous accelerator mapping
+4. **Architecture Composition** — Multi-accelerator architecture with shared NoC
+5. **PPA Assessment** — Power (15W), latency (50ms), cost ($50) constraint verdicts
+6. **Design Review** — Critic evaluates multi-workload balance and resource utilization
+7. **Report Generation** — Comprehensive design report with workload mapping
+
+### Usage
+
+```bash
+python examples/demo_full_campaign.py
+```
+
+No API key required. Governance limits iterations to 10.
+
+### Output sections
+
+- **Multi-Workload Profile** — 4 workloads with individual GFLOPS, scheduling, and aggregate requirements
+- **Pareto Front** — Trade-off analysis across power/latency/cost
+- **Workload-to-Accelerator Mapping** — Which workloads run on which compute units
+- **Governance Log** — Iteration tracking and decision audit
+- **PPA Assessment** — Per-constraint verdicts under multi-workload load
+- **Evaluation Scorecard** — 9-dimension composite score (target > 0.75)
+
+---
+
 ## Utility Examples
 
 ### Simple Workflow
@@ -213,12 +353,16 @@ python examples/kubernetes_scaling_example.py
 
 ## Architecture Progression
 
-The demos show the system's evolution:
+The demos show the system's evolution across four phases:
 
 ```
 Demo 1 (Phase 1)     Single-pass pipeline: plan -> dispatch -> 6 specialists
+Demo 2 (Phase 4)     + Pareto front design-space exploration
 Demo 3 (Phase 2)     + Optimization loop with LangGraph (iterative convergence)
 Demo 4 (Phase 3)     + KPU micro-arch sizing, floorplan, bandwidth, RTL generation
+Demo 5 (Phase 4)     + Safety-critical detection, redundancy, HITL governance gates
+Demo 6 (Phase 4)     + Experience cache for cross-design knowledge transfer
+Demo 7 (Phase 4)     + Multi-workload, full autonomous campaign with evaluation
 ```
 
-Each demo builds on the previous phases. Demo 1 works standalone. Demo 3 adds the optimization outer loop. Demo 4 adds the full hardware design flow from micro-architecture configuration through RTL synthesis.
+Each demo builds on the previous phases. Demo 1 works standalone. Demo 2 adds design-space exploration with Pareto analysis. Demo 3 adds the optimization outer loop. Demo 4 adds the full hardware design flow through RTL synthesis. Demos 5-7 add safety governance, episodic memory, and multi-workload autonomy with a 9-dimension evaluation framework.
