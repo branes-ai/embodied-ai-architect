@@ -22,12 +22,22 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class RTLLoopConfig:
-    """Configuration for the RTL inner loop."""
+    """Configuration for the RTL inner loop.
+
+    Args:
+        max_iterations: Maximum lint→synth→validate cycles.
+        process_nm: Technology node for area scaling.
+        work_dir: Working directory for intermediate files.
+        skip_validation: Skip simulation step.
+        synth_timeout: Yosys timeout in seconds.
+            -1 (default) estimates from RTL complexity.
+    """
 
     max_iterations: int = 5
     process_nm: int = 28
     work_dir: Optional[Path] = None
     skip_validation: bool = False
+    synth_timeout: int = -1
 
 
 @dataclass
@@ -72,7 +82,11 @@ def run_rtl_loop(
         config = RTLLoopConfig()
 
     work_dir = config.work_dir or Path(tempfile.mkdtemp(prefix=f"rtl_{module_name}_"))
-    toolchain = EDAToolchain(work_dir=work_dir, process_nm=config.process_nm)
+    toolchain = EDAToolchain(
+        work_dir=work_dir,
+        process_nm=config.process_nm,
+        synth_timeout=config.synth_timeout,
+    )
 
     history: list[dict] = []
 

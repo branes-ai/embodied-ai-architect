@@ -1,16 +1,23 @@
 """RTL Synthesis Tool — gate-level netlist and PPA metrics.
 
 Uses Yosys with mock fallback. Enhanced with process_nm for area scaling.
+Timeout is configurable and defaults to a complexity-based estimate.
 """
 
 from __future__ import annotations
 
+import logging
 import re
 import subprocess
 import tempfile
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Optional
+
+logger = logging.getLogger(__name__)
+
+# Sentinel: caller wants auto-detection based on RTL complexity
+AUTO_TIMEOUT = -1
 
 
 @dataclass
@@ -27,6 +34,7 @@ class SynthesisResult:
     log_excerpt: str = ""
     errors: list = field(default_factory=list)
     warnings: list = field(default_factory=list)
+    source: str = "yosys"  # "yosys" | "mock" — lets callers detect mock data
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -35,13 +43,60 @@ class SynthesisResult:
 class RTLSynthesisTool:
     """Synthesize RTL to gate-level netlist using Yosys.
 
-    Falls back to mock synthesis if Yosys is not available.
+    Falls back to mock synthesis if Yosys is not available or times out.
+
+    Args:
+        work_dir: Working directory for intermediate files.
+        process_nm: Technology node for area scaling.
+        timeout: Seconds before Yosys is killed.
+            * positive int — fixed timeout
+            * AUTO_TIMEOUT (-1, default) — estimated from RTL complexity
     """
 
-    def __init__(self, work_dir: Optional[Path] = None, process_nm: int = 28):
+    def __init__(
+        self,
+        work_dir: Optional[Path] = None,
+        process_nm: int = 28,
+        timeout: int = AUTO_TIMEOUT,
+    ):
         self.work_dir = (work_dir or Path(tempfile.mkdtemp())).resolve()
         self.work_dir.mkdir(parents=True, exist_ok=True)
         self.process_nm = process_nm
+        self.timeout = timeout
+
+    # ------------------------------------------------------------------
+    # Complexity-based timeout estimation
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def estimate_timeout(rtl_source: str) -> int:
+        """Estimate a reasonable Yosys timeout from RTL complexity.
+
+        Heuristic tiers:
+          - simple  (<100 lines, <5 always blocks, no memories): 30 s
+          - medium  (<500 lines, no inferred memories):         120 s
+          - complex (everything else):                          300 s
+        """
+        lines = len(rtl_source.splitlines())
+        always_blocks = rtl_source.count("always")
+        # Inferred memories: reg [...] name [...]
+        memory_decls = len(re.findall(r"reg\s*\[.*?\]\s*\w+\s*\[", rtl_source))
+
+        if lines < 100 and always_blocks < 5 and memory_decls == 0:
+            return 30
+        if lines < 500 and memory_decls == 0:
+            return 120
+        return 300
+
+    def _resolve_timeout(self, rtl_source: str) -> int:
+        """Return the effective timeout for this run."""
+        if self.timeout != AUTO_TIMEOUT:
+            return self.timeout
+        return self.estimate_timeout(rtl_source)
+
+    # ------------------------------------------------------------------
+    # Main entry point
+    # ------------------------------------------------------------------
 
     def run(
         self,
@@ -58,12 +113,15 @@ class RTLSynthesisTool:
         script_path = self.work_dir / "synth.ys"
         script_path.write_text(script)
 
+        effective_timeout = self._resolve_timeout(rtl_source)
+        logger.info("Yosys synthesis timeout: %ds (module=%s)", effective_timeout, top_module)
+
         try:
             proc = subprocess.run(
                 ["yosys", "-s", str(script_path)],
                 capture_output=True,
                 text=True,
-                timeout=30,
+                timeout=effective_timeout,
                 cwd=self.work_dir,
             )
             if proc.returncode != 0:
@@ -84,9 +142,18 @@ class RTLSynthesisTool:
             return result.to_dict()
 
         except FileNotFoundError:
-            return self._mock_synthesis(rtl_source, top_module).to_dict()
+            result = self._mock_synthesis(rtl_source, top_module, reason="yosys_not_found")
+            return result.to_dict()
         except subprocess.TimeoutExpired:
-            return self._mock_synthesis(rtl_source, top_module).to_dict()
+            logger.warning(
+                "Yosys timed out after %ds for %s — falling back to mock",
+                effective_timeout,
+                top_module,
+            )
+            result = self._mock_synthesis(
+                rtl_source, top_module, reason=f"timeout_{effective_timeout}s"
+            )
+            return result.to_dict()
 
     def _generate_script(
         self,
@@ -159,7 +226,9 @@ write_verilog {self.work_dir / 'synth.v'}
         result.area_um2 = result.area_cells * tech.cell_area_um2
         return result
 
-    def _mock_synthesis(self, rtl: str, top: str) -> SynthesisResult:
+    def _mock_synthesis(
+        self, rtl: str, top: str, reason: str = "yosys_not_found"
+    ) -> SynthesisResult:
         num_always = rtl.count("always")
         num_assign = rtl.count("assign")
         num_ops = len(re.findall(r"[\+\-\*\/\&\|\^]", rtl))
@@ -169,6 +238,10 @@ write_verilog {self.work_dir / 'synth.v'}
 
         tech = get_technology(self.process_nm)
 
+        warnings = [f"Using mock synthesis (reason: {reason})"]
+        if "timeout" in reason:
+            warnings.append("Metrics are heuristic estimates — real synthesis timed out")
+
         return SynthesisResult(
             success=True,
             area_cells=estimated_cells,
@@ -176,6 +249,7 @@ write_verilog {self.work_dir / 'synth.v'}
             num_wires=estimated_cells * 2,
             num_cells=estimated_cells,
             cell_counts={"estimated": estimated_cells},
-            log_excerpt="Mock synthesis - Yosys not available",
-            warnings=["Using mock synthesis - install Yosys for real metrics"],
+            log_excerpt=f"Mock synthesis — {reason}",
+            warnings=warnings,
+            source="mock",
         )

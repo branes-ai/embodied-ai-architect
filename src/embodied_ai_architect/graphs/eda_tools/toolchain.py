@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Optional
 
 from embodied_ai_architect.graphs.eda_tools.lint import RTLLintTool
-from embodied_ai_architect.graphs.eda_tools.synthesis import RTLSynthesisTool
+from embodied_ai_architect.graphs.eda_tools.synthesis import AUTO_TIMEOUT, RTLSynthesisTool
 from embodied_ai_architect.graphs.eda_tools.simulation import SimulationTool
 
 
@@ -27,19 +27,28 @@ class EDAToolchain:
         lint_result = toolchain.lint(rtl_source)
         synth_result = toolchain.synthesize(rtl_source, "my_module")
         sim_result = toolchain.simulate(rtl_source, tb_source, "my_module")
+
+    Args:
+        work_dir: Root working directory for intermediate files.
+        process_nm: Technology node for area scaling.
+        synth_timeout: Yosys timeout in seconds.
+            AUTO_TIMEOUT (-1, default) estimates from RTL complexity.
     """
 
     def __init__(
         self,
         work_dir: Optional[Path] = None,
         process_nm: int = 28,
+        synth_timeout: int = AUTO_TIMEOUT,
     ):
         self.work_dir = (work_dir or Path(tempfile.mkdtemp(prefix="eda_"))).resolve()
         self.work_dir.mkdir(parents=True, exist_ok=True)
         self.process_nm = process_nm
 
         self._lint_tool = RTLLintTool(self.work_dir / "lint")
-        self._synth_tool = RTLSynthesisTool(self.work_dir / "synth", process_nm=process_nm)
+        self._synth_tool = RTLSynthesisTool(
+            self.work_dir / "synth", process_nm=process_nm, timeout=synth_timeout
+        )
         self._sim_tool = SimulationTool(self.work_dir / "sim")
 
     @property
