@@ -287,16 +287,19 @@ Show the RTL synthesis:
 ```
 --- RTL Generation -----------------------------------------------------
   mac_unit...........................    573 cells (PASS)
-  compute_tile.......................      0 cells (FAIL)
+  compute_tile.......................   7822 cells (PASS)
   l1_skew_buffer.....................     24 cells (PASS)
   l2_cache_bank......................     22 cells (PASS)
   ...
-  Total cells: 1533
+  noc_router.........................   1300 cells (PASS)
+  ...
+  Total cells: 10655
 ```
 
 > "Real Verilog, generated from templates, linted with Verilator, synthesized
-> through Yosys. This is actual EDA toolchain output. 560 tests. 15 specialist
-> agents. This is production engineering, not a prototype."
+> through Yosys. All 10 components pass synthesis — over 10,000 gates. This is
+> actual EDA toolchain output. 560 tests. 15 specialist agents. This is
+> production engineering, not a prototype."
 
 ---
 
@@ -348,7 +351,8 @@ Show the RTL synthesis:
 | Specialist agents in the system | 15 |
 | Tests in the test suite | 560 |
 | RTL components generated | 10 |
-| Synthesis cell count | 1,533 |
+| RTL components passing synthesis | 10 of 10 |
+| Synthesis cell count | 10,655 |
 
 ### Demo commands (copy-paste ready)
 
@@ -520,10 +524,10 @@ This is the complete output from `python examples/demo_kpu_rtl.py`.
          -> Bandwidth PASS: peak utilization 6%
 
   [t7] rtl_generator: Generate RTL for KPU sub-components
-         -> Generated RTL for 10 components: 8 passed, 2 failed, 1533 total cells
+         -> Generated RTL for 10 components: 10 passed, 0 failed, 10655 total cells
 
   [t8] rtl_ppa_assessor: Assess PPA from RTL synthesis results
-         -> RTL synthesis area: 0.00mm2 (1533 cells at 28nm)
+         -> RTL synthesis area: 0.00mm2 (10655 cells at 28nm)
 
   [t9] critic: Review design for risks and improvements
          -> Design review: ADEQUATE (1 issues, 1 strengths)
@@ -531,7 +535,7 @@ This is the complete output from `python examples/demo_kpu_rtl.py`.
   [t10] report_generator: Generate final design report
          -> Design report generated
 
-  Pipeline completed in 9 steps, 94.90s
+  Pipeline completed in 9 steps, 102.17s
 
 --- KPU Configuration --------------------------------------------------
   Process Node....................... 28nm
@@ -562,17 +566,17 @@ This is the complete output from `python examples/demo_kpu_rtl.py`.
 
 --- RTL Generation -----------------------------------------------------
   mac_unit...........................    573 cells (PASS)
-  compute_tile.......................      0 cells (FAIL)
+  compute_tile.......................   7822 cells (PASS)
   l1_skew_buffer.....................     24 cells (PASS)
   l2_cache_bank......................     22 cells (PASS)
   l3_tile............................     20 cells (PASS)
-  noc_router.........................      0 cells (FAIL)
+  noc_router.........................   1300 cells (PASS)
   dma_engine.........................     85 cells (PASS)
   block_mover........................    257 cells (PASS)
   streamer...........................    533 cells (PASS)
   memory_controller..................     19 cells (PASS)
 
-  Total cells: 1533
+  Total cells: 10655
 
 --- PPA Summary --------------------------------------------------------
   Area............................... 0.0mm2
@@ -583,6 +587,6 @@ This is the complete output from `python examples/demo_kpu_rtl.py`.
   Demo 4 Complete
 ========================================================================
 
-  Total time: 94.90s  |  Status: complete
+  Total time: 102.17s  |  Status: complete
   RTL enabled: True
 ```

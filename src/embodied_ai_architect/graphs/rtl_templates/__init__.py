@@ -371,35 +371,34 @@ module {module_name} #(
 )(
     input  logic clk,
     input  logic rst_n,
-    input  logic [DATA_WIDTH-1:0] data_in [ARRAY_ROWS-1:0],
-    input  logic [DATA_WIDTH-1:0] weight_in [ARRAY_COLS-1:0],
-    output logic [ACCUM_WIDTH-1:0] result_out [ARRAY_COLS-1:0],
+    input  logic [ARRAY_ROWS*DATA_WIDTH-1:0] data_in,
+    input  logic [ARRAY_COLS*DATA_WIDTH-1:0] weight_in,
+    output logic [ARRAY_COLS*ACCUM_WIDTH-1:0] result_out,
     input  logic start,
     output logic done
 );
-    logic [ACCUM_WIDTH-1:0] accum [ARRAY_COLS-1:0];
+    logic [ARRAY_COLS*ACCUM_WIDTH-1:0] accum;
     logic running;
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             running <= 1'b0;
             done <= 1'b0;
-            for (int i = 0; i < ARRAY_COLS; i++) begin
-                accum[i] <= '0;
-                result_out[i] <= '0;
-            end
+            accum <= '0;
+            result_out <= '0;
         end else if (start) begin
             running <= 1'b1;
             done <= 1'b0;
         end else if (running) begin
             for (int c = 0; c < ARRAY_COLS; c++) begin
-                accum[c] <= accum[c] + data_in[0] * weight_in[c];
+                accum[c*ACCUM_WIDTH +: ACCUM_WIDTH] <=
+                    accum[c*ACCUM_WIDTH +: ACCUM_WIDTH]
+                    + data_in[0 +: DATA_WIDTH]
+                    * weight_in[c*DATA_WIDTH +: DATA_WIDTH];
             end
             done <= 1'b1;
             running <= 1'b0;
-            for (int c = 0; c < ARRAY_COLS; c++) begin
-                result_out[c] <= accum[c];
-            end
+            result_out <= accum;
         end
     end
 endmodule
@@ -510,30 +509,31 @@ module {module_name} #(
 )(
     input  logic clk,
     input  logic rst_n,
-    input  logic [LINK_WIDTH-1:0] data_in [NUM_PORTS-1:0],
-    input  logic valid_in [NUM_PORTS-1:0],
-    output logic ready_out [NUM_PORTS-1:0],
-    output logic [LINK_WIDTH-1:0] data_out [NUM_PORTS-1:0],
-    output logic valid_out [NUM_PORTS-1:0],
-    input  logic ready_in [NUM_PORTS-1:0]
+    input  logic [NUM_PORTS*LINK_WIDTH-1:0] data_in,
+    input  logic [NUM_PORTS-1:0] valid_in,
+    output logic [NUM_PORTS-1:0] ready_out,
+    output logic [NUM_PORTS*LINK_WIDTH-1:0] data_out,
+    output logic [NUM_PORTS-1:0] valid_out,
+    input  logic [NUM_PORTS-1:0] ready_in
 );
     // Simple round-robin routing
     logic [$clog2(NUM_PORTS)-1:0] grant;
+    integer next;
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             grant <= '0;
-            for (int i = 0; i < NUM_PORTS; i++) begin
-                data_out[i] <= '0;
-                valid_out[i] <= 1'b0;
-                ready_out[i] <= 1'b1;
-            end
+            data_out <= '0;
+            valid_out <= '0;
+            ready_out <= {{NUM_PORTS{{1'b1}}}};
         end else begin
             grant <= (grant + 1) % NUM_PORTS;
             for (int i = 0; i < NUM_PORTS; i++) begin
-                if (valid_in[i] && ready_in[(i+1) % NUM_PORTS]) begin
-                    data_out[(i+1) % NUM_PORTS] <= data_in[i];
-                    valid_out[(i+1) % NUM_PORTS] <= 1'b1;
+                next = (i + 1) % NUM_PORTS;
+                if (valid_in[i] && ready_in[next]) begin
+                    data_out[next*LINK_WIDTH +: LINK_WIDTH] <=
+                        data_in[i*LINK_WIDTH +: LINK_WIDTH];
+                    valid_out[next] <= 1'b1;
                 end else begin
                     valid_out[i] <= 1'b0;
                 end
