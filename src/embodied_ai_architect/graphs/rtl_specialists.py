@@ -188,35 +188,40 @@ def rtl_ppa_assessor(task: TaskNode, state: SoCDesignState) -> dict[str, Any]:
     total_area_um2 = estimate_area_um2(total_cells, process_nm)
     total_area_mm2 = total_area_um2 / 1e6
 
-    # Cross-check with floorplan
+    # Use floorplan area as primary estimate (includes SRAM macros, routing
+    # overhead, and periphery which dominate die area).  Synthesis cell counts
+    # cover only combinational/sequential logic — a small fraction of total.
     fp = state.get("floorplan_estimate", {})
     floorplan_area = fp.get("total_area_mm2", 0)
-    cross_check = ""
+
     if floorplan_area > 0:
-        ratio = total_area_mm2 / floorplan_area
+        effective_area = floorplan_area
         cross_check = (
-            f" (floorplan estimate was {floorplan_area:.1f}mm², "
-            f"synthesis is {ratio:.0%} of that)"
+            f" (floorplan: {floorplan_area:.1f}mm², "
+            f"synthesis logic: {total_area_mm2:.3f}mm²)"
         )
+    else:
+        effective_area = total_area_mm2
+        cross_check = ""
 
     # Update PPA metrics
     ppa = dict(state.get("ppa_metrics", {}))
-    ppa["area_mm2"] = round(total_area_mm2, 2)
+    ppa["area_mm2"] = round(effective_area, 2)
 
     constraints = get_constraints(state)
     if constraints.max_area_mm2:
-        if total_area_mm2 <= constraints.max_area_mm2:
+        if effective_area <= constraints.max_area_mm2:
             ppa.setdefault("verdicts", {})["area"] = "PASS"
         else:
             ppa.setdefault("verdicts", {})["area"] = "FAIL"
 
     return {
         "summary": (
-            f"RTL synthesis area: {total_area_mm2:.2f}mm² "
+            f"RTL PPA area: {effective_area:.1f}mm² "
             f"({total_cells} cells at {process_nm}nm){cross_check}"
         ),
         "total_cells": total_cells,
-        "total_area_mm2": total_area_mm2,
+        "total_area_mm2": effective_area,
         "module_areas": module_areas,
         "_state_updates": {"ppa_metrics": ppa},
     }

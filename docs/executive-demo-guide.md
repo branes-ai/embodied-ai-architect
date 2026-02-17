@@ -24,7 +24,7 @@ source .venv/bin/activate
 # Verify demos run (do this before the meeting)
 python examples/demo_soc_designer.py       # ~1.5 seconds
 python examples/demo_experience_cache.py   # ~2.5 seconds
-python examples/demo_kpu_rtl.py            # ~95 seconds (pre-capture this)
+python examples/demo_kpu_rtl.py            # ~100 seconds (pre-capture this)
 ```
 
 Use a clean dark terminal, monospace font at 14-16pt (JetBrains Mono or Fira Code).
@@ -237,7 +237,7 @@ Three compounding forces:
 
 ## Act 4: The Depth Proof (2 min) — *Credibility*
 
-**Use pre-captured output (see appendix). Demo 4 takes ~95 seconds — too long for live.**
+**Use pre-captured output (see appendix). Demo 4 takes ~100 seconds — too long for live.**
 
 > "And this isn't a toy. The system goes all the way down to synthesizable
 > silicon."
@@ -252,7 +252,7 @@ Show the KPU configuration:
   L2/tile............................ 256KB
   L1/tile............................ 32KB
   Streamers/tile..................... 2
-  L3/mem tile........................ 512KB
+  L3/mem tile........................ 4167KB
   Block Movers/mem tile.............. 1
   DRAM............................... LPDDR4X 2 ctrl
   NoC................................ mesh_2d 256-bit
@@ -267,9 +267,11 @@ Show the physical validation:
 ```
 --- Floorplan Check ----------------------------------------------------
   Compute Tile....................... 1.88 x 1.88mm = 3.53mm2
-  Memory Tile........................ 1.50 x 1.50mm = 2.26mm2
-  Pitch Match W...................... 1.25 (MISMATCH)
+  Memory Tile........................ 1.64 x 1.64mm = 2.70mm2
+  Pitch Match W...................... 1.14 (OK)
+  Pitch Match H...................... 1.14 (OK)
   Total Die Area..................... 95.2mm2
+  Feasible........................... PASS
 
 --- Bandwidth Check ----------------------------------------------------
   dram_to_l3......................... 25.6 avail, 1.5 req (6%)
@@ -279,27 +281,29 @@ Show the physical validation:
 
 > "It validates physical realizability — checkerboard pitch matching between
 > compute and memory tiles, bandwidth balance through the full memory
-> hierarchy. It *catches* that the floorplan pitch is mismatched. Real
+> hierarchy. Both pass. 95mm² die area under the 100mm² budget. Real
 > engineering, not hand-waving."
 
-Show the RTL synthesis:
+Show the RTL synthesis and area:
 
 ```
 --- RTL Generation -----------------------------------------------------
   mac_unit...........................    573 cells (PASS)
   compute_tile.......................   7822 cells (PASS)
-  l1_skew_buffer.....................     24 cells (PASS)
-  l2_cache_bank......................     22 cells (PASS)
   ...
   noc_router.........................   1300 cells (PASS)
   ...
   Total cells: 10655
+
+--- PPA Summary --------------------------------------------------------
+  Area............................... 95.2mm2
+    area............................. PASS
 ```
 
 > "Real Verilog, generated from templates, linted with Verilator, synthesized
-> through Yosys. All 10 components pass synthesis — over 10,000 gates. This is
-> actual EDA toolchain output. 560 tests. 15 specialist agents. This is
-> production engineering, not a prototype."
+> through Yosys. All 10 components pass synthesis — over 10,000 gates.
+> 95mm² estimated die area. This is actual EDA toolchain output. 560 tests.
+> 15 specialist agents. This is production engineering, not a prototype."
 
 ---
 
@@ -353,6 +357,8 @@ Show the RTL synthesis:
 | RTL components generated | 10 |
 | RTL components passing synthesis | 10 of 10 |
 | Synthesis cell count | 10,655 |
+| Estimated die area | 95.2mm² (under 100mm² budget) |
+| Floorplan pitch ratio | 1.14 (within 15% tolerance) |
 
 ### Demo commands (copy-paste ready)
 
@@ -514,11 +520,11 @@ This is the complete output from `python examples/demo_kpu_rtl.py`.
 
   [t4] kpu_configurator: Configure KPU micro-architecture for drone workload
          -> Configured KPU 'swkpu-delivery-drone' at 28nm: 2x2 checkerboard
-            (2 compute + 2 memory tiles), 0.51 TOPS INT8, 1.6MB SRAM
+            (2 compute + 2 memory tiles), 0.51 TOPS INT8, 8.7MB SRAM
 
   [t5] floorplan_validator: Validate floorplan (checkerboard pitch matching)
-         -> Floorplan FAIL: compute tile 1.88x1.88mm, memory tile 1.50x1.50mm,
-            pitch ratio W=1.25 H=1.25, die 95.2mm2 (EXCEEDS budget)
+         -> Floorplan PASS: compute tile 1.88x1.88mm, memory tile 1.64x1.64mm,
+            pitch ratio W=1.14 H=1.14, die 95.2mm2 (< 100mm2 budget)
 
   [t6] bandwidth_validator: Validate bandwidth matching through memory hierarchy
          -> Bandwidth PASS: peak utilization 6%
@@ -527,7 +533,7 @@ This is the complete output from `python examples/demo_kpu_rtl.py`.
          -> Generated RTL for 10 components: 10 passed, 0 failed, 10655 total cells
 
   [t8] rtl_ppa_assessor: Assess PPA from RTL synthesis results
-         -> RTL synthesis area: 0.00mm2 (10655 cells at 28nm)
+         -> RTL PPA area: 95.2mm2 (10655 cells at 28nm)
 
   [t9] critic: Review design for risks and improvements
          -> Design review: ADEQUATE (1 issues, 1 strengths)
@@ -535,7 +541,7 @@ This is the complete output from `python examples/demo_kpu_rtl.py`.
   [t10] report_generator: Generate final design report
          -> Design report generated
 
-  Pipeline completed in 9 steps, 102.17s
+  Pipeline completed in 9 steps, 102.38s
 
 --- KPU Configuration --------------------------------------------------
   Process Node....................... 28nm
@@ -544,18 +550,18 @@ This is the complete output from `python examples/demo_kpu_rtl.py`.
   L2/tile............................ 256KB
   L1/tile............................ 32KB
   Streamers/tile..................... 2
-  L3/mem tile........................ 512KB
+  L3/mem tile........................ 4167KB
   Block Movers/mem tile.............. 1
   DRAM............................... LPDDR4X 2 ctrl
   NoC................................ mesh_2d 256-bit
 
 --- Floorplan Check ----------------------------------------------------
   Compute Tile....................... 1.88 x 1.88mm = 3.53mm2
-  Memory Tile........................ 1.50 x 1.50mm = 2.26mm2
-  Pitch Match W...................... 1.25 (MISMATCH)
-  Pitch Match H...................... 1.25 (MISMATCH)
+  Memory Tile........................ 1.64 x 1.64mm = 2.70mm2
+  Pitch Match W...................... 1.14 (OK)
+  Pitch Match H...................... 1.14 (OK)
   Total Die Area..................... 95.2mm2
-  Feasible........................... ** FAIL **
+  Feasible........................... PASS
 
 --- Bandwidth Check ----------------------------------------------------
   dram_to_l3......................... 25.6 avail, 1.5 req (6%)
@@ -579,7 +585,7 @@ This is the complete output from `python examples/demo_kpu_rtl.py`.
   Total cells: 10655
 
 --- PPA Summary --------------------------------------------------------
-  Area............................... 0.0mm2
+  Area............................... 95.2mm2
 
     area............................. PASS
 
@@ -587,6 +593,6 @@ This is the complete output from `python examples/demo_kpu_rtl.py`.
   Demo 4 Complete
 ========================================================================
 
-  Total time: 102.17s  |  Status: complete
+  Total time: 102.38s  |  Status: complete
   RTL enabled: True
 ```

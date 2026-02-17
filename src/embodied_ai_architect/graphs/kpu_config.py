@@ -383,6 +383,53 @@ def create_kpu_config(
         dram_bw = 6.4
         dram_cap = 4.0
 
+    # Build initial tile configs
+    compute_tile_cfg = ComputeTileConfig(
+        num_tiles=min_compute_tiles,
+        array_rows=array_size,
+        array_cols=array_size,
+        vector_lanes=array_size,
+        frequency_mhz=freq,
+        l2_size_bytes=l2_size,
+        l2_num_banks=max(4, l2_size // (32 * 1024)),
+        l1_size_bytes=l1_size,
+        l1_num_banks=max(2, l1_size // (8 * 1024)),
+        num_streamers=2 if array_size >= 16 else 1,
+        streamer_buffer_bytes=16 * 1024,
+    )
+    memory_tile_cfg = MemoryTileConfig(
+        l3_tile_size_bytes=l3_tile_size,
+        l3_num_banks=max(2, l3_tile_size // (128 * 1024)),
+        num_block_movers=2 if grid_side >= 3 else 1,
+        block_mover_bw_gbps=32.0,
+        num_dma_engines=1,
+    )
+
+    # Pitch-matching: increase L3 until memory tile pitch matches compute tile.
+    # Import here to avoid circular dependency.
+    from embodied_ai_architect.graphs.floorplan import (
+        estimate_compute_tile_dimensions,
+        estimate_memory_tile_dimensions,
+    )
+
+    ct_dims = estimate_compute_tile_dimensions(compute_tile_cfg, process_nm)
+    mt_dims = estimate_memory_tile_dimensions(memory_tile_cfg, process_nm)
+    pitch_tolerance = 0.15
+    max_l3 = l3_tile_size * 16  # upper bound to avoid infinite loop
+
+    while mt_dims.width_mm > 0 and ct_dims.width_mm / mt_dims.width_mm > 1.0 + pitch_tolerance:
+        l3_tile_size = int(l3_tile_size * 1.1)  # 10% steps for fine convergence
+        if l3_tile_size > max_l3:
+            break
+        memory_tile_cfg = MemoryTileConfig(
+            l3_tile_size_bytes=l3_tile_size,
+            l3_num_banks=max(2, l3_tile_size // (128 * 1024)),
+            num_block_movers=memory_tile_cfg.num_block_movers,
+            block_mover_bw_gbps=memory_tile_cfg.block_mover_bw_gbps,
+            num_dma_engines=memory_tile_cfg.num_dma_engines,
+        )
+        mt_dims = estimate_memory_tile_dimensions(memory_tile_cfg, process_nm)
+
     return KPUMicroArchConfig(
         name=f"swkpu-{use_case.replace('_', '-')}",
         process_nm=process_nm,
@@ -399,26 +446,8 @@ def create_kpu_config(
             frequency_mhz=freq * 2,
             num_routers=grid_side * grid_side,
         ),
-        compute_tile=ComputeTileConfig(
-            num_tiles=min_compute_tiles,
-            array_rows=array_size,
-            array_cols=array_size,
-            vector_lanes=array_size,
-            frequency_mhz=freq,
-            l2_size_bytes=l2_size,
-            l2_num_banks=max(4, l2_size // (32 * 1024)),
-            l1_size_bytes=l1_size,
-            l1_num_banks=max(2, l1_size // (8 * 1024)),
-            num_streamers=2 if array_size >= 16 else 1,
-            streamer_buffer_bytes=16 * 1024,
-        ),
-        memory_tile=MemoryTileConfig(
-            l3_tile_size_bytes=l3_tile_size,
-            l3_num_banks=max(2, l3_tile_size // (128 * 1024)),
-            num_block_movers=2 if grid_side >= 3 else 1,
-            block_mover_bw_gbps=32.0,
-            num_dma_engines=1,
-        ),
+        compute_tile=compute_tile_cfg,
+        memory_tile=memory_tile_cfg,
         array_rows=grid_side,
         array_cols=grid_side,
     )
