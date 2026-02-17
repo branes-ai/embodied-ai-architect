@@ -174,23 +174,23 @@ Capture the KPU Configuration section:
   L2/tile............................ 256KB
   L1/tile............................ 32KB
   Streamers/tile..................... 2
-  L3/mem tile........................ 512KB
+  L3/mem tile........................ 4167KB
   Block Movers/mem tile.............. 1
   DRAM............................... LPDDR4X 2 ctrl
   NoC................................ mesh_2d 256-bit
 ```
-*Story: "From a drone description, the system sizes a custom accelerator micro-architecture: systolic arrays, SRAM hierarchy, memory controllers, NoC topology."*
+*Story: "From a drone description, the system sizes a custom accelerator micro-architecture: systolic arrays, SRAM hierarchy, memory controllers, NoC topology. The configurator automatically balances compute and memory tile pitch."*
 
 **Screenshot 4B — "Physical Validation" (the rigor)**
 Capture Floorplan Check + Bandwidth Check together:
 ```
 --- Floorplan Check ----------------------------------------------------
   Compute Tile....................... 1.88 x 1.88mm = 3.53mm2
-  Memory Tile........................ 1.50 x 1.50mm = 2.26mm2
-  Pitch Match W...................... 1.25 (MISMATCH)
-  Pitch Match H...................... 1.25 (MISMATCH)
+  Memory Tile........................ 1.64 x 1.64mm = 2.70mm2
+  Pitch Match W...................... 1.14 (OK)
+  Pitch Match H...................... 1.14 (OK)
   Total Die Area..................... 95.2mm2
-  Feasible........................... ** FAIL **
+  Feasible........................... PASS
 
 --- Bandwidth Check ----------------------------------------------------
   dram_to_l3......................... 25.6 avail, 1.5 req (6%)
@@ -199,7 +199,7 @@ Capture Floorplan Check + Bandwidth Check together:
   l1_to_compute...................... 256.0 avail, 0.2 req (0%)
   Balanced........................... PASS
 ```
-*Story: "The system validates physical realizability — checkerboard pitch matching and bandwidth balance through the full memory hierarchy. It catches that the floorplan pitch is mismatched."*
+*Story: "The system validates physical realizability — checkerboard pitch matching within 15% tolerance and bandwidth balance through the full memory hierarchy. Both pass. 95mm² die area under the 100mm² budget."*
 
 **Screenshot 4C — "RTL Synthesis Results" (the deliverable)**
 Capture the RTL Generation section:
@@ -282,7 +282,7 @@ Overall...................... ALL PASS
 | 2 | 1B: HW table | "Autonomous hardware trade-off analysis" |
 | 3 | 1C: FAIL → Optimize → PASS | "Self-healing design: detect failure, optimize, resolve" |
 | 4 | 4A: KPU config | "Custom accelerator micro-architecture sizing" |
-| 5 | 4B: Floorplan + BW | "Physical constraint validation" |
+| 5 | 4B: Floorplan + BW | "Physical constraint validation — all PASS" |
 | 6 | 4C: RTL cells | "Real synthesizable Verilog output" |
 | 7 | 7A: Multi-workload | "Complex multi-workload design-space exploration" |
 | 8 | 7B: All PASS + trail | "Full audit trail, all constraints met" |
@@ -292,6 +292,6 @@ Overall...................... ALL PASS
 - **Terminal font**: Use a clean monospace font at 14-16pt (e.g., JetBrains Mono, Fira Code)
 - **Dark theme**: Dark background with light text screenshots are more visually striking in slides
 - **Crop tightly**: Each screenshot should show exactly one section — don't try to fit the whole terminal
-- **Timing**: Demo 1 runs instantly (<1s), Demo 7 runs instantly (<1s), Demo 4 takes ~90s (real EDA synthesis). Run Demo 4 last in live demos, or pre-capture the output
+- **Timing**: Demo 1 runs instantly (<1s), Demo 7 runs instantly (<1s), Demo 4 takes ~100s (real EDA synthesis). Run Demo 4 last in live demos, or pre-capture the output
 - **Live demo order**: Demo 1 → Demo 7 → Demo 4 (save the slow-but-impressive one for last)
 - **Fallback**: If running live, have pre-captured terminal output ready in case of environment issues
