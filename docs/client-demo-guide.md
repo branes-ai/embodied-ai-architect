@@ -206,19 +206,19 @@ Capture the RTL Generation section:
 ```
 --- RTL Generation -----------------------------------------------------
   mac_unit...........................    573 cells (PASS)
-  compute_tile.......................      0 cells (FAIL)
+  compute_tile.......................   7822 cells (PASS)
   l1_skew_buffer.....................     24 cells (PASS)
   l2_cache_bank......................     22 cells (PASS)
   l3_tile............................     20 cells (PASS)
-  noc_router.........................      0 cells (FAIL)
+  noc_router.........................   1300 cells (PASS)
   dma_engine.........................     85 cells (PASS)
   block_mover........................    257 cells (PASS)
   streamer...........................    533 cells (PASS)
   memory_controller..................     19 cells (PASS)
 
-  Total cells: 1533
+  Total cells: 10655
 ```
-*Story: "Real Verilog is generated from templates, linted with Verilator, and synthesized through Yosys. This is actual EDA toolchain output — 8 of 10 components synthesize successfully with real cell counts."*
+*Story: "Real Verilog is generated from templates, linted with Verilator, and synthesized through Yosys. This is actual EDA toolchain output — all 10 components synthesize successfully with over 10,000 total cells."*
 
 ### Demo 7 Screenshots (2 slides)
 
