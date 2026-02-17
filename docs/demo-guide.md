@@ -16,7 +16,7 @@ pip install -e ".[langgraph]"
 
 | Demo | Script | What It Shows | Dependencies |
 |------|--------|---------------|-------------|
-| Demo 1 | `demo_soc_designer.py` | End-to-end SoC design pipeline | Core only |
+| Demo 1 | `demo_soc_designer.py` | End-to-end SoC design pipeline with optimization loop | Core only |
 | Demo 2 | `demo_dse_pareto.py` | Design-space exploration with Pareto front | Core only |
 | Demo 3 | `demo_soc_optimizer.py` | Iterative power optimization loop | LangGraph |
 | Demo 4 | `demo_kpu_rtl.py` | KPU micro-architecture + RTL generation | Core only |
@@ -36,9 +36,9 @@ There are also three utility examples (not demos):
 
 ## Demo 1: Agentic SoC Designer
 
-**Goal decomposition + full specialist pipeline.**
+**Goal decomposition + full specialist pipeline + optimization loop.**
 
-Runs a delivery drone SoC design through: Planner -> Dispatcher -> 6 Specialists -> Design Report.
+Runs a delivery drone SoC design through: Planner -> Dispatcher -> 6 Specialists -> Design Report. If PPA assessment produces any FAIL verdict, an optimization loop iteratively applies strategies (INT8 quantization, resolution reduction, etc.) until all constraints pass, then re-runs the critic for a final review.
 
 ### What happens
 
@@ -49,6 +49,8 @@ Runs a delivery drone SoC design through: Planner -> Dispatcher -> 6 Specialists
 5. **PPA Assessment** — Estimates power/performance/area/cost with per-constraint PASS/FAIL verdicts
 6. **Design Review** — Critic identifies risks, bottlenecks, and improvement opportunities
 7. **Report Generation** — Structured design report with decision trail
+8. **Optimization Loop** (if any FAIL) — Iteratively applies strategies until all verdicts PASS
+9. **Final Review** — Critic re-evaluates the optimized design
 
 ### Usage
 
@@ -64,6 +66,9 @@ python examples/demo_soc_designer.py --goal "Design an SoC for autonomous mobile
 
 # Override constraints
 python examples/demo_soc_designer.py --power 3.0 --latency 20.0 --cost 50.0
+
+# Control max optimization iterations
+python examples/demo_soc_designer.py --max-iterations 3
 ```
 
 ### Options
@@ -75,6 +80,7 @@ python examples/demo_soc_designer.py --power 3.0 --latency 20.0 --cost 50.0
 | `--power FLOAT` | 5.0 | Max power budget (watts) |
 | `--latency FLOAT` | 33.3 | Max latency (ms) |
 | `--cost FLOAT` | 30.0 | Max BOM cost (USD) |
+| `--max-iterations INT` | 5 | Max optimization iterations |
 
 ### Output sections
 
@@ -88,6 +94,10 @@ python examples/demo_soc_designer.py --power 3.0 --latency 20.0 --cost 50.0
 - **PPA Assessment** — Power/latency/area/cost with PASS/FAIL per constraint
 - **Design Review** — Strengths, issues, recommendations from critic
 - **Decision Trail** — Ordered audit log of all design decisions
+- **Optimization Phase** (if FAIL) — Per-iteration strategy application with before/after PPA
+- **Final PPA** (if optimized) — Post-optimization metrics with all-PASS verdicts
+- **Final Design Review** (if optimized) — Critic re-assessment (ADEQUATE/STRONG)
+- **Decision Trail (updated)** (if optimized) — Full trail including optimization steps
 
 ---
 
@@ -356,7 +366,7 @@ python examples/kubernetes_scaling_example.py
 The demos show the system's evolution across four phases:
 
 ```
-Demo 1 (Phase 1)     Single-pass pipeline: plan -> dispatch -> 6 specialists
+Demo 1 (Phase 1+)    Pipeline + optimization loop: plan -> dispatch -> 6 specialists -> optimize -> PASS
 Demo 2 (Phase 4)     + Pareto front design-space exploration
 Demo 3 (Phase 2)     + Optimization loop with LangGraph (iterative convergence)
 Demo 4 (Phase 3)     + KPU micro-arch sizing, floorplan, bandwidth, RTL generation
@@ -365,4 +375,4 @@ Demo 6 (Phase 4)     + Experience cache for cross-design knowledge transfer
 Demo 7 (Phase 4)     + Multi-workload, full autonomous campaign with evaluation
 ```
 
-Each demo builds on the previous phases. Demo 1 works standalone. Demo 2 adds design-space exploration with Pareto analysis. Demo 3 adds the optimization outer loop. Demo 4 adds the full hardware design flow through RTL synthesis. Demos 5-7 add safety governance, episodic memory, and multi-workload autonomy with a 9-dimension evaluation framework.
+Each demo builds on the previous phases. Demo 1 works standalone and includes a built-in optimization loop that resolves failing PPA constraints. Demo 2 adds design-space exploration with Pareto analysis. Demo 3 provides an alternative LangGraph-based optimization loop. Demo 4 adds the full hardware design flow through RTL synthesis. Demos 5-7 add safety governance, episodic memory, and multi-workload autonomy with a 9-dimension evaluation framework.
