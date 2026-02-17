@@ -409,6 +409,184 @@ def _try_hardware_agent(
     return []
 
 
+# -- Stillwater KPU: not yet in embodied-schemas, always included manually --
+_STILLWATER_KPU: dict[str, Any] = {
+    "name": "Stillwater KPU",
+    "vendor": "Stillwater Supercomputing",
+    "type": "kpu",
+    "compute_paradigm": "dataflow",
+    "peak_tops_int8": 20.0,
+    "peak_tflops_fp16": 5.0,
+    "memory_gb": 2.0,
+    "tdp_watts": 5.0,
+    "cost_usd": 25.0,
+    "strengths": ["low_power", "dataflow", "int8", "custom_operators"],
+    "suitable_for": ["edge", "drone", "amr"],
+}
+
+# Fallback catalog used when embodied-schemas is not installed
+_FALLBACK_CATALOG: list[dict[str, Any]] = [
+    {
+        "name": "NVIDIA Jetson Orin Nano",
+        "vendor": "NVIDIA",
+        "type": "gpu",
+        "compute_paradigm": "simd",
+        "peak_tops_int8": 40.0,
+        "peak_tflops_fp16": 20.0,
+        "memory_gb": 8.0,
+        "tdp_watts": 15.0,
+        "cost_usd": 199.0,
+        "strengths": ["gpu_acceleration", "cuda", "tensorrt", "wide_framework_support"],
+        "suitable_for": ["edge", "drone", "amr", "quadruped"],
+    },
+    {
+        "name": "Google Coral Edge TPU",
+        "vendor": "Google",
+        "type": "tpu",
+        "compute_paradigm": "systolic_array",
+        "peak_tops_int8": 4.0,
+        "peak_tflops_fp16": 0.0,
+        "memory_gb": 0.008,
+        "tdp_watts": 2.0,
+        "cost_usd": 35.0,
+        "strengths": ["ultra_low_power", "int8_only", "fast_inference"],
+        "suitable_for": ["edge", "iot", "camera"],
+    },
+    {
+        "name": "AMD Ryzen AI (Xilinx NPU)",
+        "vendor": "AMD",
+        "type": "npu",
+        "compute_paradigm": "reconfigurable",
+        "peak_tops_int8": 16.0,
+        "peak_tflops_fp16": 8.0,
+        "memory_gb": 16.0,
+        "tdp_watts": 25.0,
+        "cost_usd": 150.0,
+        "strengths": ["heterogeneous", "cpu_plus_npu", "flexible"],
+        "suitable_for": ["edge", "amr", "quadruped"],
+    },
+    {
+        "name": "Raspberry Pi 5",
+        "vendor": "Raspberry Pi Foundation",
+        "type": "cpu",
+        "compute_paradigm": "von_neumann",
+        "peak_tops_int8": 0.5,
+        "peak_tflops_fp16": 0.1,
+        "memory_gb": 8.0,
+        "tdp_watts": 8.0,
+        "cost_usd": 80.0,
+        "strengths": ["general_purpose", "low_cost", "ecosystem"],
+        "suitable_for": ["edge", "education", "prototype"],
+    },
+    {
+        "name": "Hailo-8",
+        "vendor": "Hailo",
+        "type": "npu",
+        "compute_paradigm": "dataflow",
+        "peak_tops_int8": 26.0,
+        "peak_tflops_fp16": 0.0,
+        "memory_gb": 0.0,  # No on-chip memory, uses host
+        "tdp_watts": 2.5,
+        "cost_usd": 70.0,
+        "strengths": ["high_efficiency", "low_power", "dataflow"],
+        "suitable_for": ["edge", "camera", "drone"],
+    },
+]
+
+
+def _derive_strengths(entry) -> list[str]:
+    """Derive strength tags from a HardwareEntry for scoring compatibility."""
+    strengths: list[str] = []
+
+    # Compute paradigm mapping
+    paradigm = entry.compute_paradigm.value if entry.compute_paradigm else ""
+    if paradigm == "dataflow":
+        strengths.append("dataflow")
+    elif paradigm == "simd":
+        strengths.append("gpu_acceleration")
+    elif paradigm == "reconfigurable":
+        strengths.extend(["flexible", "heterogeneous"])
+    elif paradigm == "von_neumann":
+        strengths.append("general_purpose")
+    elif paradigm == "systolic_array":
+        strengths.append("int8")
+
+    # Quantization support
+    quant = entry.capabilities.quantization_support if entry.capabilities else []
+    if "int8" in quant and "int8" not in strengths:
+        strengths.append("int8")
+
+    # Low power
+    if entry.power and entry.power.tdp_watts is not None and entry.power.tdp_watts <= 5:
+        strengths.append("low_power")
+
+    # Framework / runtime tags from capabilities
+    frameworks = [f.lower() for f in (entry.capabilities.frameworks if entry.capabilities else [])]
+    runtimes = [
+        r.lower() for r in (entry.capabilities.inference_runtimes if entry.capabilities else [])
+    ]
+    all_sw = frameworks + runtimes
+    if any("cuda" in s for s in all_sw):
+        strengths.append("cuda")
+    if any("tensorrt" in s for s in all_sw):
+        strengths.append("tensorrt")
+
+    # GPU type bonus
+    hw_type = entry.hardware_type.value if entry.hardware_type else ""
+    if hw_type == "gpu" and "gpu_acceleration" not in strengths:
+        strengths.append("gpu_acceleration")
+
+    return strengths
+
+
+def _load_registry_candidates() -> list[dict[str, Any]]:
+    """Load hardware candidates from embodied-schemas Registry.
+
+    Returns an empty list if embodied-schemas is not installed.
+    """
+    try:
+        from embodied_schemas import Registry
+    except ImportError:
+        return []
+
+    try:
+        registry = Registry.load()
+    except Exception as e:
+        logger.debug("Failed to load embodied-schemas Registry: %s", e)
+        return []
+
+    candidates: list[dict[str, Any]] = []
+    for entry in registry.hardware:
+        candidates.append(
+            {
+                "name": entry.name,
+                "vendor": entry.vendor,
+                "type": entry.hardware_type.value if entry.hardware_type else "unknown",
+                "compute_paradigm": (
+                    entry.compute_paradigm.value if entry.compute_paradigm else "unknown"
+                ),
+                "peak_tops_int8": (
+                    entry.capabilities.peak_tops_int8
+                    if entry.capabilities and entry.capabilities.peak_tops_int8
+                    else 0.0
+                ),
+                "peak_tflops_fp16": (
+                    entry.capabilities.peak_tflops_fp16
+                    if entry.capabilities and entry.capabilities.peak_tflops_fp16
+                    else 0.0
+                ),
+                "memory_gb": (
+                    entry.capabilities.memory_gb if entry.capabilities else 0.0
+                ),
+                "tdp_watts": entry.power.tdp_watts if entry.power else None,
+                "cost_usd": entry.cost_usd,
+                "strengths": _derive_strengths(entry),
+                "suitable_for": entry.suitable_for or [],
+            }
+        )
+    return candidates
+
+
 def _estimate_hardware_candidates(
     workload: dict[str, Any], constraints: DesignConstraints
 ) -> list[dict[str, Any]]:
@@ -416,87 +594,16 @@ def _estimate_hardware_candidates(
     total_gflops = workload.get("total_estimated_gflops", workload.get("estimated_gflops", 5.0))
     dominant_op = workload.get("dominant_op", "general_purpose")
 
-    # Static catalog of representative hardware platforms
-    catalog = [
-        {
-            "name": "Stillwater KPU",
-            "vendor": "Stillwater Supercomputing",
-            "type": "kpu",
-            "compute_paradigm": "dataflow",
-            "peak_tops_int8": 20.0,
-            "peak_tflops_fp16": 5.0,
-            "memory_gb": 2.0,
-            "tdp_watts": 5.0,
-            "cost_usd": 25.0,
-            "strengths": ["low_power", "dataflow", "int8", "custom_operators"],
-            "suitable_for": ["edge", "drone", "amr"],
-        },
-        {
-            "name": "NVIDIA Jetson Orin Nano",
-            "vendor": "NVIDIA",
-            "type": "gpu",
-            "compute_paradigm": "simd",
-            "peak_tops_int8": 40.0,
-            "peak_tflops_fp16": 20.0,
-            "memory_gb": 8.0,
-            "tdp_watts": 15.0,
-            "cost_usd": 199.0,
-            "strengths": ["gpu_acceleration", "cuda", "tensorrt", "wide_framework_support"],
-            "suitable_for": ["edge", "drone", "amr", "quadruped"],
-        },
-        {
-            "name": "Google Coral Edge TPU",
-            "vendor": "Google",
-            "type": "tpu",
-            "compute_paradigm": "systolic_array",
-            "peak_tops_int8": 4.0,
-            "peak_tflops_fp16": 0.0,
-            "memory_gb": 0.008,
-            "tdp_watts": 2.0,
-            "cost_usd": 35.0,
-            "strengths": ["ultra_low_power", "int8_only", "fast_inference"],
-            "suitable_for": ["edge", "iot", "camera"],
-        },
-        {
-            "name": "AMD Ryzen AI (Xilinx NPU)",
-            "vendor": "AMD",
-            "type": "npu",
-            "compute_paradigm": "reconfigurable",
-            "peak_tops_int8": 16.0,
-            "peak_tflops_fp16": 8.0,
-            "memory_gb": 16.0,
-            "tdp_watts": 25.0,
-            "cost_usd": 150.0,
-            "strengths": ["heterogeneous", "cpu_plus_npu", "flexible"],
-            "suitable_for": ["edge", "amr", "quadruped"],
-        },
-        {
-            "name": "Raspberry Pi 5",
-            "vendor": "Raspberry Pi Foundation",
-            "type": "cpu",
-            "compute_paradigm": "von_neumann",
-            "peak_tops_int8": 0.5,
-            "peak_tflops_fp16": 0.1,
-            "memory_gb": 8.0,
-            "tdp_watts": 8.0,
-            "cost_usd": 80.0,
-            "strengths": ["general_purpose", "low_cost", "ecosystem"],
-            "suitable_for": ["edge", "education", "prototype"],
-        },
-        {
-            "name": "Hailo-8",
-            "vendor": "Hailo",
-            "type": "npu",
-            "compute_paradigm": "dataflow",
-            "peak_tops_int8": 26.0,
-            "peak_tflops_fp16": 0.0,
-            "memory_gb": 0.0,  # No on-chip memory, uses host
-            "tdp_watts": 2.5,
-            "cost_usd": 70.0,
-            "strengths": ["high_efficiency", "low_power", "dataflow"],
-            "suitable_for": ["edge", "camera", "drone"],
-        },
-    ]
+    # Try registry first, fall back to static catalog
+    registry_candidates = _load_registry_candidates()
+    if registry_candidates:
+        catalog = registry_candidates
+    else:
+        catalog = list(_FALLBACK_CATALOG)  # copy to avoid mutating the constant
+
+    # Always include Stillwater KPU (not yet in schemas)
+    if not any(c["name"] == _STILLWATER_KPU["name"] for c in catalog):
+        catalog.append(dict(_STILLWATER_KPU))
 
     # Score each candidate
     scored = []
