@@ -17,7 +17,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 import time
 from pathlib import Path
@@ -25,14 +24,21 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
+from embodied_ai_architect.graphs.optimizer import design_optimizer
 from embodied_ai_architect.graphs.soc_state import (
     DesignConstraints,
     create_initial_soc_state,
     get_iteration_summary,
     get_task_graph,
+    record_decision,
 )
 from embodied_ai_architect.graphs.planner import PlannerNode
-from embodied_ai_architect.graphs.specialists import create_default_dispatcher
+from embodied_ai_architect.graphs.specialists import (
+    create_default_dispatcher,
+    critic,
+    ppa_assessor,
+)
+from embodied_ai_architect.graphs.task_graph import TaskNode
 
 # ---------------------------------------------------------------------------
 # Demo prompts
@@ -132,7 +138,12 @@ def verdict_str(v: str) -> str:
 # ---------------------------------------------------------------------------
 
 
-def run_demo(goal: str, constraints: DesignConstraints, use_llm: bool) -> None:
+def run_demo(
+    goal: str,
+    constraints: DesignConstraints,
+    use_llm: bool,
+    max_iterations: int = 5,
+) -> None:
     banner("Agentic SoC Designer — Demo 1")
     print(f"\n  Goal: {goal[:90]}{'...' if len(goal) > 90 else ''}")
     print(f"  Mode: {'LLM Planner (Claude)' if use_llm else 'Static Plan'}")
@@ -226,11 +237,226 @@ def run_demo(goal: str, constraints: DesignConstraints, use_llm: bool) -> None:
     # ---- Results ----
     _print_results(state)
 
+    # ---- Optimization (if any verdicts FAIL) ----
+    opt_iterations = 0
+    ppa = state.get("ppa_metrics", {})
+    verdicts = ppa.get("verdicts", {})
+    has_fail = any(v == "FAIL" for v in verdicts.values())
+
+    if has_fail:
+        state, opt_iterations = _run_optimization_loop(state, max_iterations)
+        _print_final_ppa(state)
+        state = _run_final_review(state)
+        _print_decision_trail(state)
+
     banner("Demo Complete")
     total = plan_time + exec_time
     print(f"\n  Total time: {total:.2f}s  |  Status: {state.get('status')}")
     print(f"  Decisions recorded: {len(state.get('history', []))}")
+    if opt_iterations > 0:
+        print(f"  Optimization iterations: {opt_iterations}")
     print()
+
+
+# ---------------------------------------------------------------------------
+# Optimization loop
+# ---------------------------------------------------------------------------
+
+_STRATEGY_LABELS = {
+    "quantize_int8": "INT8 Quantization",
+    "reduce_resolution": "Resolution Reduction",
+    "clock_scaling": "Clock Scaling",
+    "model_pruning": "Model Pruning",
+    "smaller_model": "Smaller Model Variant",
+}
+
+
+def _strategy_display_name(name: str, factor: float | None = None) -> str:
+    label = _STRATEGY_LABELS.get(name, name)
+    if factor is not None:
+        label += f" (~{factor * 100:.0f}% power reduction)"
+    return label
+
+
+def _run_optimization_loop(
+    state: dict, max_iterations: int
+) -> tuple[dict, int]:
+    """Iteratively optimize the design until all PPA verdicts PASS."""
+    section("Optimization Phase")
+
+    ppa = state.get("ppa_metrics", {})
+    verdicts = ppa.get("verdicts", {})
+    failing = [k for k, v in verdicts.items() if v == "FAIL"]
+    passing = [k for k, v in verdicts.items() if v == "PASS"]
+
+    parts = []
+    if ppa.get("power_watts") is not None:
+        v = verdicts.get("power", "?")
+        parts.append(f"power={ppa['power_watts']:.1f}W ({v})")
+    if ppa.get("latency_ms") is not None:
+        v = verdicts.get("latency", "?")
+        parts.append(f"latency={ppa['latency_ms']:.1f}ms ({v})")
+    if ppa.get("cost_usd") is not None:
+        v = verdicts.get("cost", "?")
+        parts.append(f"cost=${ppa['cost_usd']:.0f} ({v})")
+    print(f"\n  Initial: {', '.join(parts)}")
+
+    iteration = 0
+    for iteration in range(1, max_iterations + 1):
+        pre_ppa = dict(state.get("ppa_metrics", {}))
+
+        # Run optimizer
+        task = TaskNode(
+            id=f"opt_{iteration}",
+            name=f"Optimization iteration {iteration}",
+            agent="design_optimizer",
+            dependencies=[],
+        )
+        opt_result = design_optimizer(task, state)
+
+        if not opt_result.get("applied"):
+            reason = opt_result.get("summary", "No applicable strategies")
+            print(f"\n  Iteration {iteration}: {reason}")
+            break
+
+        # Merge optimizer state updates
+        for k, v in opt_result.get("_state_updates", {}).items():
+            state = {**state, k: v}
+
+        strategy_name = opt_result.get("strategy", "?")
+        power_factor = opt_result.get("power_reduction_factor")
+
+        # Re-assess PPA
+        assess_task = TaskNode(
+            id=f"reassess_{iteration}",
+            name=f"Re-assess PPA after {strategy_name}",
+            agent="ppa_assessor",
+            dependencies=[],
+        )
+        assess_result = ppa_assessor(assess_task, state)
+        for k, v in assess_result.get("_state_updates", {}).items():
+            state = {**state, k: v}
+
+        post_ppa = state.get("ppa_metrics", {})
+        post_verdicts = post_ppa.get("verdicts", {})
+
+        # Print iteration summary
+        display = _strategy_display_name(strategy_name, power_factor)
+        print(f"\n  Iteration {iteration}: Applied {display}")
+        _print_before_after(pre_ppa, post_ppa)
+        vstr = "  ".join(
+            f"{k}:{v}" for k, v in post_verdicts.items()
+        )
+        print(f"    Verdicts: {vstr}")
+
+        # Record decision
+        state = record_decision(
+            state,
+            agent="design_optimizer",
+            action=f"Applied optimization: {strategy_name}",
+            rationale=f"Fixing failing constraints via {display}",
+        )
+
+        # Check convergence
+        if all(v == "PASS" for v in post_verdicts.values()):
+            print(
+                f"\n  Converged in {iteration} iteration"
+                f"{'s' if iteration > 1 else ''}"
+                " — all constraints PASS"
+            )
+            break
+    else:
+        print(f"\n  Reached max iterations ({max_iterations}) — some constraints still FAIL")
+
+    return state, iteration
+
+
+def _run_final_review(state: dict) -> dict:
+    """Re-run critic on the optimized design and print results."""
+    section("Final Design Review")
+    task = TaskNode(
+        id="final_review",
+        name="Final design review after optimization",
+        agent="critic",
+        dependencies=[],
+    )
+    result = critic(task, state)
+
+    kv("Assessment", result.get("assessment", "N/A"))
+
+    for label, key in [
+        ("Strengths", "strengths"),
+        ("Issues", "issues"),
+        ("Recommendations", "recommendations"),
+    ]:
+        items = result.get(key, [])
+        if items:
+            print(f"\n  {label}:")
+            for item in items:
+                print(f"    - {item}")
+
+    state = record_decision(
+        state,
+        agent="critic",
+        action=f"Final review: {result.get('assessment', 'N/A')}",
+        rationale="Post-optimization design review",
+    )
+    return state
+
+
+def _print_before_after(pre_ppa: dict, post_ppa: dict) -> None:
+    parts = []
+    if pre_ppa.get("power_watts") is not None and post_ppa.get("power_watts") is not None:
+        parts.append(
+            f"Power: {pre_ppa['power_watts']:.1f}W → {post_ppa['power_watts']:.1f}W"
+        )
+    if pre_ppa.get("latency_ms") is not None and post_ppa.get("latency_ms") is not None:
+        parts.append(
+            f"Latency: {pre_ppa['latency_ms']:.1f}ms → {post_ppa['latency_ms']:.1f}ms"
+        )
+    if parts:
+        print(f"    {' | '.join(parts)}")
+
+
+def _print_final_ppa(state: dict) -> None:
+    ppa = state.get("ppa_metrics", {})
+    if not ppa:
+        return
+
+    section("Final PPA (post-optimization)")
+    if ppa.get("power_watts") is not None:
+        kv("Power", f"{ppa['power_watts']:.1f} W")
+    if ppa.get("latency_ms") is not None:
+        kv("Latency", f"{ppa['latency_ms']:.1f} ms")
+    if ppa.get("area_mm2") is not None:
+        kv("Area", f"{ppa['area_mm2']:.1f} mm2")
+    if ppa.get("cost_usd") is not None:
+        kv("Cost", f"${ppa['cost_usd']:.0f}")
+    if ppa.get("memory_mb") is not None:
+        kv("Memory", f"{ppa['memory_mb']:.0f} MB")
+
+    verdicts = ppa.get("verdicts", {})
+    if verdicts:
+        print()
+        for k, v in verdicts.items():
+            print(f"  {k:<20} {verdict_str(v)}")
+
+
+def _print_decision_trail(state: dict) -> None:
+    history = state.get("history", [])
+    if not history:
+        return
+
+    section("Decision Trail (updated)")
+    for i, d in enumerate(history, 1):
+        agent = d.get("agent", "?")
+        action = d.get("action", "?")
+        print(f"    {i}. [{agent}] {action}")
+
+
+# ---------------------------------------------------------------------------
+# Result printing
+# ---------------------------------------------------------------------------
 
 
 def _print_results(state: dict) -> None:
@@ -389,6 +615,10 @@ def main() -> None:
         "--cost", type=float, default=None,
         help="Max BOM cost in USD (default: 30)",
     )
+    parser.add_argument(
+        "--max-iterations", type=int, default=5,
+        help="Max optimization iterations if PPA fails (default: 5)",
+    )
     args = parser.parse_args()
 
     goal = args.goal or DEMO_1_GOAL
@@ -402,7 +632,7 @@ def main() -> None:
         ip_rating=DEMO_1_CONSTRAINTS.ip_rating,
     )
 
-    run_demo(goal, constraints, use_llm=args.llm)
+    run_demo(goal, constraints, use_llm=args.llm, max_iterations=args.max_iterations)
 
 
 if __name__ == "__main__":
