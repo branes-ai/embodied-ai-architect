@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Complexity-based synthesis timeout with configurable override (2026-02-17):
+  - `RTLSynthesisTool.estimate_timeout()`: 3-tier heuristic (30s/120s/300s) from line count, always blocks, and memory declarations
+  - `RTLSynthesisTool(timeout=)`, `EDAToolchain(synth_timeout=)`, `RTLLoopConfig(synth_timeout=)`: configurable override at every layer, defaults to `AUTO_TIMEOUT` (-1) for auto-detection
+  - `SynthesisResult.source` field: `"yosys"` vs `"mock"` lets callers detect heuristic estimates
+  - Mock fallback warnings now include reason (`yosys_not_found` or `timeout_Ns`)
+  - Documentation: `docs/sessions/2026-02-17-synthesis-timeout-design.md`
+
 ### Added
 - Phase 4: Evaluation Harness, Missing Demos & Regression Suite (2026-02-13):
   - **9-Dimension Evaluation Framework** (`src/embodied_ai_architect/graphs/`):
