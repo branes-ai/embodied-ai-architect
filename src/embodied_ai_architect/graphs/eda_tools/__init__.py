@@ -9,11 +9,16 @@ All tools work without any EDA tools installed (mock fallback).
 """
 
 from embodied_ai_architect.graphs.eda_tools.lint import RTLLintTool, LintResult
-from embodied_ai_architect.graphs.eda_tools.synthesis import RTLSynthesisTool, SynthesisResult
+from embodied_ai_architect.graphs.eda_tools.synthesis import (
+    AUTO_TIMEOUT,
+    RTLSynthesisTool,
+    SynthesisResult,
+)
 from embodied_ai_architect.graphs.eda_tools.simulation import SimulationTool, SimulationResult
 from embodied_ai_architect.graphs.eda_tools.toolchain import EDAToolchain
 
 __all__ = [
+    "AUTO_TIMEOUT",
     "RTLLintTool",
     "LintResult",
     "RTLSynthesisTool",
