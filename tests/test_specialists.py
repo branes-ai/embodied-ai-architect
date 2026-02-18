@@ -391,6 +391,53 @@ class TestPPAAssessor:
 
         assert ppa_65["power_watts"] > ppa_28["power_watts"]
 
+    def test_cost_breakdown_present(self, state_with_arch):
+        """ppa_metrics contains cost_breakdown dict from manufacturing model."""
+        task = make_task("t1", "ppa_assessor")
+        result = ppa_assessor(task, state_with_arch)
+
+        ppa = result["ppa_metrics"]
+        assert "cost_breakdown" in ppa
+        bd = ppa["cost_breakdown"]
+        assert bd is not None
+        assert "die_cost_usd" in bd
+        assert "package_cost_usd" in bd
+        assert "nre_per_unit_usd" in bd
+        assert "yield_percent" in bd
+        assert bd["total_unit_cost_usd"] > 0
+
+    def test_cost_uses_manufacturing_model(self, state_with_arch):
+        """cost_usd should come from manufacturing model, not static hw catalog price."""
+        task = make_task("t1", "ppa_assessor")
+        result = ppa_assessor(task, state_with_arch)
+
+        ppa = result["ppa_metrics"]
+        # The old static cost was hw["cost_usd"] = 25.0
+        # Manufacturing model cost is derived from die area/process/volume
+        assert ppa["cost_usd"] > 0
+        assert ppa["cost_usd"] != 25.0  # should differ from catalog BOM price
+
+    def test_volume_affects_cost(self, state_with_arch):
+        """Higher volume = lower per-unit cost due to NRE amortization."""
+        task = make_task("t1", "ppa_assessor")
+
+        # Low volume (default: 10K since drone_state has no target_volume)
+        result_low = ppa_assessor(task, state_with_arch)
+        cost_low = result_low["ppa_metrics"]["cost_usd"]
+
+        # High volume
+        state_high = dict(state_with_arch)
+        state_high["constraints"] = DesignConstraints(
+            max_power_watts=5.0,
+            max_latency_ms=33.3,
+            max_cost_usd=30.0,
+            target_volume=1_000_000,
+        ).model_dump()
+        result_high = ppa_assessor(task, state_high)
+        cost_high = result_high["ppa_metrics"]["cost_usd"]
+
+        assert cost_high < cost_low
+
 
 # ============================================================================
 # Critic

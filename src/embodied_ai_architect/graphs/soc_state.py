@@ -138,6 +138,10 @@ class PPAMetrics(BaseModel):
         description="Process technology node in nm (e.g. 28, 7, 5)",
     )
     cost_usd: Optional[float] = None
+    cost_breakdown: Optional[dict[str, float]] = Field(
+        default=None,
+        description="Manufacturing cost breakdown (die, package, test, NRE)",
+    )
     memory_mb: Optional[float] = None
     energy_per_inference_mj: Optional[float] = None
 

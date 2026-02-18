@@ -273,6 +273,8 @@ _STRATEGY_LABELS = {
     "clock_scaling": "Clock Scaling",
     "model_pruning": "Model Pruning",
     "smaller_model": "Smaller Model Variant",
+    "shrink_process_node": "Process Node Shrink",
+    "grow_process_node": "Process Node Grow",
 }
 
 
@@ -371,7 +373,17 @@ def _run_optimization_loop(
             )
             break
     else:
-        print(f"\n  Reached max iterations ({max_iterations}) — some constraints still FAIL")
+        still_failing = [k for k, v in post_verdicts.items() if v == "FAIL"]
+        print(f"\n  Design did not converge after {max_iterations} iterations.")
+        print(f"  Failing constraints: {', '.join(still_failing)}")
+        ppa = state.get("ppa_metrics", {})
+        bd = ppa.get("cost_breakdown", {})
+        if "cost" in still_failing and bd:
+            nre = bd.get("nre_per_unit_usd", 0)
+            actual = ppa.get("cost_usd", 0)
+            if nre > 0 and actual > 0 and nre / actual > 0.5:
+                print(f"  NRE is {nre / actual * 100:.0f}% of unit cost — "
+                      f"increase volume or relax cost target")
 
     return state, iteration
 
@@ -446,6 +458,16 @@ def _print_final_ppa(state: dict) -> None:
         print()
         for k, v in verdicts.items():
             print(f"  {k:<20} {verdict_str(v)}")
+
+    cost_bd = ppa.get("cost_breakdown")
+    if cost_bd:
+        print()
+        kv("Die Cost", f"${cost_bd.get('die_cost_usd', 0):.2f}")
+        kv("Package", f"${cost_bd.get('package_cost_usd', 0):.2f}")
+        kv("Test", f"${cost_bd.get('test_cost_usd', 0):.2f}")
+        kv("NRE/unit", f"${cost_bd.get('nre_per_unit_usd', 0):.2f}")
+        kv("Yield", f"{cost_bd.get('yield_percent', 0):.1f}%")
+        kv("Dies/wafer", str(cost_bd.get('dies_per_wafer', 0)))
 
 
 def _print_decision_trail(state: dict) -> None:
@@ -565,6 +587,16 @@ def _print_results(state: dict) -> None:
             print(f"\n  Suggestions:")
             for s in suggestions:
                 print(f"    - {s}")
+
+        cost_bd = ppa.get("cost_breakdown")
+        if cost_bd:
+            print()
+            kv("Die Cost", f"${cost_bd.get('die_cost_usd', 0):.2f}")
+            kv("Package", f"${cost_bd.get('package_cost_usd', 0):.2f}")
+            kv("Test", f"${cost_bd.get('test_cost_usd', 0):.2f}")
+            kv("NRE/unit", f"${cost_bd.get('nre_per_unit_usd', 0):.2f}")
+            kv("Yield", f"{cost_bd.get('yield_percent', 0):.1f}%")
+            kv("Dies/wafer", str(cost_bd.get('dies_per_wafer', 0)))
 
     # Critic review
     graph = get_task_graph(state)

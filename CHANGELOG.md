@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Manufacturing cost model with process node optimizer (2026-02-18):
+  - `manufacturing.py`: Physics-based cost model — dies per wafer (300mm circular packing), Murphy's yield model, manufacturing cost breakdown (die + package + test + NRE)
+  - `PROCESS_ECONOMICS` database: 16 nodes (2nm–180nm) with wafer cost, defect density, mask set, design NRE, and test NRE
+  - `ManufacturingCostBreakdown` Pydantic model with itemized variable costs (die, package, test) and amortized fixed costs (NRE/volume)
+  - `get_adjacent_nodes()` in `technology.py` for process node traversal
+  - `shrink_process_node` / `grow_process_node` optimizer strategies with dynamic naming for multi-step node changes
+  - `cost_breakdown` field on `PPAMetrics` for full cost visibility
+  - Cost breakdown display (Die Cost, Package, Test, NRE/unit, Yield, Dies/wafer) in 6 demo scripts
+  - Convergence failure analysis in `demo_soc_optimizer.py`: per-constraint diagnostics, break-even volume calculation, actionable next steps
+  - 21 new tests across `test_manufacturing.py` (14), `test_specialists.py` (3), `test_optimizer.py` (4)
+  - Documentation: `docs/sessions/2026-02-18-manufacturing-cost-model.md`
+
 ### Changed
 - Fix truncated goal display and enrich demo prompts (2026-02-18):
   - Replace `goal[:80-90]...` truncation with `textwrap.fill()` in 6 demo scripts so full goal text is always visible

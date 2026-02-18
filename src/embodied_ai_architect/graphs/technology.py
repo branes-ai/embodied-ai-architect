@@ -458,6 +458,29 @@ def estimate_sram_area_mm2(size_bytes: int, process_nm: int) -> float:
     return size_mb / density
 
 
+def get_adjacent_nodes(process_nm: int) -> dict[str, int | None]:
+    """Return the next smaller and larger available process nodes.
+
+    Args:
+        process_nm: Current process node in nm.
+
+    Returns:
+        Dict with "smaller" (next smaller nm value = more advanced) and
+        "larger" (next larger nm value = more mature) process nodes,
+        or None if at the boundary.
+    """
+    if process_nm in _AVAILABLE_NODES:
+        idx = _AVAILABLE_NODES.index(process_nm)
+    else:
+        # Snap to nearest node
+        nearest = min(_AVAILABLE_NODES, key=lambda n: abs(n - process_nm))
+        idx = _AVAILABLE_NODES.index(nearest)
+
+    smaller = _AVAILABLE_NODES[idx - 1] if idx > 0 else None
+    larger = _AVAILABLE_NODES[idx + 1] if idx < len(_AVAILABLE_NODES) - 1 else None
+    return {"smaller": smaller, "larger": larger}
+
+
 def estimate_timing_ps(logic_levels: int, process_nm: int) -> float:
     """Estimate timing in picoseconds for a logic path.
 

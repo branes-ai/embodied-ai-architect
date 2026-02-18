@@ -192,6 +192,16 @@ def run_demo(max_power: float, max_latency: float, max_cost: float, max_iteratio
     if ppa.get("cost_usd") is not None:
         kv("Cost", f"${ppa['cost_usd']:.0f}")
 
+    cost_bd = ppa.get("cost_breakdown")
+    if cost_bd:
+        print()
+        kv("Die Cost", f"${cost_bd.get('die_cost_usd', 0):.2f}")
+        kv("Package", f"${cost_bd.get('package_cost_usd', 0):.2f}")
+        kv("Test", f"${cost_bd.get('test_cost_usd', 0):.2f}")
+        kv("NRE/unit", f"${cost_bd.get('nre_per_unit_usd', 0):.2f}")
+        kv("Yield", f"{cost_bd.get('yield_percent', 0):.1f}%")
+        kv("Dies/wafer", str(cost_bd.get('dies_per_wafer', 0)))
+
     verdicts = ppa.get("verdicts", {})
     if verdicts:
         print()
@@ -202,14 +212,131 @@ def run_demo(max_power: float, max_latency: float, max_cost: float, max_iteratio
     for entry in result.get("design_rationale", []):
         print(f"    {entry}")
 
-    banner("Demo Complete")
+    # --- Outcome analysis ---
     all_pass = all(v == "PASS" for v in verdicts.values()) if verdicts else False
-    final_status = "CONVERGED (all PASS)" if all_pass else "STOPPED (limit reached)"
-    print(f"\n  Outcome: {final_status}")
-    print(f"  Optimization iterations: {result.get('iteration', 0)}")
+    iterations = result.get("iteration", 0)
+
+    if all_pass:
+        banner("Design Converged")
+        print(f"\n  All constraints PASS after {iterations} optimization iteration"
+              f"{'s' if iterations != 1 else ''}.")
+    else:
+        failing = [k for k, v in verdicts.items() if v == "FAIL"]
+        banner("Design Did Not Converge")
+        print(f"\n  The optimizer exhausted {iterations} iterations without satisfying"
+              f" all constraints.")
+        print(f"  Failing: {', '.join(failing)}")
+
+        # Per-constraint failure analysis
+        constraints_d = result.get("constraints", {})
+        print()
+        for fc in failing:
+            _print_failure_analysis(fc, ppa, constraints_d)
+
+        # Actionable next steps
+        section("Suggested Next Steps")
+        suggestions = _suggest_next_steps(failing, ppa, constraints_d)
+        for i, s in enumerate(suggestions, 1):
+            print(f"  {i}. {s}")
+
+    print(f"\n  Optimization iterations: {iterations}")
     print(f"  Total time: {elapsed:.2f}s")
     print(f"  Status: {result.get('status')}")
     print()
+
+
+def _print_failure_analysis(constraint: str, ppa: dict, constraints: dict) -> None:
+    """Print why a specific constraint cannot be met."""
+    if constraint == "cost":
+        actual = ppa.get("cost_usd", 0)
+        target = constraints.get("max_cost_usd", 0)
+        bd = ppa.get("cost_breakdown", {})
+        nre = bd.get("nre_per_unit_usd", 0)
+        die = bd.get("die_cost_usd", 0)
+        volume = bd.get("volume", 0)
+        node = ppa.get("process_nm", 28)
+        print(f"  cost: ${actual:.0f} vs ${target:.0f} target")
+        if nre > 0 and actual > 0:
+            nre_pct = nre / actual * 100
+            print(f"    NRE dominates at {nre_pct:.0f}% of unit cost "
+                  f"(${nre:.0f}/unit at {volume:,} volume)")
+            print(f"    Die cost is only ${die:.2f} — variable cost is not the problem")
+            if target > 0:
+                # Compute break-even volume: total_nre / (target - variable_costs)
+                variable = actual - nre
+                headroom = target - variable
+                if headroom > 0:
+                    total_nre = nre * volume
+                    breakeven = int(total_nre / headroom)
+                    print(f"    Break-even volume at ${target:.0f} target: "
+                          f"~{breakeven:,} units (at {node}nm)")
+    elif constraint == "power":
+        actual = ppa.get("power_watts")
+        target = constraints.get("max_power_watts")
+        if actual and target:
+            overshoot = (actual / target - 1) * 100
+            print(f"  power: {actual:.1f}W vs {target:.1f}W target (+{overshoot:.0f}% over)")
+            print(f"    All workload/clock strategies exhausted")
+    elif constraint == "area":
+        actual = ppa.get("area_mm2")
+        target = constraints.get("max_area_mm2")
+        if actual and target:
+            print(f"  area: {actual:.1f}mm² vs {target:.1f}mm² target")
+            node = ppa.get("process_nm", 28)
+            print(f"    At {node}nm — shrinking process node would reduce area")
+    elif constraint == "latency":
+        actual = ppa.get("latency_ms")
+        target = constraints.get("max_latency_ms")
+        if actual and target:
+            print(f"  latency: {actual:.1f}ms vs {target:.1f}ms target")
+
+
+def _suggest_next_steps(
+    failing: list[str], ppa: dict, constraints: dict
+) -> list[str]:
+    """Generate actionable suggestions based on which constraints fail."""
+    suggestions: list[str] = []
+    bd = ppa.get("cost_breakdown", {})
+
+    if "cost" in failing:
+        nre = bd.get("nre_per_unit_usd", 0)
+        actual = ppa.get("cost_usd", 0)
+        if nre > 0 and actual > 0 and nre / actual > 0.5:
+            volume = bd.get("volume", 0)
+            suggestions.append(
+                f"Increase production volume (currently {volume:,}) — "
+                f"NRE amortization dominates unit cost"
+            )
+        target = constraints.get("max_cost_usd", 0)
+        node = ppa.get("process_nm", 28)
+        if node <= 40:
+            suggestions.append(
+                f"Consider a more mature process node (currently {node}nm) — "
+                f"65nm or 90nm have much lower NRE"
+            )
+        suggestions.append(
+            "Relax cost target or use an existing COTS accelerator "
+            "instead of custom silicon"
+        )
+
+    if "power" in failing:
+        suggestions.append(
+            "Consider a more aggressive process node (lower Vdd) "
+            "or hardware with lower TDP"
+        )
+        suggestions.append(
+            "Re-evaluate workload: can any pipeline stages run at lower frame rate?"
+        )
+
+    if "area" in failing:
+        suggestions.append(
+            "Shrink process node to reduce die area, or remove IP blocks"
+        )
+
+    if not suggestions:
+        suggestions.append("Review constraint targets — they may be mutually infeasible")
+
+    return suggestions
 
 
 def main() -> None:
