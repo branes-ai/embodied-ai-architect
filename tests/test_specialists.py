@@ -326,6 +326,71 @@ class TestPPAAssessor:
         assert "_state_updates" in result
         assert "ppa_metrics" in result["_state_updates"]
 
+    def test_process_nm_stored(self, state_with_arch):
+        """Default process_nm=28 is stored in PPA metrics."""
+        task = make_task("t1", "ppa_assessor")
+        result = ppa_assessor(task, state_with_arch)
+
+        ppa = result["ppa_metrics"]
+        assert ppa["process_nm"] == 28
+
+    def test_custom_process_nm(self, state_with_arch):
+        """Setting target_process_nm=7 stores process_nm=7."""
+        state_with_arch["constraints"] = DesignConstraints(
+            max_power_watts=5.0,
+            max_latency_ms=33.3,
+            max_cost_usd=30.0,
+            target_process_nm=7,
+        ).model_dump()
+        task = make_task("t1", "ppa_assessor")
+        result = ppa_assessor(task, state_with_arch)
+
+        ppa = result["ppa_metrics"]
+        assert ppa["process_nm"] == 7
+
+    def test_7nm_reduces_power_and_latency(self, state_with_arch):
+        """7nm PPA values should be lower than 28nm PPA values."""
+        task = make_task("t1", "ppa_assessor")
+
+        # 28nm baseline
+        result_28 = ppa_assessor(task, state_with_arch)
+        ppa_28 = result_28["ppa_metrics"]
+
+        # 7nm
+        state_7nm = dict(state_with_arch)
+        state_7nm["constraints"] = DesignConstraints(
+            max_power_watts=5.0,
+            max_latency_ms=33.3,
+            max_cost_usd=30.0,
+            target_process_nm=7,
+        ).model_dump()
+        result_7 = ppa_assessor(task, state_7nm)
+        ppa_7 = result_7["ppa_metrics"]
+
+        assert ppa_7["power_watts"] < ppa_28["power_watts"]
+        assert ppa_7["latency_ms"] < ppa_28["latency_ms"]
+
+    def test_large_node_increases_power(self, state_with_arch):
+        """65nm power should exceed default 28nm power."""
+        task = make_task("t1", "ppa_assessor")
+
+        # 28nm baseline
+        result_28 = ppa_assessor(task, state_with_arch)
+        ppa_28 = result_28["ppa_metrics"]
+
+        # 65nm
+        state_65nm = dict(state_with_arch)
+        state_65nm["constraints"] = DesignConstraints(
+            max_power_watts=5.0,
+            max_latency_ms=33.3,
+            max_cost_usd=30.0,
+            target_process_nm=65,
+        ).model_dump()
+        result_65 = ppa_assessor(task, state_65nm)
+        ppa_65 = result_65["ppa_metrics"]
+
+        assert ppa_65["power_watts"] > ppa_28["power_watts"]
+
 
 # ============================================================================
 # Critic

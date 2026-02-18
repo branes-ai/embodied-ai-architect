@@ -59,6 +59,7 @@ DEMO_1_CONSTRAINTS = DesignConstraints(
     max_power_watts=5.0,
     max_latency_ms=33.3,  # 30fps
     max_cost_usd=30.0,
+    max_area_mm2=100.0,
     target_volume=100_000,
     operating_temp_min_c=-20,
     operating_temp_max_c=60,
@@ -428,6 +429,7 @@ def _print_final_ppa(state: dict) -> None:
         return
 
     section("Final PPA (post-optimization)")
+    kv("Process Node", f"{ppa.get('process_nm', 28)}nm")
     if ppa.get("power_watts") is not None:
         kv("Power", f"{ppa['power_watts']:.1f} W")
     if ppa.get("latency_ms") is not None:
@@ -532,6 +534,7 @@ def _print_results(state: dict) -> None:
     ppa = state.get("ppa_metrics", {})
     if ppa:
         section("PPA Assessment")
+        kv("Process Node", f"{ppa.get('process_nm', 28)}nm")
         if ppa.get("power_watts") is not None:
             kv("Power", f"{ppa['power_watts']:.1f} W")
         if ppa.get("latency_ms") is not None:
@@ -630,6 +633,7 @@ def main() -> None:
         max_power_watts=args.power or DEMO_1_CONSTRAINTS.max_power_watts,
         max_latency_ms=args.latency or DEMO_1_CONSTRAINTS.max_latency_ms,
         max_cost_usd=args.cost or DEMO_1_CONSTRAINTS.max_cost_usd,
+        max_area_mm2=DEMO_1_CONSTRAINTS.max_area_mm2,
         target_volume=DEMO_1_CONSTRAINTS.target_volume,
         operating_temp_min_c=DEMO_1_CONSTRAINTS.operating_temp_min_c,
         operating_temp_max_c=DEMO_1_CONSTRAINTS.operating_temp_max_c,

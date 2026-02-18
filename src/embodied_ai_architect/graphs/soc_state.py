@@ -133,6 +133,10 @@ class PPAMetrics(BaseModel):
     latency_ms: Optional[float] = None
     throughput_fps: Optional[float] = None
     area_mm2: Optional[float] = None
+    process_nm: Optional[int] = Field(
+        default=None,
+        description="Process technology node in nm (e.g. 28, 7, 5)",
+    )
     cost_usd: Optional[float] = None
     memory_mb: Optional[float] = None
     energy_per_inference_mj: Optional[float] = None

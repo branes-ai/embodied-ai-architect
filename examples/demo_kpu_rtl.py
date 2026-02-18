@@ -302,6 +302,7 @@ def _print_ppa_summary(state: dict) -> None:
     ppa = state.get("ppa_metrics", {})
     if ppa:
         section("PPA Summary")
+        kv("Process Node", f"{ppa.get('process_nm', 28)}nm")
         if ppa.get("power_watts") is not None:
             kv("Power", f"{ppa['power_watts']:.1f}W")
         if ppa.get("area_mm2") is not None:
