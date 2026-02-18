@@ -45,6 +45,7 @@ DEMO_5_CONSTRAINTS = DesignConstraints(
     max_power_watts=25.0,
     max_latency_ms=1.0,
     max_cost_usd=500.0,
+    max_area_mm2=300.0,
     safety_critical=True,
     safety_standard="IEC 62304 Class C",
 )
@@ -199,7 +200,9 @@ def run_demo() -> dict:
     ppa = state.get("ppa_metrics", {})
     if ppa:
         section("PPA Assessment")
-        for metric, unit in [("power_watts", "W"), ("latency_ms", "ms"), ("cost_usd", "$")]:
+        kv("Process Node", f"{ppa.get('process_nm', 28)}nm")
+        for metric, unit in [("power_watts", "W"), ("latency_ms", "ms"),
+                             ("area_mm2", "mm2"), ("cost_usd", "$")]:
             val = ppa.get(metric)
             if val is not None:
                 kv(metric.replace("_", " ").title(), f"{val:.1f} {unit}")

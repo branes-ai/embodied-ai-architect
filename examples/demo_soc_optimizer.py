@@ -138,6 +138,7 @@ def run_demo(max_power: float, max_latency: float, max_cost: float, max_iteratio
         max_power_watts=max_power,
         max_latency_ms=max_latency,
         max_cost_usd=max_cost,
+        max_area_mm2=100.0,
         target_volume=100_000,
     )
 
@@ -181,10 +182,13 @@ def run_demo(max_power: float, max_latency: float, max_cost: float, max_iteratio
 
     section("Final PPA")
     ppa = result.get("ppa_metrics", {})
+    kv("Process Node", f"{ppa.get('process_nm', 28)}nm")
     if ppa.get("power_watts") is not None:
         kv("Power", f"{ppa['power_watts']:.2f} W")
     if ppa.get("latency_ms") is not None:
         kv("Latency", f"{ppa['latency_ms']:.1f} ms")
+    if ppa.get("area_mm2") is not None:
+        kv("Area", f"{ppa['area_mm2']:.1f} mm2")
     if ppa.get("cost_usd") is not None:
         kv("Cost", f"${ppa['cost_usd']:.0f}")
 

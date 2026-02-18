@@ -28,6 +28,7 @@ from embodied_ai_architect.graphs.soc_state import (
     get_dependency_results,
 )
 from embodied_ai_architect.graphs.task_graph import TaskNode
+from embodied_ai_architect.graphs.technology import get_technology
 
 logger = logging.getLogger(__name__)
 
@@ -891,6 +892,7 @@ def ppa_assessor(task: TaskNode, state: SoCDesignState) -> dict[str, Any]:
     Writes to state: ppa_metrics
     """
     constraints = get_constraints(state)
+    process_nm = constraints.target_process_nm or 28
     architecture = state.get("selected_architecture", {})
     ip_blocks = state.get("ip_blocks", [])
     workload = state.get("workload_profile", {})
@@ -914,8 +916,8 @@ def ppa_assessor(task: TaskNode, state: SoCDesignState) -> dict[str, Any]:
         selected_hw = candidates[0]
 
     # Estimate PPA
-    power_w = _estimate_power(ip_blocks, selected_hw, workload)
-    latency_ms = _estimate_latency(workload, selected_hw)
+    power_w = _estimate_power(ip_blocks, selected_hw, workload, process_nm)
+    latency_ms = _estimate_latency(workload, selected_hw, process_nm)
     area_mm2 = _estimate_area(ip_blocks, constraints)
     cost_usd = selected_hw.get("cost_usd", 0) if selected_hw else 0
     memory_mb = sum(
@@ -968,6 +970,7 @@ def ppa_assessor(task: TaskNode, state: SoCDesignState) -> dict[str, Any]:
         power_watts=power_w,
         latency_ms=latency_ms,
         area_mm2=area_mm2,
+        process_nm=process_nm,
         cost_usd=cost_usd,
         memory_mb=memory_mb,
         verdicts=verdicts,
@@ -987,6 +990,7 @@ def _estimate_power(
     ip_blocks: list[dict[str, Any]],
     hw: dict[str, Any] | None,
     workload: dict[str, Any] | None = None,
+    process_nm: int = 28,
 ) -> float:
     """Estimate total SoC power consumption.
 
@@ -1033,6 +1037,14 @@ def _estimate_power(
     io_w = 0.5  # I/O subsystem
     memory_w = 0.8  # memory controller
 
+    # Dynamic power ~ V^2. Reference: 28nm at 0.90V
+    tech = get_technology(process_nm)
+    voltage_scale = (tech.vdd_v / 0.90) ** 2
+    compute_w *= voltage_scale
+    cpu_w *= voltage_scale
+    io_w *= voltage_scale
+    memory_w *= voltage_scale
+
     return round(compute_w + cpu_w + io_w + memory_w, 1)
 
 
@@ -1058,7 +1070,7 @@ def _reference_gflops(workload: dict[str, Any]) -> float:
 
 
 def _estimate_latency(
-    workload: dict[str, Any], hw: dict[str, Any] | None
+    workload: dict[str, Any], hw: dict[str, Any] | None, process_nm: int = 28
 ) -> float:
     """Estimate end-to-end inference latency."""
     if hw is None:
@@ -1078,7 +1090,12 @@ def _estimate_latency(
     else:
         latency_ms = 100.0
 
-    # Add overhead for memory access and I/O
+    # fmax ~ 1/gate_delay. Reference: 28nm at 25ps
+    tech = get_technology(process_nm)
+    speed_scale = 25.0 / tech.gate_delay_ps
+    latency_ms /= speed_scale
+
+    # Add overhead for memory access and I/O (DRAM-dominated, process-independent)
     overhead_ms = 2.0
     return round(latency_ms + overhead_ms, 1)
 

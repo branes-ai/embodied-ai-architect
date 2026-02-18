@@ -46,6 +46,7 @@ DEMO_7_CONSTRAINTS = DesignConstraints(
     max_power_watts=15.0,
     max_latency_ms=50.0,
     max_cost_usd=50.0,
+    max_area_mm2=200.0,
     target_volume=10_000,
 )
 
@@ -226,6 +227,7 @@ def run_demo() -> dict:
     ppa = state.get("ppa_metrics", {})
     if ppa:
         section("PPA Assessment")
+        kv("Process Node", f"{ppa.get('process_nm', 28)}nm")
         for metric, unit in [("power_watts", "W"), ("latency_ms", "ms"),
                              ("area_mm2", "mm2"), ("cost_usd", "$")]:
             val = ppa.get(metric)
