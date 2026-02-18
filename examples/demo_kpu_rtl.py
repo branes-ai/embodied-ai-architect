@@ -17,6 +17,7 @@ Usage:
 from __future__ import annotations
 
 import sys
+import textwrap
 import time
 from pathlib import Path
 
@@ -36,10 +37,13 @@ from embodied_ai_architect.graphs.specialists import create_default_dispatcher
 # ---------------------------------------------------------------------------
 
 DEMO_4_GOAL = (
-    "Design a KPU-based SoC for a delivery drone perception pipeline "
-    "(detection + tracking at 30fps) with full RTL generation. "
-    "Configure the KPU micro-architecture, validate floorplan and bandwidth, "
-    "then generate RTL for all sub-components."
+    "Design a KPU-based SoC for a delivery drone perception pipeline that must: "
+    "run camera vision processing through a dedicated ISP, "
+    "object detection and multi-object tracking at 30fps, "
+    "with full RTL generation for silicon fabrication. "
+    "Configure the KPU micro-architecture (systolic array, memory tiles, NoC), "
+    "validate checkerboard floorplan pitch matching and bandwidth hierarchy, "
+    "then generate synthesizable RTL for all sub-components targeting a 12nm process."
 )
 
 DEMO_4_CONSTRAINTS = DesignConstraints(
@@ -150,7 +154,8 @@ def verdict_str(v: str) -> str:
 
 def run_demo() -> None:
     banner("Demo 4: KPU Micro-architecture + RTL Generation")
-    print(f"\n  Goal: {DEMO_4_GOAL[:80]}...")
+    print(f"\n  Goal:")
+    print(textwrap.fill(DEMO_4_GOAL, width=W - 4, initial_indent="    ", subsequent_indent="    "))
     print(f"  Mode: Static Plan (deterministic)")
 
     # ---- Create initial state with RTL enabled ----
