@@ -12,6 +12,7 @@ Usage:
 from __future__ import annotations
 
 import sys
+import textwrap
 import time
 from pathlib import Path
 
@@ -31,7 +32,9 @@ from embodied_ai_architect.graphs.specialists import create_default_dispatcher
 
 DEMO_2_GOAL = (
     "Design an SoC for a warehouse AMR (autonomous mobile robot) that must: "
-    "run MobileNetV2 object detection + visual SLAM concurrently, "
+    "run MobileNetV2 object detection for pallet and obstacle recognition, "
+    "concurrent visual SLAM for localization and mapping in GPS-denied indoor aisles, "
+    "schedule both workloads with deterministic latency guarantees, "
     "consume less than 15 watts, cost less than $100 at 10K volume, "
     "and achieve end-to-end latency under 50ms."
 )
@@ -109,7 +112,8 @@ def kv(key: str, value: str, indent: int = 2) -> None:
 def run_demo() -> dict:
     """Run Demo 2 and return final state."""
     banner("Agentic SoC Designer — Demo 2: DSE Pareto (Warehouse AMR)")
-    print(f"\n  Goal: {DEMO_2_GOAL[:90]}...")
+    print(f"\n  Goal:")
+    print(textwrap.fill(DEMO_2_GOAL, width=W - 4, initial_indent="    ", subsequent_indent="    "))
 
     state = create_initial_soc_state(
         goal=DEMO_2_GOAL,

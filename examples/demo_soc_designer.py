@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import textwrap
 import time
 from pathlib import Path
 
@@ -46,10 +47,12 @@ from embodied_ai_architect.graphs.task_graph import TaskNode
 
 DEMO_1_GOAL = (
     "Design an SoC for a last-mile delivery drone that must: "
-    "run a visual perception pipeline (object detection + tracking) at 30fps, "
+    "run a visual perception pipeline with camera-based object detection "
+    "(YOLOv8-nano) and multi-object tracking (ByteTrack) at 30fps on 720p input, "
     "consume less than 5 watts for the compute subsystem, "
     "cost less than $30 in BOM at 100K volume, "
-    "and operate in outdoor environments (rain, sun, wind)."
+    "and operate reliably in outdoor environments with thermal cycling "
+    "(-20C to 60C), vibration, rain, and direct sunlight."
 )
 
 DEMO_1_CONSTRAINTS = DesignConstraints(
@@ -145,7 +148,8 @@ def run_demo(
     max_iterations: int = 5,
 ) -> None:
     banner("Agentic SoC Designer — Demo 1")
-    print(f"\n  Goal: {goal[:90]}{'...' if len(goal) > 90 else ''}")
+    print(f"\n  Goal:")
+    print(textwrap.fill(goal, width=W - 4, initial_indent="    ", subsequent_indent="    "))
     print(f"  Mode: {'LLM Planner (Claude)' if use_llm else 'Static Plan'}")
 
     # ---- Create initial state ----

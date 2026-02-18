@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import textwrap
 import time
 from pathlib import Path
 
@@ -120,7 +121,16 @@ def verdict_str(v: str) -> str:
 
 def run_demo(max_power: float, max_latency: float, max_cost: float, max_iterations: int) -> None:
     banner("SoC Design Optimizer — Demo 3")
-    print(f"\n  Goal: Delivery drone SoC with power optimization loop")
+    goal_text = (
+        f"Design an SoC for a last-mile delivery drone that must: "
+        f"run a visual perception pipeline with camera-based object detection "
+        f"and multi-object tracking at 30fps through a tightly power-constrained "
+        f"compute subsystem, consume less than {max_power} watts with no thermal "
+        f"throttling headroom, cost less than ${max_cost} in BOM at volume. "
+        f"The camera ISP must feed the detection pipeline with minimal buffering latency."
+    )
+    print(f"\n  Goal:")
+    print(textwrap.fill(goal_text, width=W - 4, initial_indent="    ", subsequent_indent="    "))
     print(f"  Power budget: {max_power}W | Latency: {max_latency}ms | Cost: ${max_cost}")
     print(f"  Max optimization iterations: {max_iterations}")
 
@@ -132,11 +142,7 @@ def run_demo(max_power: float, max_latency: float, max_cost: float, max_iteratio
     )
 
     state = create_initial_soc_state(
-        goal=(
-            "Design an SoC for a last-mile delivery drone that must: "
-            "run a visual perception pipeline (object detection + tracking) at 30fps, "
-            f"consume less than {max_power} watts, cost less than ${max_cost}."
-        ),
+        goal=goal_text,
         constraints=constraints,
         use_case="delivery_drone",
         platform="drone",

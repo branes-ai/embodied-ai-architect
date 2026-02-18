@@ -12,6 +12,7 @@ Usage:
 from __future__ import annotations
 
 import sys
+import textwrap
 import time
 from pathlib import Path
 
@@ -32,10 +33,12 @@ from embodied_ai_architect.graphs.governance import GovernancePolicy
 
 DEMO_5_GOAL = (
     "Design an SoC for a surgical robot arm controller that must: "
-    "process force-feedback sensor data with <1ms latency, "
-    "run visual guidance (object detection) for instrument tracking, "
-    "comply with IEC 62304 Class C safety requirements, "
-    "consume less than 25 watts, cost less than $500."
+    "process force-feedback sensor data with sub-millisecond latency for haptic control, "
+    "run visual guidance with object detection for surgical instrument tracking, "
+    "support voice and speech recognition for hands-free surgeon commands, "
+    "comply with IEC 62304 Class C safety requirements including "
+    "dual-redundant lockstep execution and hardware watchdog timers, "
+    "consume less than 25 watts, and cost less than $500."
 )
 
 DEMO_5_CONSTRAINTS = DesignConstraints(
@@ -112,7 +115,8 @@ def kv(key: str, value: str, indent: int = 2) -> None:
 def run_demo() -> dict:
     """Run Demo 5 and return final state."""
     banner("Agentic SoC Designer — Demo 5: HITL Safety (Surgical Robot)")
-    print(f"\n  Goal: {DEMO_5_GOAL[:90]}...")
+    print(f"\n  Goal:")
+    print(textwrap.fill(DEMO_5_GOAL, width=W - 4, initial_indent="    ", subsequent_indent="    "))
 
     # Set up governance with safety approval requirements
     governance = GovernancePolicy(

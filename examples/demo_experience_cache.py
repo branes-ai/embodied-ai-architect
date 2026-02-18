@@ -32,8 +32,10 @@ from embodied_ai_architect.graphs.experience import DesignEpisode, ExperienceCac
 
 # First run: delivery drone (same as Demo 1)
 DRONE_1_GOAL = (
-    "Design an SoC for a last-mile delivery drone with "
-    "object detection + tracking at 30fps, <5W, <$30."
+    "Design an SoC for a last-mile delivery drone operating in dense urban environments "
+    "that must: run YOLO-based object detection and ByteTrack multi-object tracking "
+    "at 30fps for obstacle and pedestrian avoidance, "
+    "consume less than 5 watts, and cost less than $30 at volume."
 )
 
 DRONE_1_CONSTRAINTS = DesignConstraints(
@@ -53,8 +55,10 @@ DRONE_1_PLAN = [
 
 # Second run: agricultural drone (similar problem)
 DRONE_2_GOAL = (
-    "Design an SoC for an agricultural drone with "
-    "crop detection + tracking at 15fps, <7W, <$40."
+    "Design an SoC for an agricultural survey drone covering large open fields "
+    "that must: run crop health detection via multispectral camera analysis "
+    "and GPS-tagged field tracking at 15fps for precision agriculture mapping, "
+    "consume less than 7 watts, and cost less than $40 at volume."
 )
 
 DRONE_2_CONSTRAINTS = DesignConstraints(

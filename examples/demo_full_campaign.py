@@ -12,6 +12,7 @@ Usage:
 from __future__ import annotations
 
 import sys
+import textwrap
 import time
 from pathlib import Path
 
@@ -31,12 +32,14 @@ from embodied_ai_architect.graphs.governance import GovernancePolicy
 # ---------------------------------------------------------------------------
 
 DEMO_7_GOAL = (
-    "Design an SoC for a quadruped robot that must run: "
-    "Visual SLAM for navigation, object detection for obstacle avoidance, "
-    "LiDAR point cloud processing for terrain mapping, "
-    "and voice recognition for command input. "
+    "Design an SoC for a quadruped robot that must concurrently run: "
+    "visual SLAM for real-time localization and navigation mapping, "
+    "YOLO object detection for obstacle avoidance and terrain classification, "
+    "LiDAR point cloud processing for 3D terrain surface reconstruction, "
+    "and voice recognition for natural-language command input. "
+    "All four workloads must be scheduled concurrently with deterministic priorities. "
     "Power budget: 15W, BOM cost: $50 at 10K volume, "
-    "latency: <50ms for perception pipeline."
+    "perception pipeline latency: <50ms end-to-end."
 )
 
 DEMO_7_CONSTRAINTS = DesignConstraints(
@@ -112,7 +115,8 @@ def kv(key: str, value: str, indent: int = 2) -> None:
 def run_demo() -> dict:
     """Run Demo 7 and return final state."""
     banner("Agentic SoC Designer — Demo 7: Full Campaign (Quadruped Robot)")
-    print(f"\n  Goal: {DEMO_7_GOAL[:90]}...")
+    print(f"\n  Goal:")
+    print(textwrap.fill(DEMO_7_GOAL, width=W - 4, initial_indent="    ", subsequent_indent="    "))
 
     governance = GovernancePolicy(
         iteration_limit=10,
