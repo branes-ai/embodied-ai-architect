@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Fix truncated goal display and enrich demo prompts (2026-02-18):
+  - Replace `goal[:80-90]...` truncation with `textwrap.fill()` in 6 demo scripts so full goal text is always visible
+  - Enrich all 7 demo goal strings with specific workload keywords (YOLOv8, ByteTrack, SLAM/localization/mapping, camera/vision, voice/speech, LiDAR) to trigger distinct `_estimate_workload_from_goal()` paths
+  - Demo 5 (hitl-safety) now triggers voice + detection (unique combo); Demo 2 (dse-pareto) triggers slam + detection (no tracking); Demo 7 (full-campaign) triggers all 5 workload types
+  - Demo 3 (soc-optimizer) dynamic goal reused for both display and `create_initial_soc_state()`
+  - Demo 6 (experience-cache) delivery vs agricultural drone goals made much more distinct
+  - Documentation: `docs/sessions/2026-02-18-fix-truncated-goals-enrich-prompts.md`
+
 - Complexity-based synthesis timeout with configurable override (2026-02-17):
   - `RTLSynthesisTool.estimate_timeout()`: 3-tier heuristic (30s/120s/300s) from line count, always blocks, and memory declarations
   - `RTLSynthesisTool(timeout=)`, `EDAToolchain(synth_timeout=)`, `RTLLoopConfig(synth_timeout=)`: configurable override at every layer, defaults to `AUTO_TIMEOUT` (-1) for auto-detection
