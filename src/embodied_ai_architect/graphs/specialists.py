@@ -28,6 +28,7 @@ from embodied_ai_architect.graphs.soc_state import (
     get_dependency_results,
 )
 from embodied_ai_architect.graphs.task_graph import TaskNode
+from embodied_ai_architect.graphs.manufacturing import estimate_manufacturing_cost
 from embodied_ai_architect.graphs.technology import get_technology
 
 logger = logging.getLogger(__name__)
@@ -919,7 +920,13 @@ def ppa_assessor(task: TaskNode, state: SoCDesignState) -> dict[str, Any]:
     power_w = _estimate_power(ip_blocks, selected_hw, workload, process_nm)
     latency_ms = _estimate_latency(workload, selected_hw, process_nm)
     area_mm2 = _estimate_area(ip_blocks, constraints)
-    cost_usd = selected_hw.get("cost_usd", 0) if selected_hw else 0
+
+    # Manufacturing cost model (replaces static BOM lookup)
+    volume = constraints.target_volume or 10_000
+    mfg = estimate_manufacturing_cost(area_mm2, process_nm, volume)
+    cost_usd = mfg.total_unit_cost_usd
+    cost_breakdown = mfg.model_dump()
+
     memory_mb = sum(
         b.get("config", {}).get("capacity_gb", 0) * 1024
         for b in ip_blocks
@@ -972,6 +979,7 @@ def ppa_assessor(task: TaskNode, state: SoCDesignState) -> dict[str, Any]:
         area_mm2=area_mm2,
         process_nm=process_nm,
         cost_usd=cost_usd,
+        cost_breakdown=cost_breakdown,
         memory_mb=memory_mb,
         verdicts=verdicts,
         bottlenecks=bottlenecks,

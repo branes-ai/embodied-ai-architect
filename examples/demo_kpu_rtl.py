@@ -312,6 +312,16 @@ def _print_ppa_summary(state: dict) -> None:
         if ppa.get("cost_usd") is not None:
             kv("Cost", f"${ppa['cost_usd']:.0f}")
 
+        cost_bd = ppa.get("cost_breakdown")
+        if cost_bd:
+            print()
+            kv("Die Cost", f"${cost_bd.get('die_cost_usd', 0):.2f}")
+            kv("Package", f"${cost_bd.get('package_cost_usd', 0):.2f}")
+            kv("Test", f"${cost_bd.get('test_cost_usd', 0):.2f}")
+            kv("NRE/unit", f"${cost_bd.get('nre_per_unit_usd', 0):.2f}")
+            kv("Yield", f"{cost_bd.get('yield_percent', 0):.1f}%")
+            kv("Dies/wafer", str(cost_bd.get('dies_per_wafer', 0)))
+
         verdicts = ppa.get("verdicts", {})
         if verdicts:
             print()

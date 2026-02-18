@@ -164,3 +164,121 @@ class TestDesignOptimizer:
         result = design_optimizer(_make_task(), state)
         assert result["applied"] is True
         assert "latency" in result["failing_constraints"]
+
+
+class TestProcessNodeStrategies:
+    """Tests for shrink/grow process node optimizer strategies."""
+
+    def _make_cost_failing_state(self):
+        """State where cost is the only failing constraint."""
+        state = create_initial_soc_state(
+            goal="Design drone SoC",
+            constraints=DesignConstraints(
+                max_power_watts=10.0,
+                max_latency_ms=100.0,
+                max_cost_usd=5.0,  # tight cost target
+                target_process_nm=28,
+            ),
+            use_case="delivery_drone",
+            platform="drone",
+        )
+        state["ppa_metrics"] = {
+            "power_watts": 4.0,
+            "latency_ms": 25.0,
+            "cost_usd": 22.0,
+            "verdicts": {"power": "PASS", "latency": "PASS", "cost": "FAIL"},
+            "bottlenecks": ["Cost $22 exceeds $5 budget"],
+            "suggestions": [],
+        }
+        state["workload_profile"] = {
+            "total_estimated_gflops": 9.2,
+            "dominant_op": "convolution",
+            "use_case": "delivery_drone",
+            "source": "goal_estimation",
+        }
+        state["ip_blocks"] = [
+            {"name": "compute_engine", "type": "kpu", "config": {}},
+            {"name": "cpu_subsystem", "type": "cpu", "config": {}},
+        ]
+        return state
+
+    def _make_power_failing_state(self):
+        """State where power is the only failing constraint."""
+        state = create_initial_soc_state(
+            goal="Design drone SoC",
+            constraints=DesignConstraints(
+                max_power_watts=3.0,  # tight power target
+                max_latency_ms=100.0,
+                target_process_nm=28,
+            ),
+            use_case="delivery_drone",
+            platform="drone",
+        )
+        state["ppa_metrics"] = {
+            "power_watts": 5.0,
+            "latency_ms": 25.0,
+            "verdicts": {"power": "FAIL", "latency": "PASS"},
+            "bottlenecks": [],
+            "suggestions": [],
+        }
+        state["workload_profile"] = {
+            "total_estimated_gflops": 9.2,
+            "dominant_op": "convolution",
+            "use_case": "delivery_drone",
+            "source": "goal_estimation",
+        }
+        state["ip_blocks"] = [
+            {"name": "compute_engine", "type": "kpu", "config": {}},
+            {"name": "cpu_subsystem", "type": "cpu", "config": {}},
+        ]
+        return state
+
+    def test_grow_process_resolves_cost_fail(self):
+        """grow_process_node strategy selected when cost fails."""
+        state = self._make_cost_failing_state()
+
+        # Exhaust all non-process strategies applicable to cost
+        # (smaller_model no longer has "cost", so only grow_process_node applies)
+        result = design_optimizer(_make_task(), state)
+
+        assert result["applied"] is True
+        assert result["strategy"] == "grow_process_node"
+
+    def test_shrink_process_available_for_power_fail(self):
+        """shrink_process_node is among applicable strategies when power fails."""
+        state = self._make_power_failing_state()
+
+        # Exhaust all workload/ip_blocks power strategies
+        store = WorkingMemoryStore()
+        for strat in OPTIMIZATION_STRATEGIES:
+            if strat["applies_to"] in ("workload_profile", "ip_blocks") and "power" in strat[
+                "applicable_when"
+            ]:
+                store.record_attempt("design_optimizer", strat["name"], "tried", 0)
+        state["working_memory"] = store.model_dump()
+
+        result = design_optimizer(_make_task(), state)
+        assert result["applied"] is True
+        assert result["strategy"] == "shrink_process_node"
+
+    def test_process_strategy_updates_constraints(self):
+        """_state_updates['constraints'] has new target_process_nm."""
+        state = self._make_cost_failing_state()
+        result = design_optimizer(_make_task(), state)
+
+        assert result["applied"] is True
+        updates = result["_state_updates"]
+        assert "constraints" in updates
+        new_nm = updates["constraints"]["target_process_nm"]
+        # 28nm → 40nm (grow = next larger node)
+        assert new_nm == 40
+
+    def test_dynamic_strategy_naming(self):
+        """Working memory records 'grow_process_node_28' not just 'grow_process_node'."""
+        state = self._make_cost_failing_state()
+        result = design_optimizer(_make_task(), state)
+
+        wm = WorkingMemoryStore(**result["_state_updates"]["working_memory"])
+        tried = wm.get_tried_descriptions("design_optimizer")
+        assert "grow_process_node_28" in tried
+        assert "grow_process_node" not in tried

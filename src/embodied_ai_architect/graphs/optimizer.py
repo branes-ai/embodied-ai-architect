@@ -72,11 +72,29 @@ OPTIMIZATION_STRATEGIES: list[dict[str, Any]] = [
     {
         "name": "smaller_model",
         "description": "Switch to a smaller model variant (e.g. YOLOv8n -> YOLOv8p)",
-        "applicable_when": ["power", "latency", "cost"],
+        "applicable_when": ["power", "latency"],
         "power_reduction_factor": 0.35,  # ~35% power reduction
         "latency_reduction_factor": 0.40,  # ~40% latency reduction
         "accuracy_impact": "significant",
         "applies_to": "workload_profile",
+    },
+    {
+        "name": "shrink_process_node",
+        "description": "Shrink to next smaller process node (lower power/area, higher NRE)",
+        "applicable_when": ["power", "latency", "area"],
+        "power_reduction_factor": 0.0,  # PPA is recomputed from physics
+        "latency_reduction_factor": 0.0,
+        "accuracy_impact": "none",
+        "applies_to": "constraints",
+    },
+    {
+        "name": "grow_process_node",
+        "description": "Grow to next larger process node (lower cost via cheaper wafers/NRE)",
+        "applicable_when": ["cost"],
+        "power_reduction_factor": 0.0,
+        "latency_reduction_factor": 0.0,
+        "accuracy_impact": "none",
+        "applies_to": "constraints",
     },
 ]
 
@@ -146,11 +164,16 @@ def design_optimizer(task: TaskNode, state: SoCDesignState) -> dict[str, Any]:
     # Apply strategy
     state_updates = _apply_strategy(selected, state)
 
-    # Record attempt in working memory
+    # Record attempt in working memory — use dynamic name for process strategies
+    # so the optimizer can apply them multiple times (e.g. 28nm -> 22nm -> 16nm)
     iteration = state.get("iteration", 0)
+    strategy_key = selected["name"]
+    if selected["applies_to"] == "constraints":
+        current_nm = get_constraints(state).target_process_nm or 28
+        strategy_key = f"{selected['name']}_{current_nm}"
     store.record_attempt(
         agent_name="design_optimizer",
-        description=selected["name"],
+        description=strategy_key,
         outcome=f"Applied {selected['description']} at iteration {iteration}",
         iteration=iteration,
     )
@@ -217,6 +240,23 @@ def _apply_strategy(strategy: dict[str, Any], state: SoCDesignState) -> dict[str
                 block["config"] = config
 
         updates["ip_blocks"] = ip_blocks
+
+    elif strategy["applies_to"] == "constraints":
+        constraints = get_constraints(state)
+        current_nm = constraints.target_process_nm or 28
+        from embodied_ai_architect.graphs.technology import get_adjacent_nodes
+
+        adjacent = get_adjacent_nodes(current_nm)
+
+        if strategy["name"] == "shrink_process_node":
+            new_nm = adjacent["smaller"]
+        else:  # grow_process_node
+            new_nm = adjacent["larger"]
+
+        if new_nm is not None:
+            new_constraints = constraints.model_dump()
+            new_constraints["target_process_nm"] = new_nm
+            updates["constraints"] = new_constraints
 
     # Adjust PPA estimates based on reduction factors
     if ppa.get("power_watts") is not None:
