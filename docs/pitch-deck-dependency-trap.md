@@ -1,4 +1,4 @@
-# The Dependency Trap — 5-Slide Pitch Deck
+# The Dependency Trap — 6-Slide Pitch Deck
 
 ---
 
@@ -26,6 +26,22 @@
 
 ## Slide 3
 
+**YOU HAVE THREE OPTIONS**
+
+| Strategy | Outcome |
+|---|---|
+| **Wait for the roadmap** | You ship when *they* ship. If they ship. |
+| **Throw money at it** | Overpay today, repeat next generation |
+| **Design your own compute** | Match silicon to mission, own the trajectory |
+
+Option 3 used to take 50 engineers and 18 months.
+
+It doesn't anymore.
+
+---
+
+## Slide 4
+
 **DESCRIBE THE MISSION. GET THE SILICON.**
 
 ```
@@ -42,7 +58,7 @@
 
 ---
 
-## Slide 4
+## Slide 5
 
 **IT WORKS TODAY**
 
@@ -56,7 +72,7 @@
 
 ---
 
-## Slide 5
+## Slide 6
 
 **OWN THE COMPUTE. OWN THE AUTONOMY.**
 
