@@ -18,14 +18,14 @@ needs_graphs_soc = pytest.mark.skipif(
 )
 
 
-def test_without_graphs_soc_there_are_no_tools(monkeypatch):
+def test_without_graphs_soc_there_are_no_tools(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(graphs_soc_tools, "HAS_GRAPHS_SOC", False)
     assert graphs_soc_tools.get_graphs_soc_tool_definitions() == []
     assert graphs_soc_tools.create_graphs_soc_tool_executors() == {}
 
 
 @needs_graphs_soc
-def test_definitions_are_graphs_own():
+def test_definitions_are_graphs_own() -> None:
     """Taken from graphs, not re-written here, so they cannot drift."""
     from graphs.mcp.soc_tools import soc_tool_definitions
 
@@ -34,7 +34,7 @@ def test_definitions_are_graphs_own():
 
 
 @needs_graphs_soc
-def test_the_orchestrator_offers_and_can_run_them():
+def test_the_orchestrator_offers_and_can_run_them() -> None:
     from embodied_ai_architect.llm.tools import create_tool_executors, get_tool_definitions
 
     names = [d["name"] for d in get_tool_definitions()]
@@ -44,7 +44,7 @@ def test_the_orchestrator_offers_and_can_run_them():
 
 
 @needs_graphs_soc
-def test_analyze_soc_returns_graphs_json_with_bounds():
+def test_analyze_soc_returns_graphs_json_with_bounds() -> None:
     run = create_graphs_soc_tool_executors()["analyze_soc"]
     out = json.loads(run(design="orin_class_reference", profile="far flight"))
     assert out["die"]["area_is_lower_bound"] is True
@@ -53,19 +53,19 @@ def test_analyze_soc_returns_graphs_json_with_bounds():
 
 
 @needs_graphs_soc
-def test_errors_come_back_as_json_not_exceptions():
+def test_errors_come_back_as_json_not_exceptions() -> None:
     run = create_graphs_soc_tool_executors()["analyze_soc"]
     out = json.loads(run(design="nope", profile="far flight"))
     assert out["tool"] == "analyze_soc" and "no SoC design" in out["error"]
 
 
 @needs_graphs_soc
-def test_list_soc_designs():
+def test_list_soc_designs() -> None:
     out = json.loads(create_graphs_soc_tool_executors()["list_soc_designs"]())
     assert "orin_class_reference" in {d["id"] for d in out["designs"]}
 
 
-def test_tool_names_are_unique():
+def test_tool_names_are_unique() -> None:
     """The Messages API rejects a tool list with a repeated name (400,
     'Tool names must be unique'), which disabled every tool whenever graphs
     was installed: base and graphs both define list_available_hardware."""

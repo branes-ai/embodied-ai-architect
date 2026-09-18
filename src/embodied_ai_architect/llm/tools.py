@@ -40,10 +40,10 @@ try:
 except ImportError:
     HAS_GRAPHS_SOC = False
 
-    def get_graphs_soc_tool_definitions():
+    def get_graphs_soc_tool_definitions() -> list[dict[str, Any]]:
         return []
 
-    def create_graphs_soc_tool_executors():
+    def create_graphs_soc_tool_executors() -> dict[str, Callable[..., str]]:
         return {}
 
 
