@@ -63,3 +63,14 @@ def test_errors_come_back_as_json_not_exceptions():
 def test_list_soc_designs():
     out = json.loads(create_graphs_soc_tool_executors()["list_soc_designs"]())
     assert "orin_class_reference" in {d["id"] for d in out["designs"]}
+
+
+def test_tool_names_are_unique():
+    """The Messages API rejects a tool list with a repeated name (400,
+    'Tool names must be unique'), which disabled every tool whenever graphs
+    was installed: base and graphs both define list_available_hardware."""
+    from embodied_ai_architect.llm.tools import create_tool_executors, get_tool_definitions
+
+    names = [d["name"] for d in get_tool_definitions()]
+    assert len(names) == len(set(names))
+    assert set(names) <= set(create_tool_executors())

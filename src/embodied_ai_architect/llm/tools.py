@@ -424,7 +424,14 @@ def get_tool_definitions() -> list[dict[str, Any]]:
     if HAS_SOC_DESIGN:
         base_tools.extend(get_soc_design_tool_definitions())
 
-    return base_tools
+    # One definition per name, the later one winning -- as create_tool_executors
+    # lets graphs' richer list_available_hardware override the base one. The
+    # Messages API rejects a tool list with a repeated name, so a duplicate
+    # here disables every tool, not just the repeated one.
+    by_name: dict[str, dict[str, Any]] = {}
+    for tool in base_tools:
+        by_name[tool["name"]] = tool
+    return list(by_name.values())
 
 
 # ---------------------------------------------------------------------------
