@@ -30,6 +30,23 @@ except ImportError:
         return {}
 
 
+# Import graphs' SoC study tools (optional; graphs#269)
+try:
+    from .graphs_soc_tools import (
+        get_graphs_soc_tool_definitions,
+        create_graphs_soc_tool_executors,
+        HAS_GRAPHS_SOC,
+    )
+except ImportError:
+    HAS_GRAPHS_SOC = False
+
+    def get_graphs_soc_tool_definitions() -> list[dict[str, Any]]:
+        return []
+
+    def create_graphs_soc_tool_executors() -> dict[str, Callable[..., str]]:
+        return {}
+
+
 # Import architecture analysis tools
 try:
     from .architecture_tools import (
@@ -379,6 +396,10 @@ def get_tool_definitions() -> list[dict[str, Any]]:
     if HAS_GRAPHS:
         base_tools.extend(get_graphs_tool_definitions())
 
+    # graphs' SoC study tools, with the schemas graphs itself states
+    if HAS_GRAPHS_SOC:
+        base_tools.extend(get_graphs_soc_tool_definitions())
+
     # Add architecture analysis tools if available
     if HAS_ARCHITECTURE_TOOLS:
         base_tools.extend(get_architecture_tool_definitions())
@@ -403,7 +424,14 @@ def get_tool_definitions() -> list[dict[str, Any]]:
     if HAS_SOC_DESIGN:
         base_tools.extend(get_soc_design_tool_definitions())
 
-    return base_tools
+    # One definition per name, the later one winning -- as create_tool_executors
+    # lets graphs' richer list_available_hardware override the base one. The
+    # Messages API rejects a tool list with a repeated name, so a duplicate
+    # here disables every tool, not just the repeated one.
+    by_name: dict[str, dict[str, Any]] = {}
+    for tool in base_tools:
+        by_name[tool["name"]] = tool
+    return list(by_name.values())
 
 
 # ---------------------------------------------------------------------------
@@ -676,6 +704,9 @@ def create_tool_executors() -> dict[str, Callable]:
     # Add graphs executors if available (overrides base list_available_hardware with richer version)
     if HAS_GRAPHS:
         executors.update(create_graphs_tool_executors())
+
+    if HAS_GRAPHS_SOC:
+        executors.update(create_graphs_soc_tool_executors())
 
     # Add architecture analysis executors if available
     if HAS_ARCHITECTURE_TOOLS:
