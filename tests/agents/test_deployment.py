@@ -825,7 +825,11 @@ class TestCalibrationImageLoading:
     @pytest.mark.skipif(not HAS_PIL, reason="PIL not installed")
     def test_preprocessing_imagenet(self, calibration_images):
         """Test ImageNet preprocessing on calibration images."""
-        img_path = list(calibration_images.glob("*.png"))[0]
+        # A named image, not glob()[0]: glob order is filesystem-dependent, and
+        # on CI the "first" image was an all-dark one whose normalized values
+        # are all negative. calib_003 is full-range noise, so normalization
+        # gives both signs whatever the seed.
+        img_path = calibration_images / "calib_003.png"
         img = Image.open(img_path).convert("RGB")
 
         # Resize
@@ -845,7 +849,7 @@ class TestCalibrationImageLoading:
     @pytest.mark.skipif(not HAS_PIL, reason="PIL not installed")
     def test_preprocessing_yolo(self, calibration_images):
         """Test YOLO preprocessing on calibration images."""
-        img_path = list(calibration_images.glob("*.png"))[0]
+        img_path = sorted(calibration_images.glob("*.png"))[0]
         img = Image.open(img_path).convert("RGB")
 
         img = img.resize((32, 32), Image.BILINEAR)
