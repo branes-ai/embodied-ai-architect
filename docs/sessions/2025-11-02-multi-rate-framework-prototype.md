@@ -43,14 +43,14 @@ This session focused on developing the foundational architecture for supporting 
 
 ### Phase 1: Architecture Analysis
 
-**Created**: `docs/plans/embodied-ai-application-architecture.md`
+**Created**: `docs/plan/embodied-ai-application-architecture.md`
 - Evaluated 3 architecture options:
   1. DSL-First (declarative config files)
   2. Python Library (PyTorch-like programmatic API)
   3. Hybrid (Python Framework + Graph IR + DSL) ← SELECTED
 - Analysis of trade-offs for developer experience, analyzability, and portability
 
-**Created**: `docs/plans/embodied-ai-application-implementation-plan.md`
+**Created**: `docs/plan/embodied-ai-application-implementation-plan.md`
 - 18-week implementation timeline
 - Integration strategy with existing infrastructure
 - Phased approach: Framework → Operators → Graph IR → DSL → Examples
@@ -68,7 +68,7 @@ This session focused on developing the foundational architecture for supporting 
 - Designed component model with declarative API
 - Python/Rust hybrid execution strategy
 
-**Created**: `docs/plans/phase1-framework-architecture.md`
+**Created**: `docs/plan/phase1-framework-architecture.md`
 - Concrete implementation proposal with complete code examples
 - Full class implementations for core components
 - 8-week implementation timeline
@@ -226,10 +226,10 @@ The prototype validates the core architecture. Proceed with Phase 1 full impleme
 ## Files Created/Modified
 
 ### Research & Planning
-- `docs/plans/embodied-ai-application-architecture.md`
-- `docs/plans/embodied-ai-application-implementation-plan.md`
+- `docs/plan/embodied-ai-application-architecture.md`
+- `docs/plan/embodied-ai-application-implementation-plan.md`
 - `docs/research/multi-rate-control-architecture.md`
-- `docs/plans/phase1-framework-architecture.md`
+- `docs/plan/phase1-framework-architecture.md`
 
 ### Prototype Implementation
 - `prototypes/multi_rate_framework/framework.py` (~400 lines)

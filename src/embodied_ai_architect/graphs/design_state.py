@@ -1,6 +1,6 @@
 """Unified DesignState schema — DRAFT sketch for the Loop Convergence milestone.
 
-See `docs/plans/roadmap-loop-convergence.md`.
+See `docs/plan/roadmap-loop-convergence.md`.
 
 This module is a **proposal**, not yet wired into any graph. It sketches the single
 state schema that subsumes the two existing, disjoint schemas:

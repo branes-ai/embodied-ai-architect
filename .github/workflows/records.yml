@@ -1,0 +1,35 @@
+name: Architecture records
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# A new push to a PR supersedes its in-flight run. Each run on main has a
+# group of its own (its run id), so none is cancelled or replaced while
+# pending.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Top-level least-privilege default.
+permissions:
+  contents: read
+
+jobs:
+  # The plans and ADRs (docs/plan/, docs/adr/) are published on the
+  # architecture site (branes-ai/architecture). Its check runs here, strict, so
+  # a plan without a status, an ADR without a status block, or a broken link
+  # fails this PR rather than the site's hourly build.
+  records:
+    name: Architecture records
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: branes-ai/architecture/actions/check-records@820799bd055a46354930a6307f6887fc153a4bd0  # main after architecture#9
+        with:
+          strict: 'true'

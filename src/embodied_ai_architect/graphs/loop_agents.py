@@ -1,6 +1,6 @@
 """Critic and Optimizer agent interfaces — DRAFT sketch for the Loop Convergence milestone.
 
-See `docs/plans/roadmap-loop-convergence.md` (Phase 2) and `graphs/design_state.py`.
+See `docs/plan/roadmap-loop-convergence.md` (Phase 2) and `graphs/design_state.py`.
 
 This module is a **proposal**, not yet wired into any graph. It sketches the two
 reasoning agents that replace today's shallow feedback:
