@@ -1,3 +1,6 @@
+---
+status: in-progress
+---
 # Ryzen AI NUC Demo Plan
 
 Target Platforms

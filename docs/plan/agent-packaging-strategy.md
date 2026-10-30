@@ -1,7 +1,9 @@
+---
+status: draft
+---
 # Agent Packaging Strategy
 
 **Date**: 2025-11-02
-**Status**: Design Proposal
 
 ## Overview
 

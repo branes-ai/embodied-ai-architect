@@ -1,3 +1,6 @@
+---
+status: in-progress
+---
 # Plan: Dev Environment Improvements
 
 ## Context

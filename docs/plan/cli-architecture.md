@@ -1,7 +1,9 @@
+---
+status: in-progress
+---
 # CLI Architecture - Human-Friendly Interface
 
 **Date**: 2025-11-02
-**Status**: Design Proposal
 
 ## Overview
 

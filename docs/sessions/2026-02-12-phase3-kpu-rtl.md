@@ -84,7 +84,7 @@ Outer Loop (soc_graph.py)
 | RTL Engine | `rtl_templates/__init__.py`, `rtl_loop.py`, `rtl_specialists.py` |
 | State | `soc_state.py` (extended), `experience.py` (extended) |
 | Demo | `examples/demo_kpu_rtl.py` |
-| Docs | `docs/demo-guide.md`, `docs/plans/phase3-kpu-floorplan-rtl-generation.md` |
+| Docs | `docs/demo-guide.md`, `docs/plan/phase3-kpu-floorplan-rtl-generation.md` |
 
 ## Next Steps
 

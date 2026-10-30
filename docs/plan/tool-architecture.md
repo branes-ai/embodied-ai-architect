@@ -1,3 +1,6 @@
+---
+status: in-progress
+---
 # Tool Architecture
 
 The tool registration uses two distinct registration patterns:

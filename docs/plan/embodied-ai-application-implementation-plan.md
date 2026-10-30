@@ -1,8 +1,10 @@
+---
+status: in-progress
+---
 # Embodied AI Application Framework - Implementation Plan
 
 **Date**: 2025-11-02
 **Architecture**: Hybrid (Python Framework + Graph IR + DSL)
-**Status**: Planning Phase
 **Target Timeline**: 12-16 weeks for core functionality
 
 ---

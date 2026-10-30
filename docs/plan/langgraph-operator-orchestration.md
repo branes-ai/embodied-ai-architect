@@ -1,3 +1,6 @@
+---
+status: in-progress
+---
 # Plan: LangGraph Operator Orchestration
 
 ## Overview

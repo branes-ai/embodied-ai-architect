@@ -1,3 +1,6 @@
+---
+status: in-progress
+---
 # Documentation & Developer Experience Roadmap
 
 This roadmap defines the user-facing documentation infrastructure for the Embodied AI Architect platform. The goal is to create a comprehensive documentation site that serves both human users and LLM agents.

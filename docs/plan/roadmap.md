@@ -1,3 +1,6 @@
+---
+status: in-progress
+---
 # Branes Agentic AI HW/SW Co-Design Roadmap
 
 The Branes Embodied AI Platform supports the customer to design, create, analyze, test, optimize, deploy, and validate state of the art Embodied AIs.

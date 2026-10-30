@@ -1,3 +1,6 @@
+---
+status: complete
+---
 # Embodied AI Architect — Feature Inventory
 
 > **Baseline:** v0.6.0 (Feb 2026, commit 513fec6)
@@ -166,7 +169,7 @@ Model compilation and optimization for edge/cloud hardware.
 | 5.5 | NVDLA | Full spec + deployment | DONE | Research deployment target | — |
 | 5.6 | RISC-V Targets | RISC-V toolchain integration | NOT STARTED | — | Need cross-compilation + runtime |
 | 5.7 | FPGA Targets | Vivado/Quartus integration | NOT STARTED | — | Need bitstream generation flow |
-| 5.8 | AMD Ryzen AI | NPU deployment | PARTIAL | `docs/plans/ryzen-ai-nuc-demo.md` | Plan exists; implementation TBD |
+| 5.8 | AMD Ryzen AI | NPU deployment | PARTIAL | `docs/plan/ryzen-ai-nuc-demo.md` | Plan exists; implementation TBD |
 
 ---
 
@@ -334,7 +337,7 @@ Event-sourced, versioned, hierarchical requirements system. Released in v0.6.0.
 | 10.23 | LLM Tools | 6 chat agent tools (list/create/read/modify/validate/field_history) | DONE | `llm/spec_tools.py:1-308` | — |
 | 10.24 | Exceptions | 5 typed exceptions (SpecError, NotFound, AlreadyExists, InvalidPath, VersionNotFound) | DONE | `specs/exceptions.py:1-42` | — |
 | 10.25 | Tests | 82 tests (44 model + 38 store) | DONE | `tests/test_spec_models.py`, `tests/test_spec_store.py` | — |
-| 10.26 | Documentation | Design document | DONE | `docs/plans/spec-of-specs-design.md` | — |
+| 10.26 | Documentation | Design document | DONE | `docs/plan/spec-of-specs-design.md` | — |
 | 10.27 | Documentation | Tutorial walkthrough | PARTIAL | `docs/tutorials/spec-of-specs.md` | Needs completion |
 | 10.28 | Spec → Pipeline | Spec drives design pipeline (workload → hardware → PPA) | NOT STARTED | — | Spec is standalone; not yet wired as pipeline input |
 | 10.29 | Spec Comparison | Compare specs across projects/versions | NOT STARTED | — | Diff exists per-spec but no cross-spec comparison |

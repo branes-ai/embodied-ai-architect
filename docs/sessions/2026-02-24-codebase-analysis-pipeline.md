@@ -134,5 +134,5 @@ Three synthetic projects for scanner/agent tests:
 | `docs/interactive-chat.md` | MODIFY | +3 |
 | `CLAUDE.md` | MODIFY | +13 |
 | `docs-site/astro.config.mjs` | MODIFY | +2 |
-| `docs/plans/full_application_analysis_pipeline.md` | CREATE | 261 |
+| `docs/plan/full_application_analysis_pipeline.md` | CREATE | 261 |
 | **Total** | **29 files** | **+3,200 lines** |

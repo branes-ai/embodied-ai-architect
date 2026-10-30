@@ -1,7 +1,9 @@
+---
+status: complete
+---
 # Reporting Architecture - Separation of Concerns
 
 **Date**: 2025-11-02
-**Status**: Design Proposal
 
 ## Problem Statement
 

@@ -1,3 +1,6 @@
+---
+status: in-progress
+---
 # Branes Frontend — Implementation Plan
 
 ## Epic: Visual Design Exploration Dashboard

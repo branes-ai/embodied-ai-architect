@@ -279,7 +279,7 @@ run longer.
   optimization-review surface area, with the new KPU Review section
 - `docs/designs/kpu-optimization-knobs.md` — design notes on the KPU
   catalog and the planned redesign in epic #83
-- `docs/plans/architect-workflows.md` — Workflow 6 (KPU SoC) walks
+- `docs/plan/architect-workflows.md` — Workflow 6 (KPU SoC) walks
   through the architect's session-by-session pattern
 - `tests/test_kpu_integration.py::TestKPUFullPipeline` — the contract
   tests for the full pipeline; the simplest reference for what state

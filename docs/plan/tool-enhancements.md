@@ -1,3 +1,6 @@
+---
+status: draft
+---
 # Tool Inventory and Expansion
 
 You: what would be tools that you would like to have to address questions about embodied AI hw/sw codesign that you currently could not answer?

@@ -1,3 +1,6 @@
+---
+status: in-progress
+---
 # Software Architecture Catalog Assessment
 
 ## Executive Summary

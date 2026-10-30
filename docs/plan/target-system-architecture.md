@@ -1,3 +1,6 @@
+---
+status: in-progress
+---
 # Target System Architecture
 
 This document describes the heterogeneous system architecture that the Embodied AI Architect targets for design exploration and optimization.

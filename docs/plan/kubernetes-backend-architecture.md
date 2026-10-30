@@ -1,7 +1,9 @@
+---
+status: in-progress
+---
 # Kubernetes Backend Architecture
 
 **Date**: 2025-11-02
-**Status**: Design Proposal
 
 ## Overview
 

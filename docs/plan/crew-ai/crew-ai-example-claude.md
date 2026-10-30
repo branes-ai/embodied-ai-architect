@@ -1,3 +1,5 @@
+# CrewAI Example: Agentic ALU Optimization Demo
+
 Great question. Let me build a complete, runnable example that exposes both the power and the pitfalls of agentic workflows.
 
 ## The Example: Optimizing a Simple ALU

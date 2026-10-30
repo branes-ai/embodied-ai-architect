@@ -1,3 +1,6 @@
+---
+status: in-progress
+---
 # Agentic Frameworks
 
 Designing an Agentic System-on-Chip (SoC) Designer platform requires a framework that can handle high-stakes iterative loops, complex state management (storing RTL snippets, synthesis logs, and PPA metrics), and robust tool integration for EDA (Electronic Design Automation).

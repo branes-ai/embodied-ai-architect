@@ -1,7 +1,9 @@
+---
+status: complete
+---
 # Agentic Optimization Loop — Design Space Exploration Plan
 
 **Created:** 2026-03-16
-**Status:** Draft
 **Goal:** Close the loop from natural-language mission description → joint design space optimization → intelligence/capability per watt as the top-level objective.
 
 ---

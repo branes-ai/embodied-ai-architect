@@ -1,3 +1,7 @@
+---
+status: complete
+issue: branes-ai/embodied-ai-architect#12
+---
 # Goal Qualification System — Design Assessment
 
 ## Problem Statement

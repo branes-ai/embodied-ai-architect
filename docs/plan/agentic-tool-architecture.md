@@ -1,3 +1,6 @@
+---
+status: in-progress
+---
 # Agentic Tool Architecture for Embodied AI Codesign
 
 ## Executive Summary

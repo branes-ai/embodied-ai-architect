@@ -1,3 +1,6 @@
+---
+status: in-progress
+---
 # Embodied AI Architect - Complete Roadmap Summary
 
 ## Core Product Roadmap (12 Months)

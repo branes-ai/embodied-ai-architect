@@ -1,3 +1,6 @@
+---
+status: draft
+---
 # Phase 1: The "Digital Twin" Foundation
 
 **Timeline**: Months 1–4

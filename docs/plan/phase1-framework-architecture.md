@@ -1,3 +1,6 @@
+---
+status: in-progress
+---
 # Phase 1: Multi-Rate Control Framework Architecture
 ## Concrete Implementation Proposal
 

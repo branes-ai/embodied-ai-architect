@@ -1,3 +1,6 @@
+---
+status: draft
+---
 # Devteam Size and Make-up
 
 Reflecting on the transformative impact of AI assistants on engineering productivity, when leveraging **AI-powered productivity (10x)**, the focus shifts from hiring large teams for manual, repetitive tasks (like profiling and initial DSE) to hiring **senior, specialized experts** who can *guide, validate, and build the tools* the AI uses.

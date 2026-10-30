@@ -1,3 +1,6 @@
+---
+status: complete
+---
 # DeploymentAgent Implementation Plan
 
 ## Overview

@@ -1,3 +1,6 @@
+---
+status: complete
+---
 # Plan: Multi-Objective Optimization Engine
 
 ## Context

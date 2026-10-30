@@ -1,3 +1,6 @@
+---
+status: complete
+---
 # Plan: `branes swap` CLI Subcommand Set
 
 ## Context

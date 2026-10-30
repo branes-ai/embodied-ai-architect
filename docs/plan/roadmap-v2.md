@@ -1,3 +1,6 @@
+---
+status: in-progress
+---
 # Embodied AI Architect — Product Roadmap v2
 
 > **Baseline:** v0.6.0 (Feb 2026) | **Target:** First paying customer by Release 1.0

@@ -1,3 +1,6 @@
+---
+status: complete
+---
 # Plan: Registry-Driven Qualification — Replace Hard-Coded Domain Templates
 
 ## Context

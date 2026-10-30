@@ -1,3 +1,6 @@
+---
+status: complete
+---
 # Plan: Full Application Analysis Pipeline
 
 ## Context

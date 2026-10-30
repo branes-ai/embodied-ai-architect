@@ -1,7 +1,9 @@
+---
+status: in-progress
+---
 # Embodied AI Architect - Multi-Agent Architecture Plan
 
 **Date**: 2025-11-02
-**Status**: Initial Design
 
 ## Overview
 

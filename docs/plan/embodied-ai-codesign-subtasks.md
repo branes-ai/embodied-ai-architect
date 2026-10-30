@@ -1,3 +1,6 @@
+---
+status: in-progress
+---
 # Embodied AI Codesign Agent: Subtask Enumeration
 
 ## Target Platforms

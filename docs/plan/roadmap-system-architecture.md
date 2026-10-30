@@ -1,3 +1,6 @@
+---
+status: draft
+---
 # System Architecture Diagram
 
 The System Architecture Diagram visualizes how the "Agent" moves from an abstract reasoning entity to a practical engineering tool that manipulates other software.

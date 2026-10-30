@@ -1,3 +1,6 @@
+---
+status: complete
+---
 # Phase 3: KPU Micro-architecture Configuration, Floorplan Validation & RTL Generation
 
 ## Context

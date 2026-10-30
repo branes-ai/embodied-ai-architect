@@ -1,3 +1,6 @@
+---
+status: complete
+---
 # Agentic SoC Designer: Implementation Plan
 
 ## Document Purpose

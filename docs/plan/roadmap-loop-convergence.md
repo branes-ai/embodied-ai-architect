@@ -1,7 +1,10 @@
+---
+status: complete
+issue: branes-ai/embodied-ai-architect#203
+---
 # Roadmap — Loop Convergence
 
 **Created:** 2026-07-09
-**Status:** Draft
 **Owner:** Architect team
 **Depends on:** `roadmap-v2.md` R0.8 (Optimization Loop), `agentic-optimization-loop.md` (Phases 1–4, all landed)
 **Slots between:** roadmap-v2 R0.8 → R0.9

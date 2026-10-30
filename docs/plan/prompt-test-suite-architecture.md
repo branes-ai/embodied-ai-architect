@@ -1,3 +1,6 @@
+---
+status: in-progress
+---
 # Reference Prompt Test Suite Architecture
 
 This document describes the design, implementation, and maintenance strategy for the reference prompt test suite used to validate the verdict-first tools in the CLI chat interface.

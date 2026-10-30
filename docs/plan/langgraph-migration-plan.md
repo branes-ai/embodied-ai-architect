@@ -1,3 +1,6 @@
+---
+status: in-progress
+---
 # LangGraph Migration Plan for SoC Designer
 
 ## Overview

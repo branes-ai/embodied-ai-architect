@@ -1,3 +1,6 @@
+---
+status: in-progress
+---
 # Shared Schema Repository Architecture
 
 ## Decision Summary

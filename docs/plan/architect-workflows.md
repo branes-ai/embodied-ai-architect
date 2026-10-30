@@ -1,3 +1,6 @@
+---
+status: complete
+---
 # Architect Workflows — Five Design Scenarios
 
 ## The Core Loop

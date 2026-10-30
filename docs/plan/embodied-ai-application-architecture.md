@@ -1,7 +1,9 @@
+---
+status: in-progress
+---
 # Embodied AI Application Architecture
 
 **Date**: 2025-11-02
-**Status**: Architecture Analysis - Selected Option 3
 **Next Step**: Implementation Planning
 
 ## Problem Statement

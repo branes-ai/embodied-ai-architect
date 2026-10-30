@@ -1,3 +1,6 @@
+---
+status: in-progress
+---
 # Ryzen AI NUC Embodied AI Demonstration Plan
 
 ## Executive Summary

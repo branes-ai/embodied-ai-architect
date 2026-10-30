@@ -1,3 +1,6 @@
+---
+status: complete
+---
 # Plan: Spec-of-Specs System (Hybrid Pydantic Registry + Event-Sourced Provenance)
 
 ## Context

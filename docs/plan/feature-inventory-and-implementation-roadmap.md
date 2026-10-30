@@ -1,3 +1,6 @@
+---
+status: complete
+---
 # Embodied AI Architect — Feature Inventory & Implementation Roadmap
 
 ## Context
@@ -6,7 +9,7 @@ The Embodied AI Architect is an agentic AI platform for autonomous HW/SW co-desi
 
 **Goal:** Enumerate all features/subfeatures, organize into an 18-month roadmap targeting first paying customer, with both engineering milestones and business value framing.
 
-**Approach:** We will generate this as a structured document (`docs/plans/roadmap-v2.md`) containing:
+**Approach:** We will generate this as a structured document (`docs/plan/roadmap-v2.md`) containing:
 1. Complete feature inventory (what exists, what's missing, what's needed)
 2. Prioritized milestone plan organized by releases
 3. Business-value framing per milestone
@@ -16,7 +19,7 @@ The Embodied AI Architect is an agentic AI platform for autonomous HW/SW co-desi
 
 ## Plan: Generate the Roadmap Document
 
-### Step 1: Create Feature Inventory (`docs/plans/feature-inventory.md`)
+### Step 1: Create Feature Inventory (`docs/plan/feature-inventory.md`)
 
 A comprehensive matrix of every feature and subfeature, classified by status. Organized into these **9 feature domains**:
 
@@ -121,7 +124,7 @@ A comprehensive matrix of every feature and subfeature, classified by status. Or
 
 ---
 
-### Step 2: Create Milestone Roadmap (`docs/plans/roadmap-v2.md`)
+### Step 2: Create Milestone Roadmap (`docs/plan/roadmap-v2.md`)
 
 **18-month timeline, 6 releases, targeting first paying customer.**
 
@@ -238,9 +241,9 @@ A comprehensive matrix of every feature and subfeature, classified by status. Or
 
 We will create **two documents**:
 
-1. **`docs/plans/feature-inventory.md`** — The exhaustive feature matrix above, formatted as markdown tables with links to source files. This is the living inventory that gets updated as features are completed.
+1. **`docs/plan/feature-inventory.md`** — The exhaustive feature matrix above, formatted as markdown tables with links to source files. This is the living inventory that gets updated as features are completed.
 
-2. **`docs/plans/roadmap-v2.md`** — The milestone roadmap above, with:
+2. **`docs/plan/roadmap-v2.md`** — The milestone roadmap above, with:
    - Release timeline with dates
    - Per-release feature table with effort estimates (S/M/L/XL)
    - Business value statement per release
@@ -267,12 +270,12 @@ Release 0.7 (CLI polish) ──┐
 
 | File | Action | Description |
 |------|--------|-------------|
-| `docs/plans/feature-inventory.md` | CREATE | Exhaustive feature matrix with status and gaps |
-| `docs/plans/roadmap-v2.md` | CREATE | 18-month milestone roadmap with business framing |
+| `docs/plan/feature-inventory.md` | CREATE | Exhaustive feature matrix with status and gaps |
+| `docs/plan/roadmap-v2.md` | CREATE | 18-month milestone roadmap with business framing |
 
 ### Verification
 
 - Review both documents for completeness against the codebase exploration findings
 - Ensure every TODO/STUB/gap from the codebase audit appears in the feature inventory
 - Verify critical path makes sense given dependencies
-- Cross-reference with existing `docs/plans/roadmap.md` to ensure nothing from the original plan is lost
+- Cross-reference with existing `docs/plan/roadmap.md` to ensure nothing from the original plan is lost

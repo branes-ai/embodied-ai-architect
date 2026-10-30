@@ -1,7 +1,9 @@
+---
+status: in-progress
+---
 # Security Architecture - Secrets Management
 
 **Date**: 2025-11-02
-**Status**: Design Proposal
 
 ## Problem Statement
 

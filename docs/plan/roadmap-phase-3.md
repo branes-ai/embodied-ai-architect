@@ -1,3 +1,8 @@
+---
+status: draft
+---
+# Phase 3: The Hardware Co-Designer
+
 Moving on to **Phase 3: The Hardware Co-Designer** is the crucial step that validates the core product claim: that your Agentic AI can automate the joint optimization of both software and custom hardware.
 
 This phase requires the Agent to reason about physical components—cache sizes, memory bandwidth, accelerator parameters—and design a hardware blueprint that is perfectly tailored to the optimized software pipeline from Phase 2.

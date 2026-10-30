@@ -1,3 +1,6 @@
+---
+status: complete
+---
 # Phase 4: Integration — Evaluation Harness, Missing Demos & Regression Suite
 
 ## Context
