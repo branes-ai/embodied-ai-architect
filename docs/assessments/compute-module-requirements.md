@@ -200,3 +200,58 @@ graph LR
 * **Networking Focus:** Industrial Ethernet (EtherCAT) driven by an FPGA to ensure data packets reach every limb and joint with sub-500-microsecond deterministic timing.
 
 > **Key takeaway for hardware design:** The primary differentiator between these modules is the **physical layer (PHY) and networking**. A drone compute module thrives on MIPI CSI-2 to save weight; an AMR requires ruggedized GMSL and Gigabit Ethernet for distributed sensors; and a humanoid requires an EtherCAT master controller or FPGA to handle the deterministic microsecond timing required for 40+ servo motors.
+
+
+## Taiwanese Robot Manufacturers
+
+While Taiwanese ODMs like Advantech and ADLINK provide the raw hardware compute, Taiwan also boasts a robust ecosystem of system integrators and Original Equipment Manufacturers (OEMs) that build the physical chassis, integrate the sensors, and develop the navigation software. These companies directly compete with Seer Robotics by offering complete Autonomous Mobile Robots (AMRs), Automated Guided Vehicles (AGVs), and autonomous forklifts for warehouse and factory logistics.
+
+Here are the top 12 Taiwanese robot manufacturers competing in this space:
+
+### 1. Mirle Automation
+
+A behemoth in Taiwanese automated material handling. MIRLE Group is a leader in intelligent automation, offering specialized solutions in industrial automation, including automated warehousing, logistics systems, and robotic applications. They build heavy-duty AGVs, AMRs, and massive Automated Storage and Retrieval Systems (AS/RS) that compete directly with Seer's warehouse logistics portfolio.
+
+### 2. FARobot
+
+A highly specialized robotics firm backed by major Taiwanese tech giants. FARobot focuses on advanced swarm robotic systems and autonomous mobile robot (AMR) solutions for industrial automation. Their core competitive advantage is "Swarm Autonomy" technology, which optimizes the fleet control of AGVs, AMRs, and other intralogistics equipment on the factory floor.
+
+### 3. Tailift (Tai Li Fu)
+
+Tailift is Taiwan's premier automated guided vehicle manufacturer. Leveraging their legacy as a massive traditional forklift manufacturer, they build autonomous AMR handling robots, lurking (LMR) handling robots, and fork-type (FMR) AGVs. They are highly active in deploying automation production lines for the new energy sector, particularly battery pack manufacturing.
+
+### 4. TIRCGO (Tachyon Intelligent Robot Company)
+
+Tachyon Robot is an original manufacturer of intelligent AMR handling robots, with their machines designed and manufactured entirely in Taiwan. They directly rival Seer's navigation software stack by utilizing a "collaborative decentralized architecture" powered by edge computing. This allows their AMRs to complete tasks independently using 3D visual navigation and "Ai Teach-in," reducing the heavy hardware requirements typically placed on a central control system.
+
+### 5. Delta Electronics
+
+A global leader in industrial automation and power management. Delta manufactures their own proprietary line of AGVs and AMRs for smart manufacturing environments. Because they build their own servo motors, PLCs, and lithium-ion batteries, their mobile robots are deeply vertically integrated, making them a formidable competitor to Seer in electronics manufacturing facilities.
+
+### 6. Techman Robot (TM Robot)
+
+Established in 2016, Techman Robot is the leading collaborative robot (cobot) manufacturer based in Taiwan. While primarily known for robotic arms with embedded AI vision systems, they also manufacture the "TM Mobile" series. This platform integrates their arms onto an AMR base to create a complete "mobile manipulator," a highly specialized robotics sector where Seer also operates.
+
+### 7. AUO Digitech
+
+Spun out of the Taiwanese display-manufacturing giant AU Optronics (AUO), AUO Digitech focuses on smart factory solutions. They manufacture highly sophisticated AMRs heavily utilized in cleanrooms and semiconductor facilities, utilizing their own proprietary 3D vision and obstacle avoidance technologies.
+
+### 8. YLM Group
+
+Located in Taiwan since 1976, YLM Group is traditionally a manufacturer of CNC machinery and metal tube fabrication equipment. However, they have expanded into intelligent logistics, manufacturing their own line of lightweight "Delivery AMRs" (the TM-DL series) that utilize LiDAR SLAM navigation, differential driving modes, and automated lifting capabilities.
+
+### 9. GreenTrans (China Motor Corporation)
+
+GreenTrans is a subsidiary spun out of the China Motor Corporation (CMC), one of Taiwan's largest automotive makers. They leveraged their automotive assembly expertise to build a robust lineup of AGVs and AMRs, specializing in heavy payload towing and auto-parts delivery for high-throughput manufacturing lines.
+
+### 10. Gallant Precision Machining (GPM)
+
+GPM builds highly customized, extreme-precision AMRs and AGVs designed specifically for Taiwan's massive semiconductor and flat-panel display industries. Their robots are engineered to transport delicate silicon wafers and glass substrates in ISO-certified cleanrooms, a niche with incredibly strict vibration and particle-emission standards.
+
+### 11. Passion Mobility
+
+A specialized Taiwanese robotics and automation firm. They develop autonomous mobile carts, follow-me robots, and AMRs designed for flexible material handling across warehousing, agriculture, and retail logistics.
+
+### 12. Kenmec Mechanical Engineering
+
+Kenmec is a major systems integrator and manufacturer in Taiwan that builds custom AGVs and automated material handling systems. They specialize in turnkey logistics centers, baggage handling systems, and cleanroom automation, competing with Seer on large-scale, facility-wide automated integrations.
