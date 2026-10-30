@@ -82,7 +82,7 @@ Composite scorecard with weighted dimensions. Success criteria: composite > 0.75
 
 | File | Action | Description |
 |------|--------|-------------|
-| `docs/plans/agentic-system-implementation-plan.md` | Created | Master planning document (1037 lines) |
+| `docs/plan/agentic-system-implementation-plan.md` | Created | Master planning document (1037 lines) |
 | `CHANGELOG.md` | Updated | Added entry for this session |
 | `docs/sessions/2026-02-10-agentic-system-plan.md` | Created | This session log |
 
@@ -90,15 +90,15 @@ Composite scorecard with weighted dimensions. Success criteria: composite > 0.75
 
 The following existing documents were reviewed and built upon:
 
-- `docs/plans/agentic-framework-assessment.md` -- LangGraph SoC optimization loop design
-- `docs/plans/agentic-tool-architecture.md` -- Tool granularity and verdict-first schema
-- `docs/plans/agentic-ai-dynamics.md` -- Tool selection strategy
-- `docs/plans/crew-ai/crew-ai-option-claude.md` -- CrewAI implementation sketch
-- `docs/plans/langgraph-migration-plan.md` -- Migration architecture
-- `docs/plans/target-system-architecture.md` -- Heterogeneous system model
-- `docs/plans/prompt-test-suite-architecture.md` -- Test framework
-- `docs/plans/roadmap.md` -- Product roadmap
-- `docs/plans/self-reflection.md` -- Agent self-awareness limitations
+- `docs/plan/agentic-framework-assessment.md` -- LangGraph SoC optimization loop design
+- `docs/plan/agentic-tool-architecture.md` -- Tool granularity and verdict-first schema
+- `docs/plan/agentic-ai-dynamics.md` -- Tool selection strategy
+- `docs/plan/crew-ai/crew-ai-option-claude.md` -- CrewAI implementation sketch
+- `docs/plan/langgraph-migration-plan.md` -- Migration architecture
+- `docs/plan/target-system-architecture.md` -- Heterogeneous system model
+- `docs/plan/prompt-test-suite-architecture.md` -- Test framework
+- `docs/plan/roadmap.md` -- Product roadmap
+- `docs/plan/self-reflection.md` -- Agent self-awareness limitations
 
 ## Decisions Made
 

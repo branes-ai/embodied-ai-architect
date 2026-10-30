@@ -4,7 +4,7 @@ A LangGraph-based optimization loop for SoC (System-on-Chip) design exploration.
 
 ## Overview
 
-This experiment implements the optimization loop described in the [LangGraph Migration Plan](../../../docs/plans/langgraph-migration-plan.md). It demonstrates:
+This experiment implements the optimization loop described in the [LangGraph Migration Plan](../../../docs/plan/langgraph-migration-plan.md). It demonstrates:
 
 1. **State Machine Architecture**: Explicit graph with conditional routing
 2. **Tool Integration**: Yosys synthesis, Verilator/Icarus simulation
@@ -204,6 +204,6 @@ cp gen/pe.v /path/to/soc_optimizer/designs/systars_pe.sv
 ## Related Resources
 
 - [LangGraph Documentation](https://langchain-ai.github.io/langgraph/)
-- [LangGraph Migration Plan](../../../docs/plans/langgraph-migration-plan.md)
-- [Agentic Framework Assessment](../../../docs/plans/agentic-framework-assessment.md)
+- [LangGraph Migration Plan](../../../docs/plan/langgraph-migration-plan.md)
+- [Agentic Framework Assessment](../../../docs/plan/agentic-framework-assessment.md)
 - [systars HDL Generator](https://github.com/stillwater-sc/systars)

@@ -23,7 +23,7 @@ executed all of **Phase 1: unify onto one `DesignState`**.
 
 ### Planning + skeleton (PR #218)
 
-- `docs/plans/roadmap-loop-convergence.md`: 4 phases, seam checklist S1-S12,
+- `docs/plan/roadmap-loop-convergence.md`: 4 phases, seam checklist S1-S12,
   critical path, risks; wired into `roadmap-v2.md` (risk row, dependency lines,
   graph node, critical path, staffing).
 - DRAFT import-only skeleton:

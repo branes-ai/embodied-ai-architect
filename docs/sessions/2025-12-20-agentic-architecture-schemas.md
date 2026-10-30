@@ -87,14 +87,14 @@ embodied-schemas (schemas + facts)
 
 ## Planning Documents Created
 
-### 1. docs/plans/agentic-tool-architecture.md
+### 1. docs/plan/agentic-tool-architecture.md
 - Tool registration patterns analysis
 - Tool granularity decision (dimension-specific)
 - Output schema design (verdict-first)
 - Knowledge base architecture options
 - Industry research (A-MEM, Zep/Graphiti, Mem0)
 
-### 2. docs/plans/embodied-ai-codesign-subtasks.md
+### 2. docs/plan/embodied-ai-codesign-subtasks.md
 - 70+ enumerated subtasks in 7 categories
 - Knowledge Base (21 subtasks)
 - Analysis Tools (19 subtasks)
@@ -104,7 +104,7 @@ embodied-schemas (schemas + facts)
 - Validation (10 subtasks)
 - Phased implementation plan
 
-### 3. docs/plans/knowledge-base-schema.md
+### 3. docs/plan/knowledge-base-schema.md
 - Complete Pydantic schema designs
 - Hardware: physical, environmental, power, interfaces
 - Models: architecture, variants, accuracy
@@ -113,7 +113,7 @@ embodied-schemas (schemas + facts)
 - Benchmarks: verdict-first output
 - Directory structure and query interface
 
-### 4. docs/plans/shared-schema-repo-architecture.md
+### 4. docs/plan/shared-schema-repo-architecture.md
 - Repository decision and rationale
 - Package configuration
 - API design patterns
@@ -251,10 +251,10 @@ hardware_registry/
 - `docs/sessions/2024-12-20-initial-setup.md` - Session log
 
 ### Created (embodied-ai-architect repo)
-- `docs/plans/agentic-tool-architecture.md`
-- `docs/plans/embodied-ai-codesign-subtasks.md`
-- `docs/plans/knowledge-base-schema.md`
-- `docs/plans/shared-schema-repo-architecture.md`
+- `docs/plan/agentic-tool-architecture.md`
+- `docs/plan/embodied-ai-codesign-subtasks.md`
+- `docs/plan/knowledge-base-schema.md`
+- `docs/plan/shared-schema-repo-architecture.md`
 
 ---
 
