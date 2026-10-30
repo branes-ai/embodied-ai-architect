@@ -31,7 +31,7 @@ Created `docs/knowledge-base-architecture.md` with a fundamentally different app
 
 ### 2. Documentation Roadmap (Astro Starlight)
 
-Created `docs/plans/roadmap-documentation.md` with a 12-week plan:
+Created `docs/plan/roadmap-documentation.md` with a 12-week plan:
 
 | Phase | Timeline | Deliverables |
 |-------|----------|--------------|
@@ -49,11 +49,11 @@ Created `docs/plans/roadmap-documentation.md` with a 12-week plan:
 ### 3. Complete Roadmap Documentation
 
 **Created:**
-- `docs/plans/roadmap-phase-1.md` - Missing Phase 1 (Digital Twin Foundation) with user stories and acceptance criteria
-- `docs/plans/roadmap-summary.md` - Complete overview of all 3 phases + supporting infrastructure
+- `docs/plan/roadmap-phase-1.md` - Missing Phase 1 (Digital Twin Foundation) with user stories and acceptance criteria
+- `docs/plan/roadmap-summary.md` - Complete overview of all 3 phases + supporting infrastructure
 
 **Updated:**
-- `docs/plans/roadmap.md` - Added "Supporting Infrastructure Roadmaps" section linking to documentation, knowledge base, devteam, and system architecture roadmaps
+- `docs/plan/roadmap.md` - Added "Supporting Infrastructure Roadmaps" section linking to documentation, knowledge base, devteam, and system architecture roadmaps
 
 ### 4. Roadmap Summary
 
@@ -70,15 +70,15 @@ Consolidated the complete 12-month product roadmap:
 | File | Purpose |
 |------|---------|
 | `docs/knowledge-base-architecture.md` | LLM-native KB design with retrieval system |
-| `docs/plans/roadmap-documentation.md` | Astro Starlight docs site roadmap |
-| `docs/plans/roadmap-phase-1.md` | Phase 1 user stories and acceptance criteria |
-| `docs/plans/roadmap-summary.md` | Complete roadmap overview |
+| `docs/plan/roadmap-documentation.md` | Astro Starlight docs site roadmap |
+| `docs/plan/roadmap-phase-1.md` | Phase 1 user stories and acceptance criteria |
+| `docs/plan/roadmap-summary.md` | Complete roadmap overview |
 
 ## Files Modified
 
 | File | Change |
 |------|--------|
-| `docs/plans/roadmap.md` | Added Supporting Infrastructure Roadmaps section |
+| `docs/plan/roadmap.md` | Added Supporting Infrastructure Roadmaps section |
 
 ## Architecture Decisions
 

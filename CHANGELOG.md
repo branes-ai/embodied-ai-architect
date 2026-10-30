@@ -63,7 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     the dispatcher pipeline's for the same state (no divergent second check).
 - **Loop Convergence epic — Phase 1: state unification** (2026-07-14, epic
   `#203`, PRs #218–#223, v1.2.0–v1.6.0):
-  - New milestone doc `docs/plans/roadmap-loop-convergence.md` — unify the two
+  - New milestone doc `docs/plan/roadmap-loop-convergence.md` — unify the two
     disjoint design loops (population/Pareto MOO + single-design dispatcher)
     into one multi-agent loop over a shared `DesignState`; 4 phases, seam
     checklist S1–S12, wired into `roadmap-v2.md` (PR #218).
@@ -241,7 +241,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `test_demo_acceptance.py` (17): All 7 demos run end-to-end, composite score > 0.5
   - **564 Total Tests** all passing (144 Phase 4 + 420 existing)
   - **Demo Guide** (`docs/demo-guide.md`): Updated with Demos 2, 5, 6, 7 and architecture progression
-  - Documentation: `docs/sessions/2026-02-13-phase4-evaluation-demos.md`, `docs/plans/phase4-integration-and-evaluation.md`
+  - Documentation: `docs/sessions/2026-02-13-phase4-evaluation-demos.md`, `docs/plan/phase4-integration-and-evaluation.md`
 
 - Phase 3: KPU Micro-Architecture, Floorplan Validation & RTL Generation (2026-02-12):
   - **KPU Micro-Architecture Configuration** (`src/embodied_ai_architect/graphs/`):
@@ -299,7 +299,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `test_kpu_integration.py` (6): End-to-end KPU loop convergence
     - `test_rtl_integration.py` (5): Template→RTL→synthesis pipeline
   - **207 Total Tests** all passing (88 Phase 3 + 119 existing)
-  - Documentation: `docs/sessions/2026-02-12-phase3-kpu-rtl.md`, `docs/plans/phase3-kpu-floorplan-rtl-generation.md`
+  - Documentation: `docs/sessions/2026-02-12-phase3-kpu-rtl.md`, `docs/plan/phase3-kpu-floorplan-rtl-generation.md`
 
 - Agentic SoC Designer Foundation — Phase 0 + Phase 1 Implementation (2026-02-11):
   - **Phase 0.1 — State Schema & Task Graph Engine** (`src/embodied_ai_architect/graphs/`):
@@ -398,7 +398,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Tools only for computation (roofline analysis); everything else is text
     - Token budget management (~8K tokens default for retrieved context)
     - Content chunking strategy: one file = one chunk (~500-2000 tokens)
-  - **Documentation Site Roadmap** (`docs/plans/roadmap-documentation.md`):
+  - **Documentation Site Roadmap** (`docs/plan/roadmap-documentation.md`):
     - Astro Starlight for modern, LLM-friendly static documentation
     - 12-week implementation plan across 5 phases
     - Phase 1: Foundation (landing page, getting started)
@@ -408,12 +408,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Phase 5: Interactive (hardware finder, compatibility matrix)
     - `llms.txt` and `llms-full.txt` generation for AI agent discovery
     - Single source of truth: YAML → website + knowledge base + LLM metadata
-  - **Phase 1 Roadmap** (`docs/plans/roadmap-phase-1.md`):
+  - **Phase 1 Roadmap** (`docs/plan/roadmap-phase-1.md`):
     - Complete user stories and acceptance criteria for Digital Twin Foundation
     - Milestone 1.1: Coupled Simulation Pipeline (AirSim ↔ CSim integration)
     - Milestone 1.2: Baseline Profiling (10,000+ flight minutes dataset)
     - Monthly breakdown and success criteria
-  - **Roadmap Summary** (`docs/plans/roadmap-summary.md`):
+  - **Roadmap Summary** (`docs/plan/roadmap-summary.md`):
     - Complete 12-month product roadmap overview
     - All 3 phases with milestones and acceptance criteria
     - Team structure (6 people, AI-leveraged)
@@ -482,7 +482,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Verdict-first tool output schema design (PASS/FAIL with confidence, evidence, suggestions)
   - Knowledge base architecture with hybrid storage (YAML + optional graph + vector)
   - Research on current agentic memory systems (A-MEM, Zep/Graphiti, Mem0)
-  - Documentation: docs/plans/agentic-tool-architecture.md
+  - Documentation: docs/plan/agentic-tool-architecture.md
 - Embodied AI Codesign Subtask Enumeration (2025-12-20):
   - 70+ discrete subtasks organized into 7 categories
   - Knowledge Base subtasks (21): hardware, models, sensors, use cases, constraints
@@ -492,7 +492,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Decomposition & Planning subtasks (14): query understanding, orchestration
   - Validation subtasks (10): benchmark execution, accuracy verification
   - Phased implementation plan (Foundation → Recommendation → Validation → Advanced)
-  - Documentation: docs/plans/embodied-ai-codesign-subtasks.md
+  - Documentation: docs/plan/embodied-ai-codesign-subtasks.md
 - Knowledge Base Schema Design (2025-12-20):
   - Complete schema for hardware platforms (physical, environmental, power, interfaces)
   - Model catalog schema (architecture, variants, accuracy benchmarks)
@@ -502,14 +502,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Constraint ontology (latency tiers, power classes, implication rules)
   - Directory structure design for YAML data catalog
   - Query interface design with filtering and relationships
-  - Documentation: docs/plans/knowledge-base-schema.md
+  - Documentation: docs/plan/knowledge-base-schema.md
 - Shared Schema Repository Architecture (2025-12-20):
   - Created branes-ai/embodied-schemas as shared package
   - Dependency flow: embodied-schemas ← graphs, embodied-ai-architect
   - Data split decision between graphs/hardware_registry and embodied-schemas
   - Migration strategy for existing graphs hardware data
   - Integration patterns with code examples
-  - Documentation: docs/plans/shared-schema-repo-architecture.md
+  - Documentation: docs/plan/shared-schema-repo-architecture.md
 - Created branes-ai/embodied-schemas repository:
   - Complete Pydantic schema models (hardware, models, sensors, usecases, benchmarks, constraints)
   - YAML data loaders with validation
@@ -552,9 +552,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Prototype documentation (drone_perception, multi_rate_framework)
   - Key design patterns and code style guidelines
 - Initial project structure with Python package layout
-- Documentation directories: `docs/plans` for architecture plans, `docs/sessions` for session logs
-- Architecture plan: Multi-agent system design for Embodied AI evaluation (docs/plans/agent-architecture.md)
-- Agent packaging strategy document (docs/plans/agent-packaging-strategy.md)
+- Documentation directories: `docs/plan` for architecture plans, `docs/sessions` for session logs
+- Architecture plan: Multi-agent system design for Embodied AI evaluation (docs/plan/agent-architecture.md)
+- Agent packaging strategy document (docs/plan/agent-packaging-strategy.md)
 - Core Orchestrator class for coordinating agent workflows
 - BaseAgent abstract class and AgentResult data model
 - ModelAnalyzerAgent: Extracts architecture information from PyTorch models
@@ -583,7 +583,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Auto-generated index page listing all reports
   - Run independently: `python -m embodied_ai_architect.report_server`
   - Clean separation of concerns: generation vs. serving
-- Architecture documentation: Reporting architecture patterns and design (docs/plans/reporting-architecture.md)
+- Architecture documentation: Reporting architecture patterns and design (docs/plan/reporting-architecture.md)
 - Security Architecture: Comprehensive secrets management system
   - SecretsManager: Multi-provider secrets management with audit logging
   - EnvironmentSecretsProvider: Load secrets from environment variables
@@ -594,7 +594,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Secure defaults: file permission checks, ownership validation
   - .env.example template for secure configuration
   - Updated .gitignore to prevent accidental secret commits
-  - Security architecture documentation (docs/plans/security-architecture.md)
+  - Security architecture documentation (docs/plan/security-architecture.md)
 - RemoteSSHBackend: Execute benchmarks on remote machines via SSH
   - Secure SSH connection using SecretsManager
   - Model serialization and transfer via SFTP
@@ -618,12 +618,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Kubernetes manifests (namespace, service account, RBAC)
   - Configuration examples and README (config/kubernetes/)
   - examples/kubernetes_scaling_example.py: Demonstrates parallel execution
-- Architecture documentation: Kubernetes backend design (docs/plans/kubernetes-backend-architecture.md)
+- Architecture documentation: Kubernetes backend design (docs/plan/kubernetes-backend-architecture.md)
 - Working example demonstrating full workflow with all four agents (examples/simple_workflow.py)
 - Project dependencies via pyproject.toml and requirements.txt (added matplotlib, jinja2, paramiko, kubernetes as optional)
 - This CHANGELOG.md file to track project changes
 - Command-Line Interface (CLI): Human-friendly CLI inspired by Claude Code
-  - Architecture documentation: CLI design patterns and commands (docs/plans/cli-architecture.md)
+  - Architecture documentation: CLI design patterns and commands (docs/plan/cli-architecture.md)
   - Core CLI framework using Click and Rich for beautiful terminal output
   - Entry point: `embodied-ai` command registered in pyproject.toml
   - Global options: --verbose/-v, --json, --quiet for different output modes
@@ -660,9 +660,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - JSON output mode for scripting and CI/CD integration
   - Dependencies: click>=8.1.0, rich>=13.0.0
 - Embodied AI Application Framework: Architecture analysis and implementation planning
-  - Architecture analysis document: Evaluated 3 architecture options for application support (docs/plans/embodied-ai-application-architecture.md)
+  - Architecture analysis document: Evaluated 3 architecture options for application support (docs/plan/embodied-ai-application-architecture.md)
   - Selected hybrid architecture (Option 3): Python Framework + Graph IR + DSL
-  - Comprehensive implementation plan: 18-week timeline for core functionality (docs/plans/embodied-ai-application-implementation-plan.md)
+  - Comprehensive implementation plan: 18-week timeline for core functionality (docs/plan/embodied-ai-application-implementation-plan.md)
   - Planned integration with existing infrastructure:
     - PyTorch FX for graph capture
     - MLIR/IREE for compilation
@@ -703,7 +703,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Python for slow loops (≤ 100 Hz): perception, planning
     - Rust for fast loops (> 500 Hz): joint control, balance
     - All communication via Zenoh (language-agnostic)
-  - Phase 1 implementation proposal (docs/plans/phase1-framework-architecture.md):
+  - Phase 1 implementation proposal (docs/plan/phase1-framework-architecture.md):
     - Core framework classes (Component, Application, Scheduler)
     - Multi-rate scheduler (one thread per component)
     - Automatic Zenoh pub/sub creation

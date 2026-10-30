@@ -4,7 +4,7 @@
 
 ## Summary
 
-Implemented a comprehensive 3-layer multi-objective optimization engine for SoC design space exploration, based on the plan in `docs/plans/multi_objective_optimization_engine.md`. The engine provides MAP-Elites for fast design space illumination, Bayesian optimization with qNEHVI for sample-efficient Pareto refinement, and NSGA-III for many-objective problems. Integrated with the existing specialist dispatcher, LLM agent tools, MCP server, and CLI.
+Implemented a comprehensive 3-layer multi-objective optimization engine for SoC design space exploration, based on the plan in `docs/plan/multi_objective_optimization_engine.md`. The engine provides MAP-Elites for fast design space illumination, Bayesian optimization with qNEHVI for sample-efficient Pareto refinement, and NSGA-III for many-objective problems. Integrated with the existing specialist dispatcher, LLM agent tools, MCP server, and CLI.
 
 ## Architecture
 

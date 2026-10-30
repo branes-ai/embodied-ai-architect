@@ -8,7 +8,7 @@ All three skills are now live in Claude Code — you can see them in the skill l
 
 ## What was built
 
-Five Workflow Scenarios (docs/plans/architect-workflows.md)
+Five Workflow Scenarios (docs/plan/architect-workflows.md)
 
 All five follow the same expert loop but highlight different dominant constraints:
 

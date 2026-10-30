@@ -95,7 +95,7 @@ To create an accurate CLAUDE.md, analyzed:
 
 4. **Documentation**
    - Various README.md files
-   - Architecture documents in `docs/plans/`
+   - Architecture documents in `docs/plan/`
    - Session logs in `docs/sessions/`
 
 ---
