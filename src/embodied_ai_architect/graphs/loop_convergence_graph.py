@@ -1,6 +1,6 @@
 """Unified loop assembly — DRAFT sketch for the Loop Convergence milestone.
 
-See `docs/plans/roadmap-loop-convergence.md` (Phase 4), `graphs/design_state.py`,
+See `docs/plan/roadmap-loop-convergence.md` (Phase 4), `graphs/design_state.py`,
 and `graphs/loop_agents.py`.
 
 This module is a **proposal**, not yet wired into the CLI. It assembles the single
